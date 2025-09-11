@@ -40,8 +40,9 @@
     <header>
       <h1>Mini Shop</h1>
       <div class="controls">
+        <!-- Link to your Add page on GitHub Pages -->
         <button id="addBtn" class="btn link-btn">➕ Add product</button>
-        <button class="btn" id="clearBtn" title="Clear local cache">Refresh</button>
+        <button class="btn" id="refreshBtn" title="Refresh products">Refresh</button>
       </div>
     </header>
 
@@ -55,7 +56,9 @@
   <!-- Firebase JS (modular) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, runTransaction, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import {
+      getFirestore, collection, onSnapshot, doc, runTransaction, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     // Your firebase config (provided by you)
     const firebaseConfig = {
@@ -68,6 +71,7 @@
       measurementId: "G-6N23NYNRDB"
     };
 
+    const ADD_PAGE = 'https://zezo20234.github.io/make/'; // your add page URL
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
@@ -75,7 +79,7 @@
     const productsArea = document.getElementById('productsArea');
     const toastRoot = document.getElementById('toastRoot');
     const addBtn = document.getElementById('addBtn');
-    const clearBtn = document.getElementById('clearBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
 
     function toast(text){
       const div = document.createElement('div'); div.className='toast'; div.textContent = text; toastRoot.appendChild(div);
@@ -87,7 +91,7 @@
       return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ر.س';
     }
 
-    // Real-time product listener
+    // Realtime listener for products collection (ordered by createdAt desc)
     const productsCol = collection(db, 'products');
     const productsQuery = query(productsCol, orderBy('createdAt', 'desc'));
     onSnapshot(productsQuery, (snap) => {
@@ -129,6 +133,7 @@
       }
     }
 
+    // Purchase: use Firestore transaction to decrement quantity and create buyer doc
     async function onBuy(productId, title, price){
       const name = prompt('Enter your name to complete the purchase (example: zezo):', 'zezo');
       if(name === null) return;
@@ -148,8 +153,8 @@
           tx.update(productRef, { quantity: currentQty - 1 });
 
           // add buyer doc
-          const buyerDocRef = doc(buyersColRef);
-          tx.set(buyerDocRef, {
+          const newBuyerRef = doc(buyersColRef);
+          tx.set(newBuyerRef, {
             name: buyerName,
             productId,
             productTitle: title || 'Untitled',
@@ -166,11 +171,10 @@
     }
 
     addBtn.addEventListener('click', ()=>{
-      window.location.href = 'add.html'; // adjust path if necessary
+      window.location.href = ADD_PAGE;
     });
 
-    // manual refresh if needed (re-queries)
-    clearBtn.addEventListener('click', async ()=>{
+    refreshBtn.addEventListener('click', ()=>{
       toast('Refreshed');
     });
 
