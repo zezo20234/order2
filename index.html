@@ -39,7 +39,8 @@
     <header>
       <h1>Mini Shop</h1>
       <div class="controls">
-        <a class="btn link-btn" href="add.html">➕ Add product</a>
+        <!-- Changed from direct link to button which asks for code -->
+        <button id="addBtn" class="btn link-btn">➕ Add product</button>
         <button class="btn" id="clearBtn" title="Clear all products">Clear</button>
       </div>
     </header>
@@ -54,6 +55,8 @@
   <script>
     const PRODUCTS_KEY = 'mini-shop-products-v1';
     const BUYERS_KEY   = 'mini-shop-buyers-v1';
+    const SECRET_CODE = '555';
+    const REDIRECT_URL = 'https://zezo20234.github.io/make/';
 
     function loadProducts(){ try{return JSON.parse(localStorage.getItem(PRODUCTS_KEY) || '[]')}catch(e){return []} }
     function saveProducts(arr){ localStorage.setItem(PRODUCTS_KEY, JSON.stringify(arr)); }
@@ -71,7 +74,7 @@
       const root = document.getElementById('productsArea'); root.innerHTML = '';
       const products = loadProducts();
       if(!products.length){
-        const e = document.createElement('div'); e.className='empty'; e.innerHTML = '<strong>No products yet.</strong><br>Go to "Add product" to list something.'; root.appendChild(e); return;
+        const e = document.createElement('div'); e.className='empty'; e.innerHTML = '<strong>No products yet.</strong><br>Use Add product to list something.'; root.appendChild(e); return;
       }
 
       for(const p of products){
@@ -119,7 +122,6 @@
       });
       saveBuyers(buyers);
 
-      // feedback
       toast('Thanks ' + buyer + ' — purchasing ' + (p.title || 'item'));
 
       // decrement quantity
@@ -141,6 +143,18 @@
 
     document.getElementById('clearBtn').addEventListener('click', ()=>{
       if(confirm('Clear all products from localStorage?')){ localStorage.removeItem(PRODUCTS_KEY); render(); }
+    });
+
+    // Add-btn behavior: ask for code, if 555 go to the specified URL
+    document.getElementById('addBtn').addEventListener('click', ()=>{
+      const code = prompt('Enter access code to add a product:','');
+      if(code === null) return;
+      if(String(code).trim() === SECRET_CODE){
+        // go to the custom URL
+        window.location.href = REDIRECT_URL;
+      }else{
+        alert('Incorrect code — access denied.');
+      }
     });
 
     // initial render
