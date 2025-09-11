@@ -44,6 +44,7 @@
       <h1>Mini Shop</h1>
       <div class="controls">
         <button id="addBtn" class="btn link-btn">➕ Add product</button>
+        <button id="viewBtn" class="btn link-btn">View shop</button>
         <button class="btn" id="clearBtn" title="Clear all products">Clear</button>
       </div>
     </header>
@@ -59,14 +60,15 @@
     const PRODUCTS_KEY = 'mini-shop-products-v1';
     const BUYERS_KEY   = 'mini-shop-buyers-v1';
     const SECRET_CODE = '555';
-    const REDIRECT_URL = 'https://zezo20234.github.io/make/';
+    const REDIRECT_URL = 'https://zezo20234.github.io/make/'; // add-product destination
+    const VIEW_SHOP_URL = 'https://zezo20234.github.io/order2/'; // view-shop destination
 
     function loadProducts(){ try{return JSON.parse(localStorage.getItem(PRODUCTS_KEY) || '[]')}catch(e){return []} }
     function saveProducts(arr){ localStorage.setItem(PRODUCTS_KEY, JSON.stringify(arr)); }
     function loadBuyers(){ try{return JSON.parse(localStorage.getItem(BUYERS_KEY) || '[]')}catch(e){return []} }
     function saveBuyers(arr){ localStorage.setItem(BUYERS_KEY, JSON.stringify(arr)); }
 
-    // Format price as number with two decimals and add the riyal.png icon (expects riyal.png in same folder)
+    // Format price as number with two decimals and add the riyal icon (expects money.png or your image in same folder)
     function formatPrice(n){
       const v = Number(n) || 0;
       const amount = v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -169,6 +171,11 @@
       }else{
         alert('Incorrect code — access denied.');
       }
+    });
+
+    // View shop button — goes to order2 URL
+    document.getElementById('viewBtn').addEventListener('click', ()=>{
+      window.location.href = VIEW_SHOP_URL;
     });
 
     // initial render
