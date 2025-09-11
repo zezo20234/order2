@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini Shop</title>
+  <style>
+    :root{ --bg:#071029; --card:#0b1220; --accent:#06b6d4; --muted:#94a3b8; --glass: rgba(255,255,255,0.03);}
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;color:#e6eef8;background:linear-gradient(180deg,#041022 0%, #071a2e 100%);}
+    .wrap{max-width:1100px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    h1{font-size:1.4rem;margin:0}
+    .controls{display:flex;gap:10px;align-items:center}
+    .btn{background:linear-gradient(90deg,var(--accent),#7c3aed);border:none;padding:10px 14px;border-radius:12px;color:white;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(2,6,23,0.6);transition:transform .14s ease}
+    .btn:active{transform:translateY(2px) scale(.995)}
+    .link-btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:var(--muted);text-decoration:none}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:12px;backdrop-filter: blur(6px);border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:8px;align-items:stretch;animation:pop .26s ease both}
+    @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+    .thumb{height:140px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--glass)}
+    .thumb img{max-width:100%;max-height:100%;object-fit:cover}
+    .title{font-weight:700}
+    .desc{font-size:.85rem;color:var(--muted);min-height:36px}
+    .row{display:flex;justify-content:space-between;align-items:center}
+    .price{font-weight:800}
+    .qty{font-size:.9rem;color:var(--muted)}
+    .small{font-size:.82rem;color:var(--muted)}
+    .buy{margin-top:8px;padding:10px;border-radius:10px;border:none;background:linear-gradient(90deg,#10b981,#06b6d4);color:#053;cursor:pointer;font-weight:700}
+    .buy[disabled]{opacity:.35;cursor:not-allowed}
+    .empty{padding:40px;border-radius:12px;background:rgba(255,255,255,0.02);text-align:center;color:var(--muted)}
+    .toast{position:fixed;right:18px;bottom:18px;background:#071a2e;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.6);color:#e6eef8}
+    .controls .danger{background:transparent;border:1px solid rgba(220,80,80,0.16);color:#ffb4b4}
+    @media (max-width:420px){.thumb{height:110px}.wrap{padding:12px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Mini Shop</h1>
+      <div class="controls">
+        <a class="btn link-btn" href="add.html">➕ Add product</a>
+        <button class="btn" id="clearBtn" title="Clear all products">Clear</button>
+      </div>
+    </header>
+
+    <main>
+      <div id="productsArea" class="grid"></div>
+    </main>
+  </div>
+
+  <div id="toastRoot" aria-live="polite"></div>
+
+  <script>
+    const PRODUCTS_KEY = 'mini-shop-products-v1';
+    const BUYERS_KEY   = 'mini-shop-buyers-v1';
+
+    function loadProducts(){ try{return JSON.parse(localStorage.getItem(PRODUCTS_KEY) || '[]')}catch(e){return []} }
+    function saveProducts(arr){ localStorage.setItem(PRODUCTS_KEY, JSON.stringify(arr)); }
+    function loadBuyers(){ try{return JSON.parse(localStorage.getItem(BUYERS_KEY) || '[]')}catch(e){return []} }
+    function saveBuyers(arr){ localStorage.setItem(BUYERS_KEY, JSON.stringify(arr)); }
+
+    function formatPrice(n){ const v = Number(n)||0; return v.toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:2}); }
+
+    function toast(text){
+      const div = document.createElement('div'); div.className='toast'; div.textContent = text; document.getElementById('toastRoot').appendChild(div);
+      setTimeout(()=>{div.style.opacity=0;div.style.transform='translateY(10px)';setTimeout(()=>div.remove(),500)},2300)
+    }
+
+    function render(){
+      const root = document.getElementById('productsArea'); root.innerHTML = '';
+      const products = loadProducts();
+      if(!products.length){
+        const e = document.createElement('div'); e.className='empty'; e.innerHTML = '<strong>No products yet.</strong><br>Go to "Add product" to list something.'; root.appendChild(e); return;
+      }
+
+      for(const p of products){
+        const card = document.createElement('div'); card.className='card'; card.dataset.id = p.id;
+
+        const thumb = document.createElement('div'); thumb.className='thumb';
+        const img = document.createElement('img'); img.alt = p.title || 'product';
+        img.src = p.photo || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="100%" height="100%" fill="#0b1220"/></svg>');
+        thumb.appendChild(img);
+
+        const title = document.createElement('div'); title.className='title'; title.textContent = p.title || 'Untitled';
+        const desc = document.createElement('div'); desc.className='desc'; desc.textContent = p.description || '';
+        const row = document.createElement('div'); row.className='row';
+        const price = document.createElement('div'); price.className='price'; price.textContent = formatPrice(p.price);
+        const qty = document.createElement('div'); qty.className='qty'; qty.textContent = 'Quantity: ' + (p.quantity || 0);
+        row.appendChild(price); row.appendChild(qty);
+
+        const buy = document.createElement('button'); buy.className='buy'; buy.textContent = 'Buy';
+        if(!p.quantity || p.quantity <= 0){ buy.setAttribute('disabled',''); buy.textContent = 'Sold out' }
+        buy.addEventListener('click', ()=>onBuy(p.id));
+
+        card.appendChild(thumb); card.appendChild(title); card.appendChild(desc); card.appendChild(row); card.appendChild(buy);
+        root.appendChild(card);
+      }
+    }
+
+    function onBuy(id){
+      const products = loadProducts(); const idx = products.findIndex(x=>x.id===id); if(idx===-1) return; const p = products[idx];
+      if(!p.quantity || p.quantity<=0) return toast('Product is sold out');
+
+      // prompt for buyer name (prefilled example: zezo)
+      const name = prompt('Enter your name to complete the purchase (example: zezo):', 'zezo');
+      if(name === null) return; // cancelled
+      const buyer = name.trim() || 'Anonymous';
+
+      // record buyer
+      const buyers = loadBuyers();
+      buyers.unshift({
+        id: 'b_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+        name: buyer,
+        productId: p.id,
+        productTitle: p.title || 'Untitled',
+        price: p.price,
+        time: new Date().toISOString()
+      });
+      saveBuyers(buyers);
+
+      // feedback
+      toast('Thanks ' + buyer + ' — purchasing ' + (p.title || 'item'));
+
+      // decrement quantity
+      p.quantity = Number(p.quantity) - 1;
+      if(p.quantity <= 0){
+        // remove product elegantly
+        const card = document.querySelector('.card[data-id="'+id+'"]');
+        if(card){
+          card.style.transition = 'transform .4s ease, opacity .4s ease, height .4s ease';
+          card.style.opacity = 0; card.style.transform = 'translateY(8px) scale(.98)';
+          setTimeout(()=>{ products.splice(idx,1); saveProducts(products); render(); },420);
+        }else{
+          products.splice(idx,1); saveProducts(products); render();
+        }
+      }else{
+        saveProducts(products); render();
+      }
+    }
+
+    document.getElementById('clearBtn').addEventListener('click', ()=>{
+      if(confirm('Clear all products from localStorage?')){ localStorage.removeItem(PRODUCTS_KEY); render(); }
+    });
+
+    // initial render
+    render();
+
+    // update live if other tab modifies products or buyers
+    window.addEventListener('storage', (e)=>{
+      if(e.key === PRODUCTS_KEY || e.key === BUYERS_KEY) render();
+    });
+  </script>
+</body>
+</html>
