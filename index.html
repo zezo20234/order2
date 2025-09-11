@@ -43,9 +43,6 @@
     <header>
       <h1>Mini Shop</h1>
       <div class="controls">
-        <!-- New View shop button -->
-        <button id="viewBtn" class="btn link-btn">🛒 View shop</button>
-
         <button id="addBtn" class="btn link-btn">➕ Add product</button>
         <button class="btn" id="clearBtn" title="Clear all products">Clear</button>
       </div>
@@ -63,7 +60,6 @@
     const BUYERS_KEY   = 'mini-shop-buyers-v1';
     const SECRET_CODE = '555';
     const REDIRECT_URL = 'https://zezo20234.github.io/make/';
-    const VIEW_URL = 'https://zezo20234.github.io/order2/';
 
     function loadProducts(){ try{return JSON.parse(localStorage.getItem(PRODUCTS_KEY) || '[]')}catch(e){return []} }
     function saveProducts(arr){ localStorage.setItem(PRODUCTS_KEY, JSON.stringify(arr)); }
@@ -173,14 +169,6 @@
       }else{
         alert('Incorrect code — access denied.');
       }
-    });
-
-    // View shop button: go to order2 page
-    document.getElementById('viewBtn').addEventListener('click', ()=>{
-      // navigate in the same tab
-      window.location.href = VIEW_URL;
-      // if you'd prefer a new tab, use:
-      // window.open(VIEW_URL, '_blank');
     });
 
     // initial render
