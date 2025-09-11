@@ -43,7 +43,6 @@
     <header>
       <h1>Mini Shop</h1>
       <div class="controls">
-        <!-- Changed from direct link to button which asks for code -->
         <button id="addBtn" class="btn link-btn">➕ Add product</button>
         <button class="btn" id="clearBtn" title="Clear all products">Clear</button>
       </div>
@@ -71,8 +70,7 @@
     function formatPrice(n){
       const v = Number(n) || 0;
       const amount = v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      // Use innerHTML when inserting this into the DOM
-      return `${amount} <img src="money.png" alt="SAR" class="sar-img">`;
+      return `${amount} <img src="riyal.png" alt="SAR" class="sar-img">`;
     }
 
     function toast(text){
@@ -115,12 +113,10 @@
       const products = loadProducts(); const idx = products.findIndex(x=>x.id===id); if(idx===-1) return; const p = products[idx];
       if(!p.quantity || p.quantity<=0) return toast('Product is sold out');
 
-      // prompt for buyer name (prefilled example: zezo)
       const name = prompt('Enter your name to complete the purchase (example: zezo):', 'zezo');
-      if(name === null) return; // cancelled
+      if(name === null) return;
       const buyer = name.trim() || 'Anonymous';
 
-      // record buyer
       const buyers = loadBuyers();
       buyers.unshift({
         id: 'b_' + Date.now() + '_' + Math.floor(Math.random()*1000),
@@ -134,10 +130,8 @@
 
       toast('Thanks ' + buyer + ' — purchasing ' + (p.title || 'item'));
 
-      // decrement quantity
       p.quantity = Number(p.quantity) - 1;
       if(p.quantity <= 0){
-        // remove product elegantly
         const card = document.querySelector('.card[data-id="'+id+'"]');
         if(card){
           card.style.transition = 'transform .4s ease, opacity .4s ease, height .4s ease';
@@ -151,16 +145,26 @@
       }
     }
 
+    // Clear button now asks for SECRET_CODE before confirming clear
     document.getElementById('clearBtn').addEventListener('click', ()=>{
-      if(confirm('Clear all products from localStorage?')){ localStorage.removeItem(PRODUCTS_KEY); render(); }
+      const code = prompt('Enter access code to clear all products:','');
+      if(code === null) return; // cancelled
+      if(String(code).trim() === SECRET_CODE){
+        if(confirm('Clear all products from localStorage?')){
+          localStorage.removeItem(PRODUCTS_KEY);
+          render();
+          toast('All products cleared.');
+        }
+      } else {
+        alert('Incorrect code — access denied.');
+      }
     });
 
-    // Add-btn behavior: ask for code, if 555 go to the specified URL
+    // Add-btn behavior: ask for code, if correct go to the specified URL
     document.getElementById('addBtn').addEventListener('click', ()=>{
       const code = prompt('Enter access code to add a product:','');
       if(code === null) return;
       if(String(code).trim() === SECRET_CODE){
-        // go to the custom URL
         window.location.href = REDIRECT_URL;
       }else{
         alert('Incorrect code — access denied.');
