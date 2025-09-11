@@ -30,7 +30,6 @@
     .buy[disabled]{opacity:.35;cursor:not-allowed}
     .empty{padding:40px;border-radius:12px;background:rgba(255,255,255,0.02);text-align:center;color:var(--muted)}
     .toast{position:fixed;right:18px;bottom:18px;background:#071a2e;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.6);color:#e6eef8}
-    .controls .danger{background:transparent;border:1px solid rgba(220,80,80,0.16);color:#ffb4b4}
     .sar-img { width:25px; height:25px; display:inline-block; vertical-align:middle; margin-left:4px; }
     @media (max-width:420px){.thumb{height:110px}.wrap{padding:12px}}
   </style>
@@ -40,7 +39,6 @@
     <header>
       <h1>Mini Shop</h1>
       <div class="controls">
-        <!-- Link to your Add page on GitHub Pages -->
         <button id="addBtn" class="btn link-btn">➕ Add product</button>
         <button class="btn" id="refreshBtn" title="Refresh products">Refresh</button>
       </div>
@@ -60,7 +58,6 @@
       getFirestore, collection, onSnapshot, doc, runTransaction, query, orderBy
     } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-    // Your firebase config (provided by you)
     const firebaseConfig = {
       apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
       authDomain: "minishop-67dbf.firebaseapp.com",
@@ -71,11 +68,10 @@
       measurementId: "G-6N23NYNRDB"
     };
 
-    const ADD_PAGE = 'https://zezo20234.github.io/make/'; // your add page URL
+    const ADD_PAGE = 'https://zezo20234.github.io/make/';
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // DOM refs
     const productsArea = document.getElementById('productsArea');
     const toastRoot = document.getElementById('toastRoot');
     const addBtn = document.getElementById('addBtn');
@@ -91,27 +87,26 @@
       return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ر.س';
     }
 
-    // Realtime listener for products collection (ordered by createdAt desc)
+    // Real-time products listener
     const productsCol = collection(db, 'products');
-    const productsQuery = query(productsCol, orderBy('createdAt', 'desc'));
-    onSnapshot(productsQuery, (snap) => {
+    const productsQ = query(productsCol, orderBy('createdAt', 'desc'));
+    onSnapshot(productsQ, (snap) => {
       const arr = [];
-      snap.forEach(docu => { arr.push({ id: docu.id, ...docu.data() }); });
+      snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
       renderProducts(arr);
     }, (err) => {
       console.error('products onSnapshot error', err);
-      toast('Error loading products');
+      toast('Error loading products (see console)');
     });
 
     function renderProducts(products){
       productsArea.innerHTML = '';
       if(!products.length){
-        const e = document.createElement('div'); e.className='empty'; e.innerHTML = '<strong>No products yet.</strong><br>Use Add product to list something.'; productsArea.appendChild(e); return;
+        productsArea.innerHTML = '<div class="empty"><strong>No products yet.</strong><br>Use Add product to list something.</div>'; return;
       }
 
       for(const p of products){
         const card = document.createElement('div'); card.className='card'; card.dataset.id = p.id;
-
         const thumb = document.createElement('div'); thumb.className='thumb';
         const img = document.createElement('img'); img.alt = p.title || 'product';
         img.src = p.photoURL || ('data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="100%" height="100%" fill="#0b1220"/></svg>'));
@@ -133,14 +128,13 @@
       }
     }
 
-    // Purchase: use Firestore transaction to decrement quantity and create buyer doc
+    // Purchase transaction: decrement quantity and create buyer doc with generated id
     async function onBuy(productId, title, price){
       const name = prompt('Enter your name to complete the purchase (example: zezo):', 'zezo');
       if(name === null) return;
       const buyerName = (name.trim() || 'Anonymous');
 
       const productRef = doc(db, 'products', productId);
-      const buyersColRef = collection(db, 'buyers');
 
       try{
         await runTransaction(db, async (tx) => {
@@ -149,12 +143,13 @@
           const currentQty = Number(prodSnap.data().quantity || 0);
           if(currentQty <= 0) throw new Error('Product sold out.');
 
-          // decrement quantity
+          // decrement
           tx.update(productRef, { quantity: currentQty - 1 });
 
-          // add buyer doc
-          const newBuyerRef = doc(buyersColRef);
-          tx.set(newBuyerRef, {
+          // create buyer doc with deterministic id
+          const buyerId = 'b_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+          const buyerRef = doc(db, 'buyers', buyerId);
+          tx.set(buyerRef, {
             name: buyerName,
             productId,
             productTitle: title || 'Untitled',
@@ -162,7 +157,6 @@
             time: new Date().toISOString()
           });
         });
-
         toast('Thanks ' + buyerName + ' — purchase saved.');
       }catch(err){
         console.error('purchase error', err);
@@ -170,14 +164,8 @@
       }
     }
 
-    addBtn.addEventListener('click', ()=>{
-      window.location.href = ADD_PAGE;
-    });
-
-    refreshBtn.addEventListener('click', ()=>{
-      toast('Refreshed');
-    });
-
+    addBtn.addEventListener('click', ()=>{ window.location.href = ADD_PAGE; });
+    refreshBtn.addEventListener('click', ()=>{ toast('Refreshed'); });
   </script>
 </body>
 </html>
