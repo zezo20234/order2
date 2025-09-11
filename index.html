@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Mini Shop</title>
   <style>
-    :root{ --bg:#071029; --card:#0b1220; --accent:#06b6d4; --muted:#94a3b8; --glass: rgba(255,255,255,0.03);}
+    :root{ --bg:#071029; --card:#0b1220; --accent:#06b6d4; --muted:#94a3b8; --glass: rgba(255,255,255,0.03); }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;color:#e6eef8;background:linear-gradient(180deg,#041022 0%, #071a2e 100%);}
     .wrap{max-width:1100px;margin:28px auto;padding:20px}
@@ -31,10 +31,7 @@
     .empty{padding:40px;border-radius:12px;background:rgba(255,255,255,0.02);text-align:center;color:var(--muted)}
     .toast{position:fixed;right:18px;bottom:18px;background:#071a2e;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.6);color:#e6eef8}
     .controls .danger{background:transparent;border:1px solid rgba(220,80,80,0.16);color:#ffb4b4}
-
-    /* riyal image styling */
     .sar-img { width:25px; height:25px; display:inline-block; vertical-align:middle; margin-left:4px; }
-
     @media (max-width:420px){.thumb{height:110px}.wrap{padding:12px}}
   </style>
 </head>
@@ -44,7 +41,7 @@
       <h1>Mini Shop</h1>
       <div class="controls">
         <button id="addBtn" class="btn link-btn">➕ Add product</button>
-        <button class="btn" id="clearBtn" title="Clear all products">Clear</button>
+        <button class="btn" id="clearBtn" title="Clear local cache">Refresh</button>
       </div>
     </header>
 
@@ -55,34 +52,57 @@
 
   <div id="toastRoot" aria-live="polite"></div>
 
-  <script>
-    const PRODUCTS_KEY = 'mini-shop-products-v1';
-    const BUYERS_KEY   = 'mini-shop-buyers-v1';
-    const SECRET_CODE = '555';
-    const REDIRECT_URL = 'https://zezo20234.github.io/make/';
+  <!-- Firebase JS (modular) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, runTransaction, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-    function loadProducts(){ try{return JSON.parse(localStorage.getItem(PRODUCTS_KEY) || '[]')}catch(e){return []} }
-    function saveProducts(arr){ localStorage.setItem(PRODUCTS_KEY, JSON.stringify(arr)); }
-    function loadBuyers(){ try{return JSON.parse(localStorage.getItem(BUYERS_KEY) || '[]')}catch(e){return []} }
-    function saveBuyers(arr){ localStorage.setItem(BUYERS_KEY, JSON.stringify(arr)); }
+    // Your firebase config (provided by you)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
+      authDomain: "minishop-67dbf.firebaseapp.com",
+      projectId: "minishop-67dbf",
+      storageBucket: "minishop-67dbf.firebasestorage.app",
+      messagingSenderId: "7379826226",
+      appId: "1:7379826226:web:4d8f6f9cbc679cc600ae2b",
+      measurementId: "G-6N23NYNRDB"
+    };
 
-    // Format price as number with two decimals and add the riyal.png icon (expects riyal.png in same folder)
-    function formatPrice(n){
-      const v = Number(n) || 0;
-      const amount = v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      return `${amount} <img src="money.png" alt="SAR" class="sar-img">`;
-    }
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // DOM refs
+    const productsArea = document.getElementById('productsArea');
+    const toastRoot = document.getElementById('toastRoot');
+    const addBtn = document.getElementById('addBtn');
+    const clearBtn = document.getElementById('clearBtn');
 
     function toast(text){
-      const div = document.createElement('div'); div.className='toast'; div.textContent = text; document.getElementById('toastRoot').appendChild(div);
+      const div = document.createElement('div'); div.className='toast'; div.textContent = text; toastRoot.appendChild(div);
       setTimeout(()=>{div.style.opacity=0;div.style.transform='translateY(10px)';setTimeout(()=>div.remove(),500)},2300)
     }
 
-    function render(){
-      const root = document.getElementById('productsArea'); root.innerHTML = '';
-      const products = loadProducts();
+    function formatPrice(n){
+      const v = Number(n) || 0;
+      return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ر.س';
+    }
+
+    // Real-time product listener
+    const productsCol = collection(db, 'products');
+    const productsQuery = query(productsCol, orderBy('createdAt', 'desc'));
+    onSnapshot(productsQuery, (snap) => {
+      const arr = [];
+      snap.forEach(docu => { arr.push({ id: docu.id, ...docu.data() }); });
+      renderProducts(arr);
+    }, (err) => {
+      console.error('products onSnapshot error', err);
+      toast('Error loading products');
+    });
+
+    function renderProducts(products){
+      productsArea.innerHTML = '';
       if(!products.length){
-        const e = document.createElement('div'); e.className='empty'; e.innerHTML = '<strong>No products yet.</strong><br>Use Add product to list something.'; root.appendChild(e); return;
+        const e = document.createElement('div'); e.className='empty'; e.innerHTML = '<strong>No products yet.</strong><br>Use Add product to list something.'; productsArea.appendChild(e); return;
       }
 
       for(const p of products){
@@ -90,94 +110,70 @@
 
         const thumb = document.createElement('div'); thumb.className='thumb';
         const img = document.createElement('img'); img.alt = p.title || 'product';
-        img.src = p.photo || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="100%" height="100%" fill="#0b1220"/></svg>');
+        img.src = p.photoURL || ('data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="100%" height="100%" fill="#0b1220"/></svg>'));
         thumb.appendChild(img);
 
         const title = document.createElement('div'); title.className='title'; title.textContent = p.title || 'Untitled';
         const desc = document.createElement('div'); desc.className='desc'; desc.textContent = p.description || '';
         const row = document.createElement('div'); row.className='row';
-        const price = document.createElement('div'); price.className='price'; price.innerHTML = formatPrice(p.price);
-        const qty = document.createElement('div'); qty.className='qty'; qty.textContent = 'Quantity: ' + (p.quantity || 0);
+        const price = document.createElement('div'); price.className='price'; price.textContent = formatPrice(p.price);
+        const qty = document.createElement('div'); qty.className='qty'; qty.textContent = 'Quantity: ' + (Number(p.quantity||0));
         row.appendChild(price); row.appendChild(qty);
 
         const buy = document.createElement('button'); buy.className='buy'; buy.textContent = 'Buy';
         if(!p.quantity || p.quantity <= 0){ buy.setAttribute('disabled',''); buy.textContent = 'Sold out' }
-        buy.addEventListener('click', ()=>onBuy(p.id));
+        buy.addEventListener('click', ()=>onBuy(p.id, p.title, p.price));
 
         card.appendChild(thumb); card.appendChild(title); card.appendChild(desc); card.appendChild(row); card.appendChild(buy);
-        root.appendChild(card);
+        productsArea.appendChild(card);
       }
     }
 
-    function onBuy(id){
-      const products = loadProducts(); const idx = products.findIndex(x=>x.id===id); if(idx===-1) return; const p = products[idx];
-      if(!p.quantity || p.quantity<=0) return toast('Product is sold out');
-
+    async function onBuy(productId, title, price){
       const name = prompt('Enter your name to complete the purchase (example: zezo):', 'zezo');
       if(name === null) return;
-      const buyer = name.trim() || 'Anonymous';
+      const buyerName = (name.trim() || 'Anonymous');
 
-      const buyers = loadBuyers();
-      buyers.unshift({
-        id: 'b_' + Date.now() + '_' + Math.floor(Math.random()*1000),
-        name: buyer,
-        productId: p.id,
-        productTitle: p.title || 'Untitled',
-        price: p.price,
-        time: new Date().toISOString()
-      });
-      saveBuyers(buyers);
+      const productRef = doc(db, 'products', productId);
+      const buyersColRef = collection(db, 'buyers');
 
-      toast('Thanks ' + buyer + ' — purchasing ' + (p.title || 'item'));
+      try{
+        await runTransaction(db, async (tx) => {
+          const prodSnap = await tx.get(productRef);
+          if(!prodSnap.exists()) throw new Error('Product no longer exists.');
+          const currentQty = Number(prodSnap.data().quantity || 0);
+          if(currentQty <= 0) throw new Error('Product sold out.');
 
-      p.quantity = Number(p.quantity) - 1;
-      if(p.quantity <= 0){
-        const card = document.querySelector('.card[data-id="'+id+'"]');
-        if(card){
-          card.style.transition = 'transform .4s ease, opacity .4s ease, height .4s ease';
-          card.style.opacity = 0; card.style.transform = 'translateY(8px) scale(.98)';
-          setTimeout(()=>{ products.splice(idx,1); saveProducts(products); render(); },420);
-        }else{
-          products.splice(idx,1); saveProducts(products); render();
-        }
-      }else{
-        saveProducts(products); render();
+          // decrement quantity
+          tx.update(productRef, { quantity: currentQty - 1 });
+
+          // add buyer doc
+          const buyerDocRef = doc(buyersColRef);
+          tx.set(buyerDocRef, {
+            name: buyerName,
+            productId,
+            productTitle: title || 'Untitled',
+            price: Number(price || 0),
+            time: new Date().toISOString()
+          });
+        });
+
+        toast('Thanks ' + buyerName + ' — purchase saved.');
+      }catch(err){
+        console.error('purchase error', err);
+        alert('Purchase failed: ' + (err.message || err));
       }
     }
 
-    // Clear button now asks for SECRET_CODE before confirming clear
-    document.getElementById('clearBtn').addEventListener('click', ()=>{
-      const code = prompt('Enter access code to clear all products:','');
-      if(code === null) return; // cancelled
-      if(String(code).trim() === SECRET_CODE){
-        if(confirm('Clear all products from localStorage?')){
-          localStorage.removeItem(PRODUCTS_KEY);
-          render();
-          toast('All products cleared.');
-        }
-      } else {
-        alert('Incorrect code — access denied.');
-      }
+    addBtn.addEventListener('click', ()=>{
+      window.location.href = 'add.html'; // adjust path if necessary
     });
 
-    // Add-btn behavior: ask for code, if correct go to the specified URL
-    document.getElementById('addBtn').addEventListener('click', ()=>{
-      const code = prompt('Enter access code to add a product:','');
-      if(code === null) return;
-      if(String(code).trim() === SECRET_CODE){
-        window.location.href = REDIRECT_URL;
-      }else{
-        alert('Incorrect code — access denied.');
-      }
+    // manual refresh if needed (re-queries)
+    clearBtn.addEventListener('click', async ()=>{
+      toast('Refreshed');
     });
 
-    // initial render
-    render();
-
-    // update live if other tab modifies products or buyers
-    window.addEventListener('storage', (e)=>{
-      if(e.key === PRODUCTS_KEY || e.key === BUYERS_KEY) render();
-    });
   </script>
 </body>
 </html>
