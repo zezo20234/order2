@@ -30,7 +30,6 @@
     .buy[disabled]{opacity:.35;cursor:not-allowed}
     .empty{padding:40px;border-radius:12px;background:rgba(255,255,255,0.02);text-align:center;color:var(--muted)}
     .toast{position:fixed;right:18px;bottom:18px;background:#071a2e;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.6);color:#e6eef8}
-    .sar-img { width:25px; height:25px; display:inline-block; vertical-align:middle; margin-left:4px; }
     @media (max-width:420px){.thumb{height:110px}.wrap{padding:12px}}
   </style>
 </head>
@@ -55,20 +54,21 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import {
-      getFirestore, collection, onSnapshot, doc, runTransaction, query, orderBy
+      getFirestore, collection, onSnapshot, doc, runTransaction, query, orderBy, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
+    // --- REPLACE with your Firebase config if different ---
     const firebaseConfig = {
       apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
       authDomain: "minishop-67dbf.firebaseapp.com",
       projectId: "minishop-67dbf",
-      storageBucket: "minishop-67dbf.firebasestorage.app",
+      storageBucket: "minishop-67dbf.appspot.com",
       messagingSenderId: "7379826226",
       appId: "1:7379826226:web:4d8f6f9cbc679cc600ae2b",
       measurementId: "G-6N23NYNRDB"
     };
 
-    const ADD_PAGE = 'https://zezo20234.github.io/make/';
+    const ADD_PAGE = 'add-product.html'; // link to add page
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
@@ -128,13 +128,14 @@
       }
     }
 
-    // Purchase transaction: decrement quantity and create buyer doc with generated id
+    // Purchase transaction: decrement quantity and create buyer doc with serverTimestamp
     async function onBuy(productId, title, price){
       const name = prompt('Enter your name to complete the purchase (example: zezo):', 'zezo');
       if(name === null) return;
       const buyerName = (name.trim() || 'Anonymous');
 
       const productRef = doc(db, 'products', productId);
+      const buyersCol = collection(db, 'buyers');
 
       try{
         await runTransaction(db, async (tx) => {
@@ -146,15 +147,14 @@
           // decrement
           tx.update(productRef, { quantity: currentQty - 1 });
 
-          // create buyer doc with deterministic id
-          const buyerId = 'b_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-          const buyerRef = doc(db, 'buyers', buyerId);
-          tx.set(buyerRef, {
+          // create buyer doc (generate id by using doc(collection))
+          const newBuyerRef = doc(buyersCol); // generates a new id
+          tx.set(newBuyerRef, {
             name: buyerName,
             productId,
             productTitle: title || 'Untitled',
             price: Number(price || 0),
-            time: new Date().toISOString()
+            time: serverTimestamp()
           });
         });
         toast('Thanks ' + buyerName + ' — purchase saved.');
