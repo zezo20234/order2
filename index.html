@@ -3,297 +3,619 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mini Shop</title>
+  <title>Mini Shop - Customer</title>
+
+  <meta name="theme-color" content="#0ea5a4">
+  <link rel="apple-touch-icon" href="pizza.jpeg">
+
   <style>
-    :root{ --bg:#071029; --card:#0b1220; --accent:#06b6d4; --muted:#94a3b8; --glass: rgba(255,255,255,0.03); }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;color:#e6eef8;background:linear-gradient(180deg,#041022 0%, #071a2e 100%);}
-    .wrap{max-width:1100px;margin:28px auto;padding:20px}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-    h1{font-size:1.4rem;margin:0}
-    .controls{display:flex;gap:10px;align-items:center}
-    .btn{background:linear-gradient(90deg,var(--accent),#7c3aed);border:none;padding:10px 14px;border-radius:12px;color:white;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(2,6,23,0.6);transition:transform .14s ease}
-    .btn:active{transform:translateY(2px) scale(.995)}
-    .link-btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:var(--muted);text-decoration:none}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:12px;backdrop-filter: blur(6px);border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:8px;align-items:stretch;animation:pop .26s ease both}
-    @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
-    .thumb{height:140px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--glass)}
-    .thumb img{max-width:100%;max-height:100%;object-fit:cover}
-    .title{font-weight:700}
-    .desc{font-size:.85rem;color:var(--muted);min-height:36px}
-    .row{display:flex;justify-content:space-between;align-items:center}
-    .price{font-weight:800;display:flex;align-items:center;gap:8px}
-    .qty{font-size:.9rem;color:var(--muted)}
-    .small{font-size:.82rem;color:var(--muted)}
-    .buy{margin-top:8px;padding:10px;border-radius:10px;border:none;background:linear-gradient(90deg,#10b981,#06b6d4);color:#053;cursor:pointer;font-weight:700}
-    .buy[disabled]{opacity:.35;cursor:not-allowed}
-    .empty{padding:40px;border-radius:12px;background:rgba(255,255,255,0.02);text-align:center;color:var(--muted)}
-    .toast{position:fixed;right:18px;bottom:18px;background:#071a2e;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.6);color:#e6eef8}
-    /* Buyers panel */
-    .buyers-toggle { background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:var(--muted);cursor:pointer }
-    .buyers-panel {
-      position:fixed; right:18px; top:80px; width:320px; max-height:70vh; overflow:auto;
-      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius:12px; padding:12px; border:1px solid rgba(255,255,255,0.04); box-shadow: 0 12px 40px rgba(2,6,23,0.6);
-      display:none; z-index:9999;
+    :root{
+      --accent:#0ea5a4; --accent-2:#7c3aed; --muted:#6b7280; --card:#ffffff;
+      --glass: rgba(0,0,0,0.04);
     }
-    .buyer{display:flex;justify-content:space-between;gap:8px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02); margin-bottom:8px}
-    .buyers-panel .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-    @media (max-width:880px){ .buyers-panel{ right:8px; width:calc(100% - 16px); top:64px } .thumb{height:110px}.wrap{padding:12px} }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background: #ffffff; color:#111827; -webkit-font-smoothing:antialiased;
+    }
+    .wrap{max-width:980px;margin:28px auto;padding:20px}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    h1{font-size:1.25rem;margin:0}
+    .small{font-size:0.9rem;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+    .card{
+      background:var(--card); border-radius:10px;padding:14px;border:1px solid rgba(15,23,42,0.04);
+      box-shadow:0 6px 18px rgba(11,15,26,0.02);
+      transition: transform .14s ease, box-shadow .14s ease;
+    }
+    .card:hover{ transform: translateY(-4px); box-shadow:0 18px 40px rgba(11,15,26,0.06); }
+    .menu-item{display:flex;flex-direction:column;gap:10px;border-radius:10px;padding:10px;border:1px solid rgba(15,23,42,0.03)}
+    .item-name{font-weight:700}
+    .price{font-weight:700;color:var(--accent)}
+    .select-row{display:flex;justify-content:space-between;align-items:center}
+    input.itm{width:18px;height:18px}
+    .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));border:0;color:white;padding:9px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+    .btn.ghost{background:transparent;border:1px solid rgba(15,23,42,0.06);color:var(--accent);font-weight:700}
+    .order-summary{
+      position:fixed; left:50%; transform:translateX(-50%); bottom:18px; width:92%; max-width:980px;
+      display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;
+      background:#ffffff; border:1px solid rgba(15,23,42,0.06); box-shadow:0 12px 30px rgba(11,15,26,0.06);
+    }
+    .order-summary .muted{color:var(--muted)}
+    .ticket{
+      width:320px;padding:14px;border:2px dashed rgba(15,23,42,0.08);border-radius:10px;background:#fff;color:#111827;
+    }
+    .ticket h3{margin:0 0 8px 0}
+    @media print{
+      body *{visibility:hidden}
+      #printArea, #printArea *{visibility:visible}
+      #printArea{position:fixed;left:0;top:0;width:100%}
+      @page{size:portrait;margin:8mm}
+    }
+    .fade-in{animation:fadeIn .36s ease both}
+    @keyframes fadeIn{ from {opacity:0; transform:translateY(6px)} to {opacity:1; transform:none} }
+    .orders-list{display:flex;flex-direction:column;gap:10px}
+    .order-card{padding:10px;border-radius:10px;background:#fff;border:1px solid rgba(15,23,42,0.03)}
+    .right-align{text-align:right}
+
+    /* Install button top-left */
+    #btnAddHome{
+      position:fixed; left:12px; top:12px; z-index:9999; border-radius:9px; padding:8px 10px; font-weight:700;
+      box-shadow:0 6px 20px rgba(2,6,23,0.12); display:flex; gap:8px; align-items:center;
+      background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:white; border:0; cursor:pointer;
+    }
+
+    /* tutorial modal */
+    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:100000; }
+    .modal{ width:92%; max-width:720px; background:white; padding:18px; border-radius:12px; box-shadow:0 18px 40px rgba(11,15,26,0.12) }
+    .modal h3{ margin:0 0 8px 0 }
+    .steps{ margin-top:8px }
+    .steps li{ margin-bottom:8px }
+    .close-x{ position:absolute; right:18px; top:18px; background:transparent; border:0; font-weight:700; font-size:16px; color:#666; cursor:pointer; }
+    .media-preview{max-width:100%;border-radius:8px;border:1px solid rgba(0,0,0,0.04);display:block}
+    .stock-pill{font-weight:700;padding:6px 8px;border-radius:999px;border:1px solid rgba(15,23,42,0.06);display:inline-block}
   </style>
 </head>
 <body>
+  <button id="btnAddHome" title="Add to home screen">➕ Add to Home</button>
+
   <div class="wrap">
     <header>
-      <h1>Mini Shop</h1>
-      <div class="controls">
-        <button id="addBtn" class="btn link-btn">➕ Add product</button>
-        <button class="btn" id="refreshBtn" title="Refresh products">Refresh</button>
-        <button id="buyersBtn" class="buyers-toggle">Buyers</button>
+      <div>
+        <h1>Mini Shop</h1>
+        <div class="small">No products yet — admin can add products (code 555).</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div id="authInfo" class="small">Not signed in</div>
+        <button id="btnAuth" class="btn" style="margin-left:8px">Login / Create</button>
+        <button id="btnMyOrders" class="btn ghost" style="display:none">My Orders</button>
+        <button id="btnLogout" class="btn ghost" style="display:none">Logout</button>
+        <button id="btnAddProduct" class="btn" style="margin-left:6px">Add Product</button>
+        <button id="btnAdmin" class="btn ghost" style="margin-left:6px">Admin Panel</button>
       </div>
     </header>
 
     <main>
-      <div id="productsArea" class="grid"></div>
+      <section class="card fade-in">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <strong>Products</strong>
+          <div class="small">Items are shared for all users. Click to select.</div>
+        </div>
+
+        <div class="grid" id="menuGrid"></div>
+      </section>
+
+      <section id="userArea"></section>
     </main>
   </div>
 
-  <div id="toastRoot" aria-live="polite"></div>
+  <div id="printArea" style="display:none;padding:18px"></div>
+  <audio id="paySound" src="pay.mp3" preload="auto"></audio>
 
-  <!-- Buyers floating panel -->
-  <div id="buyersPanel" class="buyers-panel" aria-live="polite" role="region" aria-label="Recent buyers">
-    <div class="panel-head">
-      <strong>Recent buyers</strong>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button id="refreshBuyersBtn" class="buyers-toggle" title="Refresh buyers">↻</button>
-        <button id="clearBuyersBtn" class="buyers-toggle" title="Clear buyers">Clear</button>
-        <button id="closeBuyersBtn" class="buyers-toggle" title="Close">✕</button>
-      </div>
-    </div>
-    <div id="buyersList" class="small" style="color:var(--muted)">Loading…</div>
-  </div>
+  <!-- Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <!-- Firebase JS (modular) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import {
-      getFirestore, collection, onSnapshot, doc, runTransaction, query, orderBy, serverTimestamp,
-      getDocs, deleteDoc
-    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-
-    // --- REPLACE with your Firebase config if different ---
-    const firebaseConfig = {
+  <script>
+    // FIREBASE CONFIG (user-provided)
+    var firebaseConfig = {
       apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
       authDomain: "minishop-67dbf.firebaseapp.com",
+      databaseURL: "https://minishop-67dbf-default-rtdb.firebaseio.com",
       projectId: "minishop-67dbf",
-      storageBucket: "minishop-67dbf.appspot.com",
+      storageBucket: "minishop-67dbf.firebasestorage.app",
       messagingSenderId: "7379826226",
       appId: "1:7379826226:web:4d8f6f9cbc679cc600ae2b",
       measurementId: "G-6N23NYNRDB"
     };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    const ADD_PAGE = 'https://zezo20234.github.io/make/'; // opens this URL when Add product clicked
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    // APP STATE
+    let selections = {};
+    let currentUser = null;
+    let productsCache = {};
+    let deferredPrompt = null;
 
-    const productsArea = document.getElementById('productsArea');
-    const toastRoot = document.getElementById('toastRoot');
-    const addBtn = document.getElementById('addBtn');
-    const refreshBtn = document.getElementById('refreshBtn');
+    // HELPERS
+    function $(id){ return document.getElementById(id); }
+    function escapeKey(k){ return (k||'').toString().replace(/[.$#[\]]/g,'_'); }
+    function formatMoney(n){ return Number(n).toFixed(2).replace(/\.00$/,''); }
+    function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 
-    const buyersBtn = document.getElementById('buyersBtn');
-    const buyersPanel = document.getElementById('buyersPanel');
-    const buyersList = document.getElementById('buyersList');
-    const refreshBuyersBtn = document.getElementById('refreshBuyersBtn');
-    const clearBuyersBtn = document.getElementById('clearBuyersBtn');
-    const closeBuyersBtn = document.getElementById('closeBuyersBtn');
+    // INIT
+    document.addEventListener('DOMContentLoaded', ()=>{
+      try{ const s = localStorage.getItem('fo_user'); if(s) currentUser = JSON.parse(s); }catch(e){ localStorage.removeItem('fo_user'); }
+      renderStickySummary(); updateAuthUI();
+      $('btnAuth').onclick = authFlow;
+      $('btnMyOrders').onclick = showMyOrders;
+      $('btnLogout').onclick = ()=>{ localStorage.removeItem('fo_user'); currentUser=null; updateAuthUI(); showMessage('Logged out'); };
+      $('btnAddHome').onclick = openInstallTutorial;
+      $('btnAddProduct').onclick = addProductFlow;
+      $('btnAdmin').onclick = openAdminPanel;
 
-    function toast(text){
-      const div = document.createElement('div'); div.className='toast'; div.textContent = text; toastRoot.appendChild(div);
-      setTimeout(()=>{div.style.opacity=0;div.style.transform='translateY(10px)';setTimeout(()=>div.remove(),500)},2300)
-    }
+      // register service worker
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('SW registered', reg);
+        }).catch(err => console.warn('SW reg failed', err));
+      }
 
-    function formatPrice(n){
-      const v = Number(n) || 0;
-      return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ر.س';
-    }
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        $('btnAddHome').textContent = '▸ Install App';
+      });
 
-    // Real-time products listener
-    const productsCol = collection(db, 'products');
-    const productsQ = query(productsCol, orderBy('createdAt', 'desc'));
-    onSnapshot(productsQ, (snap) => {
-      const arr = [];
-      snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
-      renderProducts(arr);
-    }, (err) => {
-      console.error('products onSnapshot error', err);
-      toast('Error loading products (see console)');
+      // listen for products (shared)
+      db.ref('products').on('value', snap=>{
+        productsCache = snap.val() || {};
+        renderMenuFromProducts();
+        updateStickySummary();
+      });
     });
 
-    function renderProducts(products){
-      productsArea.innerHTML = '';
-      if(!products.length){
-        productsArea.innerHTML = '<div class="empty"><strong>No products yet.</strong><br>Use Add product to list something.</div>'; return;
-      }
-
-      for(const p of products){
-        const card = document.createElement('div'); card.className='card'; card.dataset.id = p.id;
-        const thumb = document.createElement('div'); thumb.className='thumb';
-        const img = document.createElement('img'); img.alt = p.title || 'product';
-        img.src = p.photoURL || ('data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="100%" height="100%" fill="#0b1220"/></svg>'));
-        thumb.appendChild(img);
-
-        const title = document.createElement('div'); title.className='title'; title.textContent = p.title || 'Untitled';
-        const desc = document.createElement('div'); desc.className='desc'; desc.textContent = p.description || '';
-        const row = document.createElement('div'); row.className='row';
-        const price = document.createElement('div'); price.className='price'; price.textContent = formatPrice(p.price);
-        const qty = document.createElement('div'); qty.className='qty'; qty.textContent = 'Quantity: ' + (Number(p.quantity||0));
-        row.appendChild(price); row.appendChild(qty);
-
-        const buy = document.createElement('button'); buy.className='buy'; buy.textContent = 'Buy';
-        if(!p.quantity || p.quantity <= 0){ buy.setAttribute('disabled',''); buy.textContent = 'Sold out' }
-        buy.addEventListener('click', ()=>onBuy(p.id, p.title, p.price, buy));
-
-        card.appendChild(thumb); card.appendChild(title); card.appendChild(desc); card.appendChild(row); card.appendChild(buy);
-        productsArea.appendChild(card);
-      }
-    }
-
-    // Purchase transaction: decrement quantity and create buyer doc with serverTimestamp
-    async function onBuy(productId, title, price, btnEl){
-      const name = prompt('Enter your name to complete the purchase (example: zezo):', 'zezo');
-      if(name === null) return;
-      const buyerName = (name.trim() || 'Anonymous');
-
-      const productRef = doc(db, 'products', productId);
-      const buyersCol = collection(db, 'buyers');
-
-      try{
-        btnEl && (btnEl.disabled = true);
-        await runTransaction(db, async (tx) => {
-          const prodSnap = await tx.get(productRef);
-          if(!prodSnap.exists()) throw new Error('Product no longer exists.');
-          const currentQty = Number(prodSnap.data().quantity || 0);
-          if(currentQty <= 0) throw new Error('Product sold out.');
-
-          // decrement
-          tx.update(productRef, { quantity: currentQty - 1 });
-
-          // create buyer doc (generate id by using doc(collection))
-          const newBuyerRef = doc(buyersCol); // generates a new id
-          tx.set(newBuyerRef, {
-            name: buyerName,
-            productId,
-            productTitle: title || 'Untitled',
-            price: Number(price || 0),
-            time: serverTimestamp()
-          });
-        });
-        toast('Thanks ' + buyerName + ' — purchase saved.');
-      }catch(err){
-        console.error('purchase error', err);
-        alert('Purchase failed: ' + (err.message || err));
-      }finally{
-        btnEl && (btnEl.disabled = false);
-      }
-    }
-
-    // OPEN ADD PAGE (same tab)
-    addBtn.addEventListener('click', ()=>{ window.location.href = ADD_PAGE; });
-
-    refreshBtn.addEventListener('click', ()=>{ toast('Refreshed'); });
-
-    // Buyers panel logic: live listener + UI
-    const buyersCol = collection(db, 'buyers');
-    const buyersQ = query(buyersCol, orderBy('time', 'desc'));
-    let buyersSnapUnsub = null;
-
-    function renderBuyersFromSnapshot(snap){
-      if(!snap || snap.empty){
-        buyersList.innerHTML = '<div class="small" style="padding:8px;color:var(--muted)">No purchases yet — buyers will appear here when someone buys a product.</div>';
+    // RENDER (from /products)
+    function renderMenuFromProducts(){
+      const grid = $('menuGrid'); grid.innerHTML = '';
+      const products = productsCache;
+      const keys = Object.keys(products || {});
+      if(keys.length === 0){
+        grid.innerHTML = '<div class="small">No products yet. Admin can add products using the "Add Product" button.</div>';
         return;
       }
-      buyersList.innerHTML = '';
-      snap.forEach(d => {
-        const b = d.data();
-        const el = document.createElement('div'); el.className = 'buyer';
-        const left = document.createElement('div'); left.style.flex = '1';
-        const name = document.createElement('div'); name.style.fontWeight='700'; name.textContent = b.name || 'Anonymous';
-        const product = document.createElement('div'); product.className='small';
-        const priceText = Number(b.price||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) + ' ر.س';
-        product.textContent = (b.productTitle || 'Product') + ' • ' + priceText;
-        left.appendChild(name); left.appendChild(product);
+      keys.forEach(pid=>{
+        const p = products[pid];
+        const card = document.createElement('div'); card.className = 'menu-item';
+        const mediaHtml = buildMediaHtml(p.media || '');
+        card.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="max-width:65%">
+              <div class="item-name">${escapeHtml(p.title || 'Untitled')}</div>
+              <div class="small">${escapeHtml((p.description || '').slice(0,120))}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="price">${formatMoney(p.price || 0)} SAR</div>
+              <div style="margin-top:8px"><span class="stock-pill">${(typeof p.stock === 'number')? p.stock : '—'} left</span></div>
+            </div>
+          </div>
+          <div style="margin-top:8px">${mediaHtml}</div>
+          <div class="select-row" style="margin-top:10px">
+            <label class="small"><input class="itm" type="checkbox" data-id="${pid}" ${(!p.stock || p.stock <= 0) ? 'disabled' : ''} /> Add</label>
+            <div class="small">One per item</div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      document.querySelectorAll('input.itm').forEach(cb=>{
+        cb.addEventListener('change', e=>{
+          const id = e.target.dataset.id;
+          if(e.target.checked) selections[id] = true; else delete selections[id];
+          updateStickySummary();
+        });
+      });
+    }
 
-        const right = document.createElement('div'); right.style.textAlign='right'; right.className='small';
-        try{
-          const t = b.time && b.time.toDate ? b.time.toDate() : new Date();
-          right.innerHTML = t.toLocaleString();
-        }catch(e){
-          right.innerHTML = '';
+    function buildMediaHtml(url){
+      if(!url) return '';
+      try{
+        const u = url.trim();
+        const ext = u.split('.').pop().split('?')[0].toLowerCase();
+        if(['mp4','webm','ogg'].includes(ext) || u.includes('youtube.com') || u.includes('youtu.be')){
+          // video tag (use src directly)
+          if(u.includes('youtube.com') || u.includes('youtu.be')){
+            // embed as iframe
+            let vid = '';
+            if(u.includes('youtu.be')) vid = u.split('/').pop();
+            else {
+              const m = u.match(/[?&]v=([^&]+)/);
+              vid = m ? m[1] : '';
+            }
+            if(vid) return `<iframe class="media-preview" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen style="height:180px"></iframe>`;
+          }
+          return `<video controls class="media-preview" style="height:180px"><source src="${escapeHtml(u)}"></video>`;
+        } else {
+          return `<img src="${escapeHtml(u)}" class="media-preview" alt="media" style="height:140px;object-fit:cover">`;
         }
+      }catch(e){ return ''; }
+    }
 
-        el.appendChild(left); el.appendChild(right);
-        buyersList.appendChild(el);
+    // STICKY SUMMARY (bottom)
+    function renderStickySummary(){
+      const ss = document.createElement('div'); ss.className = 'order-summary'; ss.id = 'orderSummary';
+      ss.innerHTML = `
+        <div><span class="small">Selected:</span> <strong id="selCount">0</strong> &nbsp;&nbsp; <span class="small">Total:</span> <strong id="selTotal">0</strong> SAR</div>
+        <div><button id="btnOrderNow" class="btn" disabled>Order</button></div>
+      `;
+      document.body.appendChild(ss);
+      $('btnOrderNow').addEventListener('click', handleOrderClick);
+      updateStickySummary();
+    }
+
+    function updateStickySummary(){
+      const count = Object.keys(selections).length;
+      const total = Object.keys(selections).reduce((s,id)=>{
+        const it = productsCache[id]; return s + (it?Number(it.price||0):0);
+      }, 0);
+      $('selCount').textContent = count;
+      $('selTotal').textContent = formatMoney(total);
+      $('btnOrderNow').disabled = (count === 0);
+    }
+
+    // SIMPLE AUTH (DB-based)
+    function updateAuthUI(){
+      const ai = $('authInfo');
+      if(currentUser){
+        ai.textContent = 'Signed in: ' + currentUser.name;
+        $('btnAuth').style.display = 'none';
+        $('btnMyOrders').style.display = 'inline-block';
+        $('btnLogout').style.display = 'inline-block';
+      } else {
+        ai.textContent = 'Not signed in';
+        $('btnAuth').style.display = 'inline-block';
+        $('btnMyOrders').style.display = 'none';
+        $('btnLogout').style.display = 'none';
+      }
+    }
+
+    function authFlow(){
+      const name = prompt('Username (no dots):'); if(!name) return;
+      const pw = prompt('Password (3+ chars):'); if(!pw || pw.length < 3){ alert('Password 3+ chars'); return; }
+      const ref = db.ref('users/' + escapeKey(name));
+      ref.once('value').then(snap=>{
+        if(snap.exists()){
+          const val = snap.val();
+          if(val.password !== pw){ alert('Wrong password'); return; }
+          currentUser = { name: name }; localStorage.setItem('fo_user', JSON.stringify(currentUser));
+          updateAuthUI(); showMessage('Signed in as ' + name);
+        } else {
+          ref.set({ name: name, password: pw }).then(()=>{
+            currentUser = { name: name }; localStorage.setItem('fo_user', JSON.stringify(currentUser));
+            updateAuthUI(); showMessage('Account created & signed in as ' + name);
+          });
+        }
+      }).catch(err=>{ alert('Auth error: '+err.message); });
+    }
+
+    // ADD PRODUCT (admin)
+    async function addProductFlow(){
+      const code = prompt('Admin code:');
+      if(code !== '555'){ showMessage('Wrong admin code'); return; }
+      const title = prompt('Product title:'); if(!title){ alert('Cancelled'); return; }
+      const media = prompt('Media URL (image or video, optional). You can paste YouTube links too:') || '';
+      const description = prompt('Short description (optional)') || '';
+      const priceRaw = prompt('Price (SAR):', '0'); const price = Number(priceRaw || 0);
+      if(isNaN(price) || price < 0){ alert('Invalid price'); return; }
+      const stockRaw = prompt('Quantity / stock (integer):', '1'); const stock = parseInt(stockRaw || '0', 10);
+      if(isNaN(stock) || stock < 0){ alert('Invalid quantity'); return; }
+
+      const pid = 'prod_' + Date.now();
+      const productObj = {
+        id: pid,
+        title: title,
+        media: media,
+        description: description,
+        price: price,
+        stock: stock,
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      };
+      const updates = {};
+      updates['/products/' + pid] = productObj;
+      db.ref().update(updates).then(()=>{
+        showMessage('Product added: ' + title);
+      }).catch(e=>{ alert('Could not save product: ' + e.message); });
+    }
+
+    // ORDER FLOW (customer)
+    function askDay(){
+      const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday'];
+      let tries = 0;
+      while(tries < 3){
+        let raw = prompt('Which day do you want it? (Sunday, Monday, Tuesday, Wednesday or Thursday)');
+        if(raw === null) return null;
+        raw = raw.trim().toLowerCase();
+        if(!raw) { tries++; alert('Please enter a day.'); continue; }
+        const match = DAYS.find(d=>{
+          const low = d.toLowerCase();
+          return low === raw || low.startsWith(raw) || low.startsWith(raw.slice(0,3));
+        });
+        if(match) return match;
+        tries++;
+        alert('Invalid day. Please enter Sunday, Monday, Tuesday, Wednesday or Thursday.');
+      }
+      return null;
+    }
+
+    async function handleOrderClick(){
+      if(!currentUser){ alert('Please login or create an account first.'); return; }
+      const ids = Object.keys(selections);
+      if(ids.length === 0){ alert('Select at least one item'); return; }
+
+      const chosenDay = askDay();
+      if(!chosenDay){ alert('Order cancelled (no day selected).'); return; }
+
+      // Build items and check stock
+      const items = ids.map(id=>{
+        const p = productsCache[id];
+        return { id: id, name: p.title, price: Number(p.price||0), qty: 1 };
+      });
+
+      // Check stock availability
+      const insufficient = items.filter(it => {
+        const p = productsCache[it.id];
+        return !p || (typeof p.stock !== 'number') || (p.stock < it.qty);
+      });
+      if(insufficient.length > 0){
+        alert('One or more items do not have enough stock. Please refresh and try again.');
+        return;
+      }
+
+      const total = items.reduce((s,it)=> s + (it.price * it.qty), 0);
+      if(!confirm(`Confirm order for ${items.length} item(s) on ${chosenDay}. Total: ${formatMoney(total)} SAR?`)) return;
+
+      // Play sound
+      const snd = $('paySound'); if(snd){ snd.currentTime=0; snd.play().catch(()=>{}); }
+
+      // Create incremental order number safely via transaction
+      const counterRef = db.ref('orderCounter');
+      counterRef.transaction(cur => (cur || 0) + 1, async (err, committed, snap) => {
+        if(err || !committed){ alert('Could not create order number. Try again.'); return; }
+        const number = snap.val();
+        const orderId = 'order_' + number + '_' + Date.now();
+        const orderObj = {
+          number: number,
+          owner: currentUser.name,
+          items: items,
+          day: chosenDay,
+          status: 'pending',
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        // Prepare updates: add order and decrement stocks
+        const updates = {};
+        updates['/orders/' + orderId] = orderObj;
+        updates['/users/' + escapeKey(currentUser.name) + '/orders/' + orderId] = orderObj;
+
+        // Compute new stocks and include in updates
+        items.forEach(it=>{
+          const p = productsCache[it.id];
+          const newStock = (typeof p.stock === 'number' ? p.stock : 0) - it.qty;
+          updates['/products/' + it.id + '/stock'] = newStock;
+        });
+
+        db.ref().update(updates).then(()=>{
+          showMessage('Order placed — #' + number);
+          showTicketPreview(orderObj);
+
+          // reset selections and UI
+          selections = {};
+          document.querySelectorAll('input.itm').forEach(cb=>cb.checked=false);
+          updateStickySummary();
+
+          // optionally send webhook (CORS may block)
+          try { sendDiscordWebhook(orderObj, number, total); } catch(e){ console.warn('Webhook send failed', e); }
+        }).catch(e=>{ alert('Save error: ' + e.message); });
       });
     }
 
-    function attachBuyersListener(){
-      if(buyersSnapUnsub) return;
-      buyersSnapUnsub = onSnapshot(buyersQ, (snap) => {
-        renderBuyersFromSnapshot(snap);
-      }, (err) => {
-        console.error('buyers onSnapshot error', err);
-        buyersList.innerHTML = '<div class="small" style="padding:8px;color:var(--muted)">Unable to load buyers (check console/rules).</div>';
+    function sendDiscordWebhook(orderObj, number, total){
+      // left as-is from previous sample
+      const DISCORD_WEBHOOK = '';
+      if(!DISCORD_WEBHOOK) return;
+      const itemsText = (orderObj.items||[]).map(i=>`${i.name} x${i.qty} (${i.price} SAR)`).join('\n');
+      const payload = { content: `📣 New order — #${number}\nBy: ${orderObj.owner}\nFor: ${orderObj.day}\nTotal: ${formatMoney(total)} SAR\n\nItems:\n${itemsText}` };
+      fetch(DISCORD_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(r=>{ if(!r.ok) console.warn('Webhook returned non-OK', r.status); }).catch(err=>console.warn('Webhook send error', err));
+    }
+
+    // TICKET PREVIEW & PRINT
+    function buildTicketHtml(orderObj){
+      const total = (orderObj.items||[]).reduce((s,it)=> s + (it.price * it.qty), 0);
+      const itemsHtml = (orderObj.items||[]).map(it=>`<li>${escapeHtml(it.name)} x ${it.qty} — ${it.price} SAR</li>`).join('');
+      return `
+        <div class="ticket">
+          <h3>Purchase Ticket</h3>
+          <div style="font-weight:700">Order #: ${orderObj.number}</div>
+          <div class="small">By: ${escapeHtml(orderObj.owner)}</div>
+          <div class="small">For: ${escapeHtml(orderObj.day || '')}</div>
+          <div style="height:8px"></div>
+          <div><strong>Items</strong></div>
+          <ul style="margin:8px 0 0 18px;color:#111827">${itemsHtml}</ul>
+          <div style="margin-top:8px"><strong>Total: ${formatMoney(total)} SAR</strong></div>
+          <div style="margin-top:10px;display:flex;justify-content:flex-end">
+            <button id="printTicketBtn" class="btn">Print Ticket</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function showTicketPreview(orderObj){
+      const pa = $('printArea'); pa.style.display = 'block'; pa.innerHTML = buildTicketHtml(orderObj);
+      setTimeout(()=>{ const btn = $('printTicketBtn'); if(btn) btn.onclick = ()=>{ window.print(); setTimeout(()=>{ pa.style.display='none'; pa.innerHTML=''; },500); }; },50);
+      window.scrollTo({ top:0, behavior:'smooth' });
+    }
+
+    // MY ORDERS (customer)
+    function showMyOrders(){
+      if(!currentUser){ alert('Please login'); return; }
+      const ua = $('userArea'); ua.innerHTML = '';
+      const wrapper = document.createElement('section'); wrapper.className = 'card fade-in';
+      wrapper.innerHTML = `<h3>My Orders</h3><div id="ordersList" class="orders-list small">Loading...</div>`;
+      ua.appendChild(wrapper);
+      const listEl = $('ordersList');
+      const ref = db.ref('users/' + escapeKey(currentUser.name) + '/orders');
+      ref.on('value', snap=>{
+        const v = snap.val(); listEl.innerHTML = '';
+        if(!v){ listEl.innerHTML = '<div class="small">No orders yet.</div>'; return; }
+        const arr = Object.entries(v).sort((a,b)=>(a[1].number||0)-(b[1].number||0));
+        arr.forEach(([id, ord])=>{
+          const total = (ord.items||[]).reduce((s,it)=> s + (it.price * it.qty), 0);
+          const block = document.createElement('div'); block.className = 'order-card';
+          block.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong>Order #${ord.number}</strong><div class="small">Status: ${escapeHtml(ord.status)} — For: ${escapeHtml(ord.day || '')}</div></div>
+              <div class="right-align">
+                <div class="small">Total: ${formatMoney(total)} SAR</div>
+                <div style="margin-top:6px"><button class="btn printMe" data-id="${id}">Print Ticket</button></div>
+              </div>
+            </div>
+            <div class="small" style="margin-top:8px">Items:<ul>${(ord.items||[]).map(i=>`<li>${escapeHtml(i.name)} x ${i.qty} — ${i.price} SAR</li>`).join('')}</ul></div>
+          `;
+          listEl.appendChild(block);
+        });
+
+        // wire print buttons
+        document.querySelectorAll('button.printMe').forEach(b=>{
+          b.onclick = e=>{
+            const id = e.target.getAttribute('data-id');
+            db.ref('users/' + escapeKey(currentUser.name) + '/orders/' + id).once('value').then(snap=>{
+              const ord = snap.val(); if(!ord) return;
+              const pa = $('printArea'); pa.style.display='block'; pa.innerHTML = buildTicketHtml(ord);
+              setTimeout(()=>{ window.print(); setTimeout(()=>{ pa.style.display='none'; pa.innerHTML=''; },500); },300);
+            });
+          };
+        });
       });
     }
 
-    function detachBuyersListener(){
-      if(buyersSnapUnsub){ buyersSnapUnsub(); buyersSnapUnsub = null; }
+    // ADMIN PANEL (view all orders, accept/decline)
+    function openAdminPanel(){
+      const code = prompt('Admin code:');
+      if(code !== '555'){ showMessage('Wrong admin code'); return; }
+
+      // build modal
+      const backdrop = document.createElement('div'); backdrop.className='modal-backdrop'; backdrop.id='adminModal';
+      backdrop.innerHTML = `
+        <div class="modal">
+          <button class="close-x" id="closeAdmin">✕</button>
+          <h3>Admin — Orders</h3>
+          <div style="margin-top:10px" id="adminOrdersContainer">Loading...</div>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+      document.getElementById('closeAdmin').onclick = ()=>backdrop.remove();
+
+      const container = document.getElementById('adminOrdersContainer');
+      const ref = db.ref('orders').orderByChild('createdAt');
+      ref.on('value', snap=>{
+        const v = snap.val(); container.innerHTML = '';
+        if(!v){ container.innerHTML = '<div class="small">No orders yet.</div>'; return; }
+        const arr = Object.entries(v).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
+        arr.forEach(([id, ord])=>{
+          const total = (ord.items||[]).reduce((s,it)=> s + (it.price * it.qty), 0);
+          const el = document.createElement('div'); el.className='order-card';
+          el.style.marginBottom='8px';
+          el.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong>Order #${ord.number}</strong> <div class="small">By: ${escapeHtml(ord.owner)} — Status: ${escapeHtml(ord.status)}</div></div>
+              <div style="text-align:right">
+                <div class="small">Total: ${formatMoney(total)} SAR</div>
+                <div style="margin-top:8px">
+                  <button class="btn viewAdmin" data-id="${id}">View / Ticket</button>
+                  <button class="btn ghost acceptAdmin" data-id="${id}">Accept</button>
+                  <button class="btn ghost declineAdmin" data-id="${id}">Decline</button>
+                </div>
+              </div>
+            </div>
+            <div class="small" style="margin-top:8px">Items:<ul>${(ord.items||[]).map(i=>`<li>${escapeHtml(i.name)} x ${i.qty} — ${i.price} SAR</li>`).join('')}</ul></div>
+          `;
+          container.appendChild(el);
+        });
+
+        // wire admin buttons
+        container.querySelectorAll('button.viewAdmin').forEach(b=> b.onclick = e=>{
+          const id = e.target.dataset.id;
+          db.ref('orders/' + id).once('value').then(snap=>{
+            const ord = snap.val(); if(!ord) return;
+            // show ticket in print area (not closing modal)
+            const pa = $('printArea'); pa.style.display='block'; pa.innerHTML = buildTicketHtml(ord);
+            setTimeout(()=>{ const btn = $('printTicketBtn'); if(btn) btn.onclick = ()=>{ window.print(); setTimeout(()=>{ pa.style.display='none'; pa.innerHTML=''; },500); }; },50);
+          });
+        });
+
+        container.querySelectorAll('button.acceptAdmin').forEach(b=> b.onclick = e=>{
+          const id = e.target.dataset.id;
+          db.ref('orders/' + id + '/status').set('accepted').then(()=> showMessage('Order accepted'));
+        });
+        container.querySelectorAll('button.declineAdmin').forEach(b=> b.onclick = e=>{
+          const id = e.target.dataset.id;
+          db.ref('orders/' + id + '/status').set('declined').then(()=> showMessage('Order declined'));
+        });
+      });
     }
 
-    buyersBtn.addEventListener('click', ()=>{
-      const shown = buyersPanel.style.display === 'block';
-      if(shown){ buyersPanel.style.display = 'none'; detachBuyersListener(); }
-      else { buyersPanel.style.display = 'block'; attachBuyersListener(); }
-    });
+    // small toast
+    function showMessage(msg){
+      const t = document.createElement('div'); t.style.position='fixed'; t.style.right='18px'; t.style.bottom='110px';
+      t.style.background='linear-gradient(90deg,#0ea5a4,#7c3aed)'; t.style.color='white'; t.style.padding='10px 12px';
+      t.style.borderRadius='8px'; t.style.boxShadow='0 8px 26px rgba(2,6,23,0.12)'; t.style.zIndex=99999; t.textContent = msg;
+      document.body.appendChild(t); setTimeout(()=> t.style.opacity='0', 2200); setTimeout(()=> t.remove(), 2600);
+    }
 
-    closeBuyersBtn.addEventListener('click', ()=>{ buyersPanel.style.display = 'none'; detachBuyersListener(); });
-
-    refreshBuyersBtn.addEventListener('click', async ()=>{
-      try{
-        const snap = await getDocs(buyersQ);
-        renderBuyersFromSnapshot(snap);
-        toast('Buyers refreshed');
-      }catch(err){
-        console.error('refresh buyers error', err);
-        alert('Failed to refresh buyers: ' + (err.message || err));
-      }
-    });
-
-    // Clear buyers: deletes all docs from buyers collection (requires permission)
-    clearBuyersBtn.addEventListener('click', async ()=>{
-      if(!confirm('Clear buyers history from Firestore? This permanently deletes buyer records.')) return;
-      try{
-        const snap = await getDocs(buyersCol);
-        const deletes = [];
-        snap.forEach(d => deletes.push(deleteDoc(doc(db, 'buyers', d.id))));
-        await Promise.all(deletes);
-        toast('Buyers cleared.');
-      }catch(err){
-        console.error('clear buyers error', err);
-        alert('Failed to clear buyers (check console/rules): ' + (err.message || err));
-      }
-    });
-
-    // Clean up listener if page unloads
-    window.addEventListener('beforeunload', ()=>{ detachBuyersListener(); });
-
-    // Notes:
-    // - purchases create docs in 'buyers' and decrement product 'quantity' in a transaction.
-    // - clearing buyers (delete) requires Firestore rules that allow delete for the client (or admin).
-    // - If you want the buyers panel open by default uncomment the following:
-    // buyersPanel.style.display = 'block'; attachBuyersListener();
+    // Install / Tutorial UI
+    function openInstallTutorial(){
+      const backdrop = document.createElement('div'); backdrop.className='modal-backdrop'; backdrop.id='installModal';
+      backdrop.innerHTML = `
+        <div class="modal">
+          <button class="close-x" id="closeInstall">✕</button>
+          <h3>Add to Home Screen</h3>
+          <p class="small">Install this web app to open it quickly from your device home screen.</p>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button id="doInstall" class="btn">Install / Add</button>
+            <button id="showSteps" class="btn ghost">Show steps (iOS)</button>
+          </div>
+          <div style="margin-top:12px;font-size:0.95rem">
+            <div class="small"><strong>Android (Chrome):</strong> If your device supports it, tap "Install" above to use the native prompt. If nothing happens, use the browser menu → Add to home screen.</div>
+          </div>
+          <div style="margin-top:10px">
+            <strong>iOS (Safari):</strong>
+            <ol class="steps small" id="iosSteps" style="display:none">
+              <li>Tap the Safari Share button (square with arrow).</li>
+              <li>Choose "Add to Home Screen".</li>
+              <li>Tap "Add" — the app will appear on your home screen.</li>
+            </ol>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+      document.getElementById('closeInstall').onclick = ()=>backdrop.remove();
+      document.getElementById('showSteps').onclick = ()=>{ const s = document.getElementById('iosSteps'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; };
+      document.getElementById('doInstall').onclick = async ()=>{
+        if(deferredPrompt){
+          deferredPrompt.prompt();
+          const choice = await deferredPrompt.userChoice;
+          if(choice && choice.outcome === 'accepted') showMessage('Thanks — app installed!');
+          else showMessage('Install dismissed.');
+          deferredPrompt = null;
+          backdrop.remove();
+        } else {
+          alert('If your browser supports it, use the browser menu and select "Add to home screen". On iOS, open Safari → Share → "Add to Home Screen".');
+        }
+      };
+    }
   </script>
 </body>
 </html>
