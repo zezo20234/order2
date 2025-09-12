@@ -50,6 +50,8 @@
     .step{display:flex;gap:10px;align-items:flex-start}
     .step .icon{width:56px;height:56px;border-radius:10px;background:#f8fafc;display:flex;align-items:center;justify-content:center;border:1px solid rgba(15,23,36,0.04)}
 
+    .delete-lock{font-size:12px;color:#7f1d1d;margin-left:6px}
+
     @media (max-width:520px){.pcard .art{height:120px}}
   </style>
 </head>
@@ -186,7 +188,7 @@
           </div>
         </div>
 
-    
+      
 
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
         <button id="tutorialClose" class="btn small">Close</button>
@@ -436,12 +438,38 @@
         buyBtn.disabled = !(data.quantity>0);
         buyBtn.addEventListener('click', ()=>{openBuy(id,data)});
         footer.appendChild(buyBtn);
+
+        // Delete button locked with code 555
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn small danger';
+        deleteBtn.style.marginLeft = '8px';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.title = 'Requires admin code';
+        deleteBtn.addEventListener('click', ()=>{ attemptDeleteProduct(id, data); });
+        footer.appendChild(deleteBtn);
+
         const meta = document.createElement('div'); meta.style.marginLeft='auto'; meta.className='muted'; meta.style.fontSize='12px';
         meta.textContent = new Date((data.createdAt||0)).toLocaleDateString();
         footer.appendChild(meta);
         card.appendChild(footer);
         productsEl.appendChild(card);
       });
+    }
+
+    // ---------- Delete product (locked by client-side code '555') ----------
+    async function attemptDeleteProduct(productId, productData){
+      // prompt for code
+      const code = prompt('Enter admin code to delete this product');
+      if(code === null) return; // user cancelled
+      if(code !== '555') return alert('Wrong code — product not deleted.');
+
+      if(!confirm('Delete product "'+(productData.title||'')+'"? This will remove it from the database.')) return;
+      try{
+        await db.ref('products/'+productId).remove();
+        alert('Product deleted.');
+      } catch(err){
+        alert('Failed to delete product: '+err.message);
+      }
     }
 
     // ---------- Buy flow ----------
