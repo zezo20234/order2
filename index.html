@@ -4,440 +4,635 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Mini Shop</title>
+  <!-- PWA / iOS meta -->
+  <meta name="theme-color" content="#0ea5a3">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <!-- Important: place shop.jpg in the same folder as this HTML file -->
+  <link rel="apple-touch-icon" href="shop.jpg">
   <style>
-    :root{--accent:#0b74de;--muted:#666}
-    body{font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;margin:0;background:#f6f8fb;color:#111}
-    header{display:flex;align-items:center;gap:12px;padding:12px 18px;background:#fff;border-bottom:1px solid #eee}
-    header img.logo{width:25px;height:25px}
-    header h1{font-size:18px;margin:0}
-    .container{max-width:1100px;margin:22px auto;padding:0 18px}
-    .toolbar{display:flex;gap:10px;margin-bottom:14px}
-    .btn{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
-    .btn.secondary{background:#fff;color:var(--accent);border:1px solid #0b74de}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-    .card{background:#fff;padding:12px;border-radius:10px;box-shadow:0 4px 12px rgba(10,10,10,0.03);display:flex;flex-direction:column}
-    .card img{width:100%;height:150px;object-fit:cover;border-radius:8px}
-    .meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
-    .price{font-weight:700}
-    footer{padding:18px;text-align:center;color:var(--muted);font-size:13px}
+    :root{--bg:#ffffff;--card:#fff9f0;--muted:#4b5563;--accent:#ef4444;--accent2:#0ea5a3}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;background:var(--bg);color:#0f1724}
+    .container{max-width:1100px;margin:28px auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{margin:0;font-size:22px}
+    .controls{display:flex;align-items:center}
+    .controls button{margin-left:8px;padding:8px 12px;border-radius:8px;border:0;background:var(--accent2);color:white;cursor:pointer}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
 
-    /* modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:9999}
-    .modal{background:#fff;padding:18px;border-radius:10px;min-width:320px;max-width:720px}
-    .field{display:flex;flex-direction:column;margin-bottom:8px}
-    .field label{font-size:13px;margin-bottom:6px}
-    .field input,.field textarea{padding:8px;border-radius:6px;border:1px solid #ddd}
-    .small{font-size:13px;color:var(--muted)}
-    .orders-list{display:flex;flex-direction:column;gap:8px}
-    .order-row{background:#fff;padding:10px;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
-    .chip{padding:6px 8px;border-radius:999px;background:#f1f5f9;font-size:13px}
-    .actions{display:flex;gap:8px}
+    /* Pokémon-card style */
+    .pcard{background:linear-gradient(180deg,#fff,#fff7ed);border-radius:14px;border:3px solid #fde68a;box-shadow:0 12px 30px rgba(15,23,42,0.06);overflow:hidden;display:flex;flex-direction:column}
+    .pcard .art{height:150px;background:linear-gradient(180deg,#f3f4f6,#e6eef6);display:flex;align-items:center;justify-content:center}
+    .pcard .art img{width:100%;height:100%;object-fit:cover}
+    .pcard .content{padding:12px}
+    .pcard h3{margin:0 0 6px 0;font-size:16px}
+    .muted{color:var(--muted);font-size:13px}
+    .stats{display:flex;gap:8px;align-items:center;margin-top:8px}
+    .stat{background:rgba(0,0,0,0.03);padding:6px 8px;border-radius:999px;font-weight:600;font-size:13px}
+    .pfooter{display:flex;gap:8px;padding:12px;border-top:1px dashed rgba(15,23,36,0.04);background:linear-gradient(180deg,rgba(255,255,255,0.6),transparent)}
+    .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent2);color:#fff;cursor:pointer}
+    .small{padding:6px 8px;font-size:13px}
+    .danger{background:#ef4444}
 
-    @media (max-width:600px){header h1{font-size:16px}.card img{height:120px}}
+    .modal{position:fixed;inset:0;background:rgba(2,6,23,0.06);display:flex;align-items:center;justify-content:center;padding:20px;z-index:999;}
+    .modal .sheet{width:100%;max-width:560px;background:white;padding:16px;border-radius:12px;box-shadow:0 8px 24px rgba(2,6,23,0.06)}
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+    .ticket{background:#ffffff;padding:12px;border-radius:8px;border:1px solid rgba(15,23,36,0.04);box-shadow:0 6px 18px rgba(15,23,36,0.03)}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(15,23,36,0.04);font-size:12px}
+    .flex{display:flex;gap:8px;align-items:center}
+
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+    input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,36,0.06);background:transparent;color:inherit}
+
+    .install-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:linear-gradient(90deg,#ecfeff,#f0fdf4);border:1px solid rgba(15,23,36,0.04)}
+
+    .tutorial-steps{display:grid;gap:10px}
+    .step{display:flex;gap:10px;align-items:flex-start}
+    .step .icon{width:56px;height:56px;border-radius:10px;background:#f8fafc;display:flex;align-items:center;justify-content:center;border:1px solid rgba(15,23,36,0.04)}
+
+    @media (max-width:520px){.pcard .art{height:120px}}
   </style>
 </head>
 <body>
-  <header>
-    <img src="money.png" alt="logo" class="logo" />
-    <h1>Mini Shop</h1>
-  </header>
-
-  <main class="container">
-    <div class="toolbar">
-      <button class="btn" id="addProductBtn">+ Add Product</button>
-      <button class="btn secondary" id="adminOrdersBtn">Admin Orders (code)</button>
-      <button class="btn secondary" id="myOrdersBtn">My Orders</button>
-      <button class="btn secondary" id="testDbBtn">Debug: Test DB write</button>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <input id="searchInput" placeholder="Search products..." style="padding:8px;border-radius:8px;border:1px solid #ddd" />
+  <div class="container">
+    <header>
+      <h1>Mini Shop</h1>
+      <div class="controls">
+        <button id="addProductBtn" class="btn">➕ Add product</button>
+        <button id="ordersBtn" class="btn small">🔒 Orders</button>
+        <button id="myOrdersBtn" class="btn small">🧾 My Orders</button>
+        <!-- New: Install & Tutorial buttons -->
+        <button id="installBtn" class="btn small" style="display:none;margin-left:8px">⬇️ Install</button>
+        <button id="tutorialBtn" class="btn small" style="margin-left:8px">📱 Tutorial</button>
       </div>
-    </div>
-    </div>
+    </header>
 
-    <section id="productsSection" class="grid"></section>
-
-    <hr style="margin:18px 0" />
-
-    <section id="ordersSection" style="display:none">
-      <h3>Orders</h3>
-      <div id="ordersList" class="orders-list"></div>
+    <section>
+      <h2 class="muted">Products</h2>
+      <div id="products" class="grid" aria-live="polite"></div>
     </section>
-  </main>
 
-  <footer>
-    Built with ❤️ — place money.png (25px) and pay.mp3 in the same folder.
-  </footer>
-
-  <!-- audio -->
-  <audio id="paySound" src="pay.mp3"></audio>
-
-  <!-- modal backdrop -->
-  <div class="modal-backdrop" id="modalBackdrop">
-    <div class="modal" id="modalContent"></div>
+    <footer>
+      <div class="muted">Tip: For best experience, add this app to your home screen.</div>
+    </footer>
   </div>
 
-  <script type="module">
-  // ---------- Firebase setup (modular) ----------
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-  import { getDatabase, ref, push, set, onValue, get, child, update, remove } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
-  import { getStorage, ref as sref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
-    authDomain: "minishop-67dbf.firebaseapp.com",
-    databaseURL: "https://minishop-67dbf-default-rtdb.firebaseio.com",
-    projectId: "minishop-67dbf",
-    storageBucket: "minishop-67dbf.firebasestorage.app",
-    messagingSenderId: "7379826226",
-    appId: "1:7379826226:web:4d8f6f9cbc679cc600ae2b",
-    measurementId: "G-6N23NYNRDB"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const storage = getStorage(app);
-
-  // ---------- helpers ----------
-  const $ = (sel) => document.querySelector(sel);
-  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-
-  const modalBackdrop = $('#modalBackdrop');
-  const modalContent = $('#modalContent');
-
-  function showModal(html){ modalContent.innerHTML = html; modalBackdrop.style.display = 'flex'; }
-  function closeModal(){ modalBackdrop.style.display = 'none'; modalContent.innerHTML=''; }
-  modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) closeModal(); });
-
-  // ---------- UI actions ----------
-  const prodSection = $('#productsSection');
-  const ordersSection = $('#ordersSection');
-  const ordersList = $('#ordersList');
-
-  document.getElementById('addProductBtn').addEventListener('click', async ()=>{
-    const code = prompt('Enter admin code to add product:');
-    if(code !== '555'){ alert('Wrong code'); return; }
-    showAddProductModal();
-  });
-
-  document.getElementById('adminOrdersBtn').addEventListener('click', ()=>{
-    const code = prompt('Enter admin code to view/handle orders:');
-    if(code !== '555'){ alert('Wrong code'); return; }
-    showAdminOrders();
-  });
-
-  document.getElementById('myOrdersBtn').addEventListener('click', ()=>{
-    showMyOrdersPrompt();
-  });
-
-  $('#searchInput').addEventListener('input',(e)=>{ renderProducts(e.target.value); });
-
-  // ---------- Product modal ----------
-  function showAddProductModal(){
-    showModal(`
-      <h3>Add product (admin)</h3>
-      <div class="field"><label>Title</label><input id="p_title"/></div>
-      <div class="field"><label>Description</label><textarea id="p_desc"></textarea></div>
-      <div class="field"><label>Price (SAR)</label><input id="p_price" type="number" min="0" step="0.01"/></div>
-      <div class="field"><label>Quantity</label><input id="p_qty" type="number" min="0" value="1"/></div>
-      <div class="field"><label>Photo (optional)</label><input id="p_file" type="file" accept="image/*"/></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-        <button class="btn secondary" id="cancelAdd">Cancel</button>
-        <button class="btn" id="saveAdd">Save product</button>
-      </div>
-    `);
-
-    $('#cancelAdd').addEventListener('click', closeModal);
-    $('#saveAdd').addEventListener('click', async ()=>{
-      const title = $('#p_title').value.trim();
-      const desc = $('#p_desc').value.trim();
-      const price = parseFloat($('#p_price').value)||0;
-      const qty = parseInt($('#p_qty').value)||0;
-      const fileInput = $('#p_file');
-
-      if(!title){ alert('Title required'); return; }
-
-      const prodRef = push(ref(db, 'products'));
-      const id = prodRef.key;
-      const createdAt = Date.now();
-      let imageUrl = '';
-
-      if(fileInput.files.length>0){
-        const file = fileInput.files[0];
-        const storageRef = sref(storage, `products/${Date.now()}_${file.name}`);
-        try{
-          await uploadBytes(storageRef, file);
-          imageUrl = await getDownloadURL(storageRef);
-        }catch(err){
-          console.error('Storage upload failed',err);
-          alert('Image upload failed. Make sure your Firebase Storage rules/CORS allow uploads.');
-        }
-      }
-
-      await set(prodRef, { id, title, desc, price, qty, imageUrl, createdAt });
-      closeModal();
-      loadProducts();
-    });
-  }
-
-  // ---------- render products ----------
-  let productsCache = {};
-  function renderProducts(filter=''){
-    prodSection.innerHTML = '';
-    const arr = Object.values(productsCache)
-      .filter(p=>p && p.title && p.title.toLowerCase().includes(filter.toLowerCase()));
-    if(arr.length===0){ prodSection.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted)">No products</div>'; return; }
-    arr.forEach(p=>{
-      const el = document.createElement('div'); el.className='card';
-      el.innerHTML = `
-        <img src="${p.imageUrl||'https://via.placeholder.com/400x300?text=No+Image'}" alt="${escapeHtml(p.title)}"/>
-        <div style="margin-top:8px">
-          <div style="font-weight:700">${escapeHtml(p.title)}</div>
-          <div class="small">${escapeHtml(p.desc||'')}</div>
+  <!-- Modals (original + tutorial modal) -->
+  <div id="productModal" class="modal" style="display:none">
+    <div class="sheet">
+      <h3>Add product</h3>
+      <div style="margin-top:8px">
+        <label>Title</label>
+        <input id="pTitle" placeholder="e.g. Blue Potion" />
+        <label style="margin-top:8px">Description</label>
+        <textarea id="pDesc" rows="3"></textarea>
+        <label style="margin-top:8px">Choose image from device</label>
+        <input id="pImageFile" type="file" accept="image/*" />
+        <div id="uploadingNote" class="muted" style="margin-top:6px;display:none">Processing image…</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <div>
+            <label>Price</label>
+            <input id="pPrice" type="number" min="0" />
+          </div>
+          <div>
+            <label>Quantity</label>
+            <input id="pQty" type="number" min="0" />
+          </div>
         </div>
-        <div class="meta">
-          <div class="price">${Number(p.price).toFixed(2)} SAR</div>
-          <div class="chip">Qty: ${p.qty||0}</div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button id="pCancel" class="btn small">Cancel</button>
+          <button id="pSave" class="btn">Save product</button>
         </div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn" data-id="${p.id}" ${p.qty<=0? 'disabled':''}>Buy</button>
-          <button class="btn secondary" data-edit="${p.id}">Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="buyModal" class="modal" style="display:none">
+    <div class="sheet">
+      <h3>Place order</h3>
+      <div style="margin-top:8px">
+        <label>Name</label>
+        <input id="oName" />
+        <label style="margin-top:8px">Day</label>
+        <select id="oDay">
+          <option>Sunday</option>
+          <option>Monday</option>
+          <option>Tuesday</option>
+          <option>Wednesday</option>
+          <option>Thursday</option>
+        </select>
+        <label style="margin-top:8px">Quantity</label>
+        <input id="oQty" type="number" min="1" />
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button id="oCancel" class="btn small">Cancel</button>
+          <button id="oPlace" class="btn">Place order</button>
         </div>
-      `;
-      prodSection.appendChild(el);
-
-      el.querySelector('[data-id]')?.addEventListener('click', ()=>{ promptBuy(p); });
-      el.querySelector('[data-edit]')?.addEventListener('click', ()=>{ promptEdit(p); });
-    });
-  }
-
-  function escapeHtml(s){ return (s+'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-  // ---------- load products from firebase ----------
-  function loadProducts(){
-    const productsRef = ref(db, 'products');
-    onValue(productsRef, (snapshot)=>{
-      productsCache = snapshot.val() || {};
-      renderProducts($('#searchInput').value||'');
-    });
-  }
-  loadProducts();
-
-  // ---------- edit product (admin) ----------
-  function promptEdit(p){
-    const code = prompt('Enter admin code to edit product:');
-    if(code !== '555'){ alert('Wrong code'); return; }
-    showModal(`
-      <h3>Edit product</h3>
-      <div class="field"><label>Title</label><input id="e_title" value="${escapeHtml(p.title)}"/></div>
-      <div class="field"><label>Description</label><textarea id="e_desc">${escapeHtml(p.desc||'')}</textarea></div>
-      <div class="field"><label>Price (SAR)</label><input id="e_price" type="number" min="0" step="0.01" value="${p.price||0}"/></div>
-      <div class="field"><label>Quantity</label><input id="e_qty" type="number" min="0" value="${p.qty||0}"/></div>
-      <div class="field"><label>Replace Photo (optional)</label><input id="e_file" type="file" accept="image/*"/></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-        <button class="btn secondary" id="cancelEdit">Cancel</button>
-        <button class="btn" id="saveEdit">Save</button>
       </div>
-    `);
+    </div>
+  </div>
 
-    $('#cancelEdit').addEventListener('click', closeModal);
-    $('#saveEdit').addEventListener('click', async ()=>{
-      const title = $('#e_title').value.trim();
-      const desc = $('#e_desc').value.trim();
-      const price = parseFloat($('#e_price').value)||0;
-      const qty = parseInt($('#e_qty').value)||0;
-      const fileInput = $('#e_file');
-
-      let imageUrl = p.imageUrl||'';
-      if(fileInput.files.length>0){
-        const file = fileInput.files[0];
-        const storageRef = sref(storage, `products/${Date.now()}_${file.name}`);
-        try{ await uploadBytes(storageRef, file); imageUrl = await getDownloadURL(storageRef); }
-        catch(err){ console.error(err); alert('Image upload failed'); }
-      }
-
-      const updates = { title, desc, price, qty, imageUrl };
-      await update(ref(db, `products/${p.id}`), updates);
-      closeModal();
-    });
-  }
-
-  // ---------- buy flow (no login) ----------
-  async function promptBuy(p){
-    showModal(`
-      <h3>Buy: ${escapeHtml(p.title)}</h3>
-      <div class="small">Price: ${Number(p.price).toFixed(2)} SAR</div>
-      <div class="field"><label>Your name</label><input id="b_name" placeholder="Enter your name"/></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-        <button class="btn secondary" id="cancelBuy">Cancel</button>
-        <button class="btn" id="confirmBuy">Order</button>
+  <div id="ordersModal" class="modal" style="display:none">
+    <div class="sheet">
+      <h3>All orders (admin)</h3>
+      <div id="ordersList" style="margin-top:8px;display:grid;gap:8px;max-height:60vh;overflow:auto"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="ordersClose" class="btn small">Close</button>
       </div>
-    `);
+    </div>
+  </div>
 
-    $('#cancelBuy').addEventListener('click', closeModal);
-    $('#confirmBuy').addEventListener('click', async ()=>{
-      const buyer = $('#b_name').value.trim();
-      if(!buyer){ alert('Name required'); return; }
+  <div id="myOrdersModal" class="modal" style="display:none">
+    <div class="sheet">
+      <h3>My orders</h3>
+      <div style="margin-top:8px">
+        <label>Enter name to view your orders</label>
+        <input id="myName" />
+        <div id="myOrdersList" style="margin-top:12px;display:grid;gap:8px;max-height:50vh;overflow:auto"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button id="myOrdersClose" class="btn small">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      // decrement product qty atomically (simple approach)
-      const prodRef = ref(db, `products/${p.id}`);
-      const snapshot = await get(prodRef);
-      const prodNow = snapshot.val();
-      if(!prodNow || (prodNow.qty||0) <= 0){ alert('Product out of stock'); closeModal(); loadProducts(); return; }
+  <!-- Tutorial modal -->
+  <div id="tutorialModal" class="modal" style="display:none">
+    <div class="sheet">
+      <h3>How to Add to Home Screen</h3>
+      <p class="muted">Follow the steps for your device. You can also use the Install button (if shown) on Android.</p>
+      <div class="tutorial-steps" style="margin-top:12px">
+        <div>
+          <strong>Android (Chrome / Edge)</strong>
+          <div class="step" style="margin-top:8px">
+            <div class="icon"><img src="shop.jpg" alt="icon" style="width:36px;height:36px;border-radius:6px;object-fit:cover"></div>
+            <div>
+              <div class="muted">1. Tap the browser menu (⋮) and choose <strong>Add to Home screen</strong>.</div>
+              <div class="muted">2. Confirm the name and tap <strong>Add</strong>.</div>
+              <div class="muted">3. The app will appear on your launcher like a normal app.</div>
+            </div>
+          </div>
+        </div>
 
-      const newQty = (prodNow.qty||0) - 1;
-      await update(prodRef, { qty: newQty });
+        <div style="margin-top:12px">
+          <strong>iOS (Safari)</strong>
+          <div class="step" style="margin-top:8px">
+            <div class="icon">📤</div>
+            <div>
+              <div class="muted">1. Tap the <strong>Share</strong> button (square with arrow) at the bottom of Safari.</div>
+              <div class="muted">2. Scroll the share sheet and tap <strong>Add to Home Screen</strong>.</div>
+              <div class="muted">3. Choose a name and tap <strong>Add</strong>. The icon will be placed on your home screen.</div>
+              <div class="muted" style="margin-top:6px">Note: iOS requires Safari and does not support the automatic install prompt.</div>
+            </div>
+          </div>
+        </div>
 
-      // create order
-      const orderRef = push(ref(db, 'orders'));
-      const orderId = orderRef.key;
-      const order = {
-        id: orderId,
-        productId: p.id,
-        productTitle: p.title,
-        buyerName: buyer,
-        price: p.price,
-        status: 'pending',
-        createdAt: Date.now()
+        <div style="margin-top:12px">
+          <strong>Notes / Hosting</strong>
+          <div class="muted" style="margin-top:6px">To fully enable installation and service worker features, host this page via <strong>HTTPS</strong> (or serve from <code>http://localhost</code> during development). Place <code>shop.jpg</code> in the same folder as this file.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="tutorialClose" class="btn small">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
+    // ---------- PWA: generate manifest & service-worker dynamically (so you only need this single file)
+    (function createManifestAndSW(){
+      const manifest = {
+        name: 'Mini Shop',
+        short_name: 'MiniShop',
+        start_url: '.',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#0ea5a3',
+        icons: [
+          {src:'shop.jpg', sizes:'192x192', type:'image/jpeg'},
+          {src:'shop.jpg', sizes:'512x512', type:'image/jpeg'}
+        ]
       };
-      await set(orderRef, order);
 
-      // play sound
-      try{ document.getElementById('paySound').play(); }catch(e){ console.warn('play failed',e); }
+      const manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+      const manifestURL = URL.createObjectURL(manifestBlob);
+      let link = document.querySelector('link[rel="manifest"]');
+      if(!link){ link = document.createElement('link'); link.rel = 'manifest'; document.head.appendChild(link); }
+      link.href = manifestURL;
 
-      alert('Order placed! Order ID: ' + orderId);
-      closeModal();
-      loadOrdersForBuyer(buyer);
-    });
-  }
-
-  // ---------- orders UI ----------
-  let allOrdersCache = {};
-
-  function watchOrders(){
-    const ordersRef = ref(db, 'orders');
-    onValue(ordersRef, (snap)=>{ allOrdersCache = snap.val()||{}; });
-  }
-  watchOrders();
-
-  function showAdminOrders(){
-    ordersSection.style.display = 'block';
-    ordersList.innerHTML = '';
-    const arr = Object.values(allOrdersCache).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
-    if(arr.length===0) ordersList.innerHTML = '<div class="small">No orders</div>';
-    arr.forEach(o=>{
-      const row = document.createElement('div'); row.className='order-row';
-      row.innerHTML = `
-        <div>
-          <div style="font-weight:700">${escapeHtml(o.productTitle)} — ${escapeHtml(o.buyerName)}</div>
-          <div class="small">Order ID: ${o.id} • ${o.price?.toFixed?.(2)||o.price} SAR • Status: ${escapeHtml(o.status||'pending')}</div>
-        </div>
-        <div class="actions">
-          <button class="btn" data-accept="${o.id}">Accept</button>
-          <button class="btn secondary" data-cancel="${o.id}">Cancel</button>
-          <button class="btn secondary" data-print="${o.id}">Print</button>
-        </div>
+      // service worker source (basic offline cache)
+      const swSource = `
+        const CACHE = 'mini-shop-cache-v1';
+        const ASSETS = ['.', 'index.html', 'shop.jpg'];
+        self.addEventListener('install', event => {
+          event.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+        });
+        self.addEventListener('activate', event => {
+          event.waitUntil(clients.claim());
+        });
+        self.addEventListener('fetch', event => {
+          event.respondWith(caches.match(event.request).then(r => r || fetch(event.request).catch(()=>caches.match('index.html'))));
+        });
       `;
-      ordersList.appendChild(row);
+      const swBlob = new Blob([swSource], {type:'text/javascript'});
+      const swURL = URL.createObjectURL(swBlob);
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.register(swURL).catch(err=>console.warn('SW register failed',err));
+      }
+    })();
 
-      row.querySelector('[data-accept]')?.addEventListener('click', ()=>handleAccept(o));
-      row.querySelector('[data-cancel]')?.addEventListener('click', ()=>handleCancel(o));
-      row.querySelector('[data-print]')?.addEventListener('click', ()=>printOrder(o));
+    // capture beforeinstallprompt for Android-like install
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e)=>{
+      e.preventDefault();
+      deferredPrompt = e; // save for later
+      document.getElementById('installBtn').style.display = 'inline-block';
     });
-  }
 
-  async function handleAccept(o){
-    if(o.status==='accepted'){ alert('Already accepted'); return; }
-    await update(ref(db, `orders/${o.id}`), { status: 'accepted' });
-    alert('Order accepted');
-    showAdminOrders();
-  }
-
-  async function handleCancel(o){
-    if(!confirm('Cancel this order?')) return;
-    // restore qty
-    const prodRef = ref(db, `products/${o.productId}`);
-    const snap = await get(prodRef);
-    const p = snap.val();
-    const newQty = (p?.qty||0) + 1;
-    await update(prodRef, { qty: newQty });
-    await update(ref(db, `orders/${o.id}`), { status: 'cancelled' });
-    alert('Order cancelled and stock restored');
-    showAdminOrders();
-  }
-
-  function printOrder(o){
-    const w = window.open('', '_blank');
-    const html = `
-      <html><head><title>Order ${o.id}</title></head><body style="font-family:Arial;padding:20px">
-      <h2>Order #${o.id}</h2>
-      <p><strong>Product:</strong> ${escapeHtml(o.productTitle)}</p>
-      <p><strong>Buyer:</strong> ${escapeHtml(o.buyerName)}</p>
-      <p><strong>Price:</strong> ${o.price?.toFixed?.(2)||o.price} SAR</p>
-      <p><strong>Status:</strong> ${escapeHtml(o.status)}</p>
-      <hr/>
-      <p style="font-size:12px;color:#666">Printed: ${new Date(o.createdAt||Date.now()).toLocaleString()}</p>
-      </body></html>
-    `;
-    w.document.write(html); w.document.close(); w.print();
-  }
-
-  // ---------- My orders (buyer) ----------
-  function showMyOrdersPrompt(){
-    showModal(`
-      <h3>My Orders</h3>
-      <div class="field"><label>Your name</label><input id="mo_name" placeholder="Enter the name you used when ordering"/></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-        <button class="btn secondary" id="cancelMo">Cancel</button>
-        <button class="btn" id="viewMo">View</button>
-      </div>
-    `);
-    $('#cancelMo').addEventListener('click', closeModal);
-    $('#viewMo').addEventListener('click', ()=>{
-      const name = $('#mo_name').value.trim(); if(!name){ alert('Name required'); return; }
-      closeModal(); loadOrdersForBuyer(name);
+    document.getElementById('installBtn').addEventListener('click', async ()=>{
+      if(!deferredPrompt) return alert('Install prompt not available (maybe already installed or not supported).');
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if(choice.outcome === 'accepted') alert('Thanks — app installed!');
+      deferredPrompt = null;
+      document.getElementById('installBtn').style.display = 'none';
     });
-  }
 
-  function loadOrdersForBuyer(name){
-    ordersSection.style.display = 'block';
-    ordersList.innerHTML = '';
-    const arr = Object.values(allOrdersCache).filter(o=> o.buyerName === name ).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
-    if(arr.length===0) ordersList.innerHTML = '<div class="small">No orders for this name</div>';
-    arr.forEach(o=>{
-      const row = document.createElement('div'); row.className='order-row';
-      row.innerHTML = `
-        <div>
-          <div style="font-weight:700">${escapeHtml(o.productTitle)}</div>
-          <div class="small">Order ID: ${o.id} • ${o.price?.toFixed?.(2)||o.price} SAR • Status: ${escapeHtml(o.status||'pending')}</div>
-        </div>
-        <div class="actions">
-          <button class="btn secondary" data-print="${o.id}">Print</button>
-          <button class="btn secondary" data-cancel="${o.id}">Cancel</button>
-        </div>
-      `;
-      ordersList.appendChild(row);
-      row.querySelector('[data-print]')?.addEventListener('click', ()=>printOrder(o));
-      row.querySelector('[data-cancel]')?.addEventListener('click', ()=>cancelByBuyer(o, name));
+    // Tutorial modal
+    const tutorialBtn = document.getElementById('tutorialBtn');
+    const tutorialModal = document.getElementById('tutorialModal');
+    const tutorialClose = document.getElementById('tutorialClose');
+    tutorialBtn.addEventListener('click', ()=>{ openModal(tutorialModal); });
+    tutorialClose.addEventListener('click', ()=>{ closeModal(tutorialModal); });
+
+    // ---------- Firebase config (from user) ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
+      authDomain: "minishop-67dbf.firebaseapp.com",
+      databaseURL: "https://minishop-67dbf-default-rtdb.firebaseio.com",
+      projectId: "minishop-67dbf",
+      storageBucket: "minishop-67dbf.appspot.com",
+      messagingSenderId: "7379826226",
+      appId: "1:7379826226:web:4d8f6f9cbc679cc600ae2b",
+      measurementId: "G-6N23NYNRDB"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // ---------- Helpers & DOM refs ----------
+    const productsEl = document.getElementById('products');
+    const addProductBtn = document.getElementById('addProductBtn');
+    const productModal = document.getElementById('productModal');
+    const pCancel = document.getElementById('pCancel');
+    const pSave = document.getElementById('pSave');
+    const pTitle = document.getElementById('pTitle');
+    const pDesc = document.getElementById('pDesc');
+    const pPrice = document.getElementById('pPrice');
+    const pQty = document.getElementById('pQty');
+    const pImageFile = document.getElementById('pImageFile');
+    const uploadingNote = document.getElementById('uploadingNote');
+
+    const buyModal = document.getElementById('buyModal');
+    const oName = document.getElementById('oName');
+    const oDay = document.getElementById('oDay');
+    const oQty = document.getElementById('oQty');
+    const oCancel = document.getElementById('oCancel');
+    const oPlace = document.getElementById('oPlace');
+
+    const ordersBtn = document.getElementById('ordersBtn');
+    const ordersModal = document.getElementById('ordersModal');
+    const ordersList = document.getElementById('ordersList');
+    const ordersClose = document.getElementById('ordersClose');
+
+    const myOrdersBtn = document.getElementById('myOrdersBtn');
+    const myOrdersModal = document.getElementById('myOrdersModal');
+    const myOrdersClose = document.getElementById('myOrdersClose');
+    const myName = document.getElementById('myName');
+    const myOrdersList = document.getElementById('myOrdersList');
+
+    let currentBuyProduct = null; // {id, data}
+
+    // time constants
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    const TWO_DAYS = 2 * ONE_DAY;
+
+    // ---------- UI events ----------
+    addProductBtn.addEventListener('click', ()=>{
+      const code = prompt('Enter code');
+      if(code !== '555') return;
+      openModal(productModal);
     });
-  }
+    pCancel.addEventListener('click', ()=>{closeModal(productModal); clearProductForm();});
+    pSave.addEventListener('click', saveProduct);
 
-  async function cancelByBuyer(o, name){
-    if(o.buyerName !== name){ alert('You can only cancel your own orders'); return; }
-    if(confirm('Cancel this order?')){
-      // restore qty
-      const prodRef = ref(db, `products/${o.productId}`);
-      const snap = await get(prodRef);
-      const p = snap.val();
-      const newQty = (p?.qty||0) + 1;
-      await update(prodRef, { qty: newQty });
-      await update(ref(db, `orders/${o.id}`), { status: 'cancelled' });
-      alert('Order cancelled');
-      loadOrdersForBuyer(name);
+    oCancel.addEventListener('click', ()=>{closeModal(buyModal)});
+    oPlace.addEventListener('click', placeOrder);
+
+    ordersBtn.addEventListener('click', openAdminOrders);
+    ordersClose.addEventListener('click', ()=>{closeModal(ordersModal)});
+
+    myOrdersBtn.addEventListener('click', ()=>{openModal(myOrdersModal); const saved = localStorage.getItem('mini_shop_name'); if(saved) myName.value = saved; refreshMyOrders();});
+    myOrdersClose.addEventListener('click', ()=>{closeModal(myOrdersModal)});
+    myName.addEventListener('input', ()=>{localStorage.setItem('mini_shop_name', myName.value); refreshMyOrders();});
+
+    // ---------- helpers ----------
+    function openModal(el){el.style.display='flex'}
+    function closeModal(el){el.style.display='none'}
+    function clearProductForm(){pTitle.value='';pDesc.value='';pPrice.value='';pQty.value='';pImageFile.value='';uploadingNote.style.display='none';}
+
+    function readFileAsDataURL(file){
+      return new Promise((res,rej)=>{
+        const reader = new FileReader();
+        reader.onload = ()=>res(reader.result);
+        reader.onerror = ()=>rej(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
     }
-  }
 
-  // ---------- initial load ----------
-  setTimeout(()=>{ loadProducts(); watchOrders(); }, 300);
+    // ---------- Products logic (store images in Realtime DB as data URLs) ----------
+    async function saveProduct(){
+      const title = pTitle.value.trim();
+      const description = pDesc.value.trim();
+      const price = parseFloat(pPrice.value) || 0;
+      const quantity = parseInt(pQty.value) || 0;
+      if(!title){alert('Please add a title');return}
+
+      let imageData = '';
+      const file = pImageFile.files && pImageFile.files[0];
+      try{
+        if(file){
+          // read file as data URL (base64). This stores image data directly in the Realtime DB.
+          uploadingNote.style.display = 'block';
+          pSave.disabled = true;
+          // Optional: downscale large images client-side to reduce size (basic approach)
+          const dataUrl = await readFileAsDataURL(file);
+          // try to downsize by drawing to canvas if large
+          imageData = await downsizeDataUrlIfNeeded(dataUrl);
+          uploadingNote.style.display = 'none';
+          pSave.disabled = false;
+        }
+      } catch(err){
+        uploadingNote.style.display = 'none';
+        pSave.disabled = false;
+        alert('Image processing failed: '+err.message);
+        return;
+      }
+
+      const newRef = db.ref('products').push();
+      newRef.set({title,description,price,quantity,imageData,createdAt:Date.now()}).then(()=>{
+        closeModal(productModal); clearProductForm();
+      }).catch(err=>alert('Error saving product: '+err.message));
+    }
+
+    async function downsizeDataUrlIfNeeded(dataUrl){
+      try{
+        const approxKb = Math.ceil((dataUrl.length * 3/4) / 1024);
+        if(approxKb <= 500) return dataUrl;
+        const img = await new Promise((res, rej)=>{const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('img load fail')); i.src=dataUrl});
+        const maxDim = 1200; // max width/height
+        let w = img.width, h = img.height;
+        if(w>maxDim || h>maxDim){
+          const ratio = Math.min(maxDim/w, maxDim/h);
+          w = Math.round(w*ratio); h = Math.round(h*ratio);
+        }
+        const canv = document.createElement('canvas'); canv.width = w; canv.height = h;
+        const ctx = canv.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+        const compressed = canv.toDataURL('image/jpeg', 0.8);
+        return compressed;
+      } catch(e){
+        return dataUrl;
+      }
+    }
+
+    function renderProductsList(snapshot){
+      productsEl.innerHTML='';
+      const val = snapshot.val() || {};
+      const entries = Object.entries(val).filter(([id,data]) => (data.quantity || 0) > 0);
+      if(entries.length===0){productsEl.innerHTML='<div class="muted">No products yet. Add one!</div>';return}
+      entries.sort((a,b)=> (b[1].createdAt||0)-(a[1].createdAt||0));
+      entries.forEach(([id,data])=>{
+        const card = document.createElement('div');card.className='pcard';
+        const art = document.createElement('div'); art.className='art';
+        if(data.imageData){
+          const img = document.createElement('img'); img.src = data.imageData; img.alt = data.title || 'product'; art.appendChild(img);
+        } else {
+          const ph = document.createElement('div'); ph.className='muted'; ph.textContent = 'No image'; art.appendChild(ph);
+        }
+        card.appendChild(art);
+        const content = document.createElement('div'); content.className='content';
+        const title = document.createElement('h3'); title.textContent = data.title || '';
+        content.appendChild(title);
+        const desc = document.createElement('div'); desc.className='muted'; desc.textContent = data.description || '';
+        content.appendChild(desc);
+        const stats = document.createElement('div'); stats.className='stats';
+        const price = document.createElement('div'); price.className='stat'; price.textContent = '$'+(Number(data.price).toFixed(2)||'0.00');
+        const qty = document.createElement('div'); qty.className='stat'; qty.textContent = 'Qty: '+(data.quantity||0);
+        stats.appendChild(price); stats.appendChild(qty);
+        content.appendChild(stats);
+        card.appendChild(content);
+        const footer = document.createElement('div'); footer.className='pfooter';
+        const buyBtn = document.createElement('button'); buyBtn.className='btn small'; buyBtn.textContent='Buy';
+        buyBtn.disabled = !(data.quantity>0);
+        buyBtn.addEventListener('click', ()=>{openBuy(id,data)});
+        footer.appendChild(buyBtn);
+        const meta = document.createElement('div'); meta.style.marginLeft='auto'; meta.className='muted'; meta.style.fontSize='12px';
+        meta.textContent = new Date((data.createdAt||0)).toLocaleDateString();
+        footer.appendChild(meta);
+        card.appendChild(footer);
+        productsEl.appendChild(card);
+      });
+    }
+
+    // ---------- Buy flow ----------
+    function openBuy(id,data){
+      currentBuyProduct = {id,data};
+      oName.value = localStorage.getItem('mini_shop_name') || '';
+      oDay.value = 'Sunday';
+      oQty.value = 1;
+      oQty.max = Math.max(1,(data.quantity||0));
+      openModal(buyModal);
+    }
+
+    function placeOrder(){
+      if(!currentBuyProduct) return;
+      const name = oName.value.trim();
+      const day = oDay.value;
+      let qty = parseInt(oQty.value) || 1;
+      const prodId = currentBuyProduct.id;
+      const prod = currentBuyProduct.data;
+      if(!name){alert('Please enter your name');return}
+      if(qty < 1) {alert('Quantity must be at least 1');return}
+      if(qty > (prod.quantity||0)){alert('Not enough quantity available');return}
+      const newOrderRef = db.ref('orders').push();
+      const orderObj = {
+        productId: prodId,
+        productTitle: prod.title || '',
+        buyerName: name,
+        day: day,
+        quantity: qty,
+        status: 'pending',
+        createdAt: Date.now(),
+        adminHidden: false
+      };
+      newOrderRef.set(orderObj).then(()=>{
+        localStorage.setItem('mini_shop_name', name);
+        closeModal(buyModal);
+        alert('Order placed! Admin will accept or decline it.');
+      }).catch(err=>alert('Error placing order: '+err.message));
+    }
+
+    // ---------- Admin orders (only Accept / Decline) ----------
+    function openAdminOrders(){
+      const code = prompt('Enter admin code to open orders');
+      if(!code){return}
+      if(code !== '555'){alert('Wrong code');return}
+      openModal(ordersModal);
+    }
+
+    function renderOrders(snapshot){
+      ordersList.innerHTML='';
+      const val = snapshot.val() || {};
+      const entries = Object.entries(val).sort((a,b)=> (b[1].createdAt||0)-(a[1].createdAt||0));
+      const visibleEntries = [];
+      entries.forEach(([id,data])=>{
+        if(data.adminHidden) return;
+        if(data.adminDeleteAt && Date.now() >= data.adminDeleteAt){
+          db.ref('orders/'+id).update({adminHidden: true, adminHiddenAt: Date.now()});
+          return;
+        }
+        visibleEntries.push([id,data]);
+      });
+
+      if(visibleEntries.length===0){ordersList.innerHTML='<div class="muted">No orders yet</div>';return}
+      visibleEntries.forEach(([id,data])=>{
+        const box = document.createElement('div');box.className='ticket';
+        const top = document.createElement('div'); top.className='flex';
+        const title = document.createElement('div'); title.innerHTML='<strong>'+data.productTitle+'</strong>';
+        const badge = document.createElement('div'); badge.className='badge'; badge.style.marginLeft='auto';
+        badge.textContent=(data.status||'pending');
+        top.appendChild(title); top.appendChild(badge);
+        box.appendChild(top);
+
+        const info = document.createElement('div'); info.className='muted'; info.style.marginTop='6px';
+        let infoHtml = 'Buyer: '+(data.buyerName||'')+' — Qty: '+(data.quantity||0)+' — Day: '+(data.day||'')+'<br/>' + new Date((data.createdAt||0)).toLocaleString();
+        if(data.adminDeleteAt){
+          const when = new Date(data.adminDeleteAt);
+          infoHtml += '<br/><em style="font-size:12px;color:#666">Will be hidden from admin on: '+when.toLocaleString()+'</em>';
+        }
+        info.innerHTML = infoHtml;
+        box.appendChild(info);
+
+        const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='8px';
+        const accept = document.createElement('button'); accept.className='btn small'; accept.textContent='Accept';
+        const decline = document.createElement('button'); decline.className='btn small danger'; decline.textContent='Decline';
+        accept.addEventListener('click', ()=>{handleAcceptOrder(id,data)});
+        decline.addEventListener('click', ()=>{handleDeclineOrder(id,data)});
+        actions.appendChild(accept); actions.appendChild(decline);
+        box.appendChild(actions);
+        ordersList.appendChild(box);
+      });
+    }
+
+    async function handleAcceptOrder(orderId,orderData){
+      if(orderData.status === 'accepted'){
+        alert('Order already accepted.');
+        return;
+      }
+      const prodRefRoot = db.ref('products/'+orderData.productId);
+      const prodSnap = await prodRefRoot.get();
+      const prod = prodSnap.val();
+      if(!prod){alert('Product not found');return}
+      const available = prod.quantity || 0;
+      const orderQty = parseInt(orderData.quantity) || 1;
+      if(orderQty > available){
+        if(!confirm('Order quantity ('+orderQty+') exceeds available stock ('+available+'). Accept and set stock to 0?')) return;
+      }
+      const qtyRef = db.ref('products/'+orderData.productId+'/quantity');
+      qtyRef.transaction(current => {
+        if(current === null) return 0;
+        let next = current - orderQty;
+        if(next < 0) next = 0;
+        return next;
+      }, function(error, committed, snapshot){
+        if(error){alert('Transaction failed: '+error.message)}
+        else if(!committed){alert('Could not update quantity')}
+        else {
+          const adminDeleteAt = Date.now() + TWO_DAYS;
+          db.ref('orders/'+orderId).update({
+            status:'accepted',
+            handledAt:Date.now(),
+            adminDeleteAt: adminDeleteAt,
+            adminHidden: false
+          });
+        }
+      });
+    }
+
+    async function handleDeclineOrder(orderId,orderData){
+      if(!confirm('Decline this order?')) return;
+      const orderQty = parseInt(orderData.quantity) || 1;
+      const doSetDeclined = (extraFields = {}) => {
+        const adminDeleteAt = Date.now() + ONE_DAY;
+        db.ref('orders/'+orderId).update(Object.assign({
+          status:'declined',
+          handledAt:Date.now(),
+          adminDeleteAt: adminDeleteAt,
+          adminHidden: false
+        }, extraFields));
+      };
+
+      if(orderData.status === 'accepted'){
+        const qtyRef = db.ref('products/'+orderData.productId+'/quantity');
+        qtyRef.transaction(current => {
+          const now = (current || 0) + orderQty;
+          return now;
+        }, function(error, committed, snapshot){
+          if(error){alert('Could not restore quantity: '+error.message);} 
+          else if(!committed){alert('Could not restore quantity');}
+          else { doSetDeclined({restoredAt:Date.now()}); }
+        });
+      } else {
+        doSetDeclined();
+      }
+    }
+
+    function refreshMyOrders(){
+      const name = (myName.value || localStorage.getItem('mini_shop_name') || '').trim();
+      myOrdersList.innerHTML='';
+      if(!name){myOrdersList.innerHTML='<div class="muted">Enter your name to view orders</div>';return}
+      const q = db.ref('orders').orderByChild('buyerName').equalTo(name);
+      q.once('value', snap=>{
+        const val = snap.val() || {};
+        const items = Object.entries(val).sort((a,b)=> (b[1].createdAt||0)-(a[1].createdAt||0));
+        if(items.length===0){myOrdersList.innerHTML='<div class="muted">No orders found for "'+name+'"</div>';return}
+        items.forEach(([id,data])=>{
+          const box = document.createElement('div');box.className='ticket';
+          const top = document.createElement('div'); top.className='flex';
+          const title = document.createElement('div'); title.innerHTML='<strong>'+data.productTitle+'</strong>';
+          const badge = document.createElement('div'); badge.className='badge'; badge.style.marginLeft='auto'; badge.textContent=(data.status||'pending');
+          top.appendChild(title); top.appendChild(badge);
+          box.appendChild(top);
+          const info = document.createElement('div'); info.className='muted'; info.style.marginTop='6px';
+          info.innerHTML = 'Qty: '+(data.quantity||0)+' — Day: '+(data.day||'')+'<br/>' + new Date((data.createdAt||0)).toLocaleString();
+          if(data.adminDeleteAt){ info.innerHTML += '<br/><em style="font-size:12px;color:#666">Admin scheduled hide: '+new Date(data.adminDeleteAt).toLocaleString()+'</em>'; }
+          box.appendChild(info);
+          myOrdersList.appendChild(box);
+        });
+      });
+    }
+
+    // ---------- Realtime listeners ----------
+    db.ref('products').on('value', renderProductsList);
+    db.ref('orders').on('value', renderOrders);
+    db.ref('orders').on('value', ()=>{ if(myOrdersModal.style.display === 'flex') refreshMyOrders(); });
+
+    // Accessibility: close modal on escape
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ [productModal,buyModal,ordersModal,myOrdersModal,tutorialModal].forEach(m=>m.style.display='none'); } });
 
   </script>
 </body>
