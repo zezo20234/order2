@@ -29,6 +29,7 @@
     .muted{color:var(--muted);font-size:13px}
     .stats{display:flex;gap:8px;align-items:center;margin-top:8px}
     .stat{background:rgba(0,0,0,0.03);padding:6px 8px;border-radius:999px;font-weight:600;font-size:13px}
+    .moneyicon{width:25px;height:25px;vertical-align:middle;margin-right:6px;border-radius:4px;} 
     .pfooter{display:flex;gap:8px;padding:12px;border-top:1px dashed rgba(15,23,36,0.04);background:linear-gradient(180deg,rgba(255,255,255,0.6),transparent)}
     .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent2);color:#fff;cursor:pointer}
     .small{padding:6px 8px;font-size:13px}
@@ -428,7 +429,7 @@
         const desc = document.createElement('div'); desc.className='muted'; desc.textContent = data.description || '';
         content.appendChild(desc);
         const stats = document.createElement('div'); stats.className='stats';
-        const price = document.createElement('div'); price.className='stat'; price.textContent = '$'+(Number(data.price).toFixed(2)||'0.00');
+        const price = document.createElement('div'); price.className='stat'; price.innerHTML = '<img src="money.png" alt="riy" class="moneyicon" />' + (Number(data.price).toFixed(2)||'0.00');
         const qty = document.createElement('div'); qty.className='stat'; qty.textContent = 'Qty: '+(data.quantity||0);
         stats.appendChild(price); stats.appendChild(qty);
         content.appendChild(stats);
