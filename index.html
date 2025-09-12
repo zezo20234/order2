@@ -5,8 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Mini Shop - Customer</title>
 
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0ea5a4">
-  <link rel="apple-touch-icon" href="pizza.jpeg">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mini Shop">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="shop.png">
 
   <style>
     :root{
@@ -67,7 +73,7 @@
 
     /* modal / secret admin area */
     .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:100000; }
-    .modal{ width:92%; max-width:620px; background:white; padding:18px; border-radius:12px; box-shadow:0 18px 40px rgba(11,15,26,0.12); position:relative }
+    .modal{ width:92%; max-width:720px; background:white; padding:18px; border-radius:12px; box-shadow:0 18px 40px rgba(11,15,26,0.12); position:relative }
     .modal h3{ margin:0 0 8px 0 }
     .close-x{ position:absolute; right:14px; top:10px; background:transparent; border:0; font-weight:700; font-size:18px; color:#666; cursor:pointer; }
     .form-row{display:flex;flex-direction:column;margin-bottom:10px}
@@ -79,6 +85,8 @@
     .money-label{display:flex;align-items:center;gap:8px}
     .money-label img{width:25px;height:25px;display:inline-block}
     .stock-pill{font-weight:700;padding:6px 8px;border-radius:999px;border:1px solid rgba(15,23,42,0.06);display:inline-block}
+    .progress-bar{height:8px;background:#f1f5f9;border-radius:999px;overflow:hidden;margin-top:8px}
+    .progress-bar > div{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
   </style>
 </head>
 <body>
@@ -88,7 +96,7 @@
     <header>
       <div>
         <h1>Mini Shop</h1>
-        <div class="small">No products yet — admin can add products (secret area).</div>
+        <div class="small">Add products from the secret admin area. Use shop.png as app icon and money.png next to price.</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <div id="authInfo" class="small">Not signed in</div>
@@ -114,13 +122,13 @@
     </main>
   </div>
 
-  <!-- print area & audio -->
   <div id="printArea" style="display:none;padding:18px"></div>
   <audio id="paySound" src="pay.mp3" preload="auto"></audio>
 
   <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
   <script>
     // FIREBASE CONFIG (user-provided)
@@ -129,13 +137,14 @@
       authDomain: "minishop-67dbf.firebaseapp.com",
       databaseURL: "https://minishop-67dbf-default-rtdb.firebaseio.com",
       projectId: "minishop-67dbf",
-      storageBucket: "minishop-67dbf.firebasestorage.app",
+      storageBucket: "minishop-67dbf.appspot.com",
       messagingSenderId: "7379826226",
       appId: "1:7379826226:web:4d8f6f9cbc679cc600ae2b",
       measurementId: "G-6N23NYNRDB"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const storage = firebase.storage();
 
     // STATE
     let selections = {};
@@ -149,6 +158,13 @@
     function formatMoney(n){ return Number(n).toFixed(2).replace(/\.00$/,''); }
     function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 
+    // REGISTER SERVICE WORKER
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('/sw.js').then(reg=>{
+        console.log('SW registered', reg);
+      }).catch(err=> console.warn('SW failed', err));
+    }
+
     // INIT
     document.addEventListener('DOMContentLoaded', ()=>{
       try{ const s = localStorage.getItem('fo_user'); if(s) currentUser = JSON.parse(s); }catch(e){ localStorage.removeItem('fo_user'); }
@@ -160,20 +176,12 @@
       $('btnAddProduct').onclick = openSecretAddProductArea;
       $('btnAdmin').onclick = openAdminPanel;
 
-      // register service worker (optional)
-      if('serviceWorker' in navigator){
-        navigator.serviceWorker.register('/sw.js').then(reg => {
-          console.log('SW registered', reg);
-        }).catch(err => console.warn('SW reg failed', err));
-      }
-
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
         $('btnAddHome').textContent = '▸ Install App';
       });
 
-      // listen for products (shared)
       db.ref('products').on('value', snap=>{
         productsCache = snap.val() || {};
         renderMenuFromProducts();
@@ -301,7 +309,7 @@
       }).catch(err=>{ alert('Auth error: '+err.message); });
     }
 
-    // SECRET ADMIN AREA (modal form)
+    // SECRET ADMIN AREA (file upload form)
     function openSecretAddProductArea(){
       const code = prompt('Enter admin code to open the secret Add Product area:');
       if(code !== '555'){ showMessage('Wrong admin code'); return; }
@@ -311,7 +319,7 @@
       backdrop.innerHTML = `
         <div class="modal">
           <button class="close-x" id="closeAddModal">✕</button>
-          <h3>Secret — Add Product</h3>
+          <h3>Secret — Add Product (upload file)</h3>
 
           <div style="margin-top:12px">
             <div class="form-row">
@@ -320,9 +328,10 @@
             </div>
 
             <div class="form-row">
-              <label>Media URL (image / video / YouTube)</label>
-              <input id="ap_media" type="text" placeholder="https://..." />
+              <label>Photo or video file (choose from device)</label>
+              <input id="ap_file" type="file" accept="image/*,video/*" />
               <div id="ap_mediaPreview"></div>
+              <div class="progress-bar" id="ap_progress" style="display:none"><div></div></div>
             </div>
 
             <div class="form-row">
@@ -342,11 +351,11 @@
             </div>
 
             <div style="display:flex;gap:8px;margin-top:12px">
-              <button id="ap_save" class="btn">Save Product</button>
+              <button id="ap_save" class="btn">Upload & Save Product</button>
               <button id="ap_cancel" class="btn ghost">Cancel</button>
             </div>
 
-            <div style="margin-top:10px" class="small">Note: Media URL can be a direct image/video link or a YouTube URL (it will embed). To upload files to Firebase Storage, ask me and I can add an uploader.</div>
+            <div style="margin-top:10px" class="small">Files are uploaded to Firebase Storage. Large videos may take time. Make sure your Storage rules allow uploads.</div>
           </div>
         </div>
       `;
@@ -356,47 +365,95 @@
       document.getElementById('closeAddModal').onclick = ()=>backdrop.remove();
       document.getElementById('ap_cancel').onclick = ()=>backdrop.remove();
 
-      // media preview behavior
-      const mediaInput = document.getElementById('ap_media');
-      const mediaPreview = document.getElementById('ap_mediaPreview');
-      mediaInput.addEventListener('input', ()=> {
-        mediaPreview.innerHTML = buildMediaHtml(mediaInput.value || '');
+      // preview local file (before upload)
+      const fileInput = document.getElementById('ap_file');
+      const previewDiv = document.getElementById('ap_mediaPreview');
+      const progressWrap = document.getElementById('ap_progress');
+      const progressInner = progressWrap.querySelector('div');
+
+      fileInput.addEventListener('change', ()=> {
+        previewDiv.innerHTML = '';
+        const f = fileInput.files[0];
+        if(!f) return;
+        const url = URL.createObjectURL(f);
+        if(f.type.startsWith('image/')){
+          previewDiv.innerHTML = `<img class="media-preview" src="${url}" alt="preview" />`;
+        } else if(f.type.startsWith('video/')){
+          previewDiv.innerHTML = `<video class="media-preview" controls src="${url}"></video>`;
+        } else {
+          previewDiv.innerHTML = `<div class="small">Selected file: ${f.name}</div>`;
+        }
       });
 
-      // save product
-      document.getElementById('ap_save').onclick = ()=>{
+      // save product (upload + save DB)
+      document.getElementById('ap_save').onclick = async ()=>{
         const title = document.getElementById('ap_title').value.trim();
-        const media = document.getElementById('ap_media').value.trim();
         const description = document.getElementById('ap_description').value.trim();
         const priceRaw = document.getElementById('ap_price').value;
         const stockRaw = document.getElementById('ap_stock').value;
+        const file = fileInput.files[0];
 
         if(!title){ alert('Please enter a title'); return; }
+        if(!file){ alert('Please choose a photo or video file to upload (not a link).'); return; }
+
         const price = Number(priceRaw || 0);
         if(isNaN(price) || price < 0){ alert('Invalid price'); return; }
         const stock = parseInt(stockRaw || '0', 10);
         if(isNaN(stock) || stock < 0){ alert('Invalid quantity'); return; }
 
+        // create product id first
         const pid = 'prod_' + Date.now();
-        const productObj = {
-          id: pid,
-          title: title,
-          media: media,
-          description: description,
-          price: price,
-          stock: stock,
-          createdAt: firebase.database.ServerValue.TIMESTAMP
-        };
-        const updates = {};
-        updates['/products/' + pid] = productObj;
-        db.ref().update(updates).then(()=>{
-          showMessage('Product added: ' + title);
-          backdrop.remove();
-        }).catch(e=>{ alert('Could not save product: ' + e.message); });
+
+        // create storage path: products/{pid}/{safe-filename}
+        const nameSafe = file.name.replace(/[^\w.\-]/g, '_');
+        const path = `products/${pid}/${nameSafe}`;
+        const storageRef = storage.ref().child(path);
+        const uploadTask = storageRef.put(file);
+
+        // show progress bar
+        progressWrap.style.display = 'block';
+        progressInner.style.width = '0%';
+
+        uploadTask.on('state_changed', snapshot => {
+          const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+          progressInner.style.width = pct + '%';
+        }, err => {
+          alert('Upload error: ' + err.message);
+          progressWrap.style.display = 'none';
+        }, async () => {
+          // upload complete -> get download URL
+          try {
+            const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+            // prepare product object and save to DB
+            const productObj = {
+              id: pid,
+              title: title,
+              media: downloadURL,
+              description: description,
+              price: price,
+              stock: stock,
+              createdAt: firebase.database.ServerValue.TIMESTAMP,
+              storagePath: path
+            };
+            const updates = {};
+            updates['/products/' + pid] = productObj;
+            db.ref().update(updates).then(()=>{
+              showMessage('Product uploaded & saved: ' + title);
+              backdrop.remove();
+            }).catch(e=>{
+              alert('Could not save product meta: ' + e.message);
+            }).finally(()=> {
+              progressWrap.style.display = 'none';
+            });
+          } catch (e) {
+            alert('Could not get download URL: ' + e.message);
+            progressWrap.style.display = 'none';
+          }
+        });
       };
     }
 
-    // ORDER FLOW
+    // ORDER FLOW (same as before, ensures stock decrement)
     function askDay(){
       const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday'];
       let tries = 0;
@@ -442,10 +499,8 @@
       const total = items.reduce((s,it)=> s + (it.price * it.qty), 0);
       if(!confirm(`Confirm order for ${items.length} item(s) on ${chosenDay}. Total: ${formatMoney(total)} SAR?`)) return;
 
-      // Play sound
       const snd = $('paySound'); if(snd){ snd.currentTime=0; snd.play().catch(()=>{}); }
 
-      // Create incremental order number safely via transaction
       const counterRef = db.ref('orderCounter');
       counterRef.transaction(cur => (cur || 0) + 1, (err, committed, snap) => {
         if(err || !committed){ alert('Could not create order number. Try again.'); return; }
@@ -460,12 +515,10 @@
           createdAt: firebase.database.ServerValue.TIMESTAMP
         };
 
-        // Prepare updates: add order and decrement stocks
         const updates = {};
         updates['/orders/' + orderId] = orderObj;
         updates['/users/' + escapeKey(currentUser.name) + '/orders/' + orderId] = orderObj;
 
-        // Compute new stocks and include in updates
         items.forEach(it=>{
           const p = productsCache[it.id];
           const newStock = (typeof p.stock === 'number' ? p.stock : 0) - it.qty;
@@ -476,30 +529,16 @@
           showMessage('Order placed — #' + number);
           showTicketPreview(orderObj);
 
-          // reset selections and UI
           selections = {};
           document.querySelectorAll('input.itm').forEach(cb=>cb.checked=false);
           updateStickySummary();
-
-          // optionally send webhook (CORS may block)
-          try { sendDiscordWebhook(orderObj, number, total); } catch(e){ console.warn('Webhook send failed', e); }
         }).catch(e=>{ alert('Save error: ' + e.message); });
       });
     }
 
-    function sendDiscordWebhook(orderObj, number, total){
-      const DISCORD_WEBHOOK = '';
-      if(!DISCORD_WEBHOOK) return;
-      const itemsText = (orderObj.items||[]).map(i=>`${i.name} x${i.qty} (${i.price} SAR)`).join('\n');
-      const payload = { content: `📣 New order — #${number}\nBy: ${orderObj.owner}\nFor: ${orderObj.day}\nTotal: ${formatMoney(total)} SAR\n\nItems:\n${itemsText}` };
-      fetch(DISCORD_WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).then(r=>{ if(!r.ok) console.warn('Webhook returned non-OK', r.status); }).catch(err=>console.warn('Webhook send error', err));
-    }
-
-    // TICKET PREVIEW & PRINT
+    // TICKET PREVIEW, MY ORDERS & ADMIN: same as earlier code (omitted here for brevity)
+    // For completeness keep the same functions as before:
+    function sendDiscordWebhook(orderObj, number, total){ /* left blank */ }
     function buildTicketHtml(orderObj){
       const total = (orderObj.items||[]).reduce((s,it)=> s + (it.price * it.qty), 0);
       const itemsHtml = (orderObj.items||[]).map(it=>`<li>${escapeHtml(it.name)} x ${it.qty} — ${it.price} SAR</li>`).join('');
@@ -519,14 +558,12 @@
         </div>
       `;
     }
-
     function showTicketPreview(orderObj){
       const pa = $('printArea'); pa.style.display = 'block'; pa.innerHTML = buildTicketHtml(orderObj);
       setTimeout(()=>{ const btn = $('printTicketBtn'); if(btn) btn.onclick = ()=>{ window.print(); setTimeout(()=>{ pa.style.display='none'; pa.innerHTML=''; },500); }; },50);
       window.scrollTo({ top:0, behavior:'smooth' });
     }
 
-    // MY ORDERS
     function showMyOrders(){
       if(!currentUser){ alert('Please login'); return; }
       const ua = $('userArea'); ua.innerHTML = '';
@@ -555,7 +592,6 @@
           listEl.appendChild(block);
         });
 
-        // wire print buttons
         document.querySelectorAll('button.printMe').forEach(b=>{
           b.onclick = e=>{
             const id = e.target.getAttribute('data-id');
@@ -569,7 +605,7 @@
       });
     }
 
-    // ADMIN PANEL (view all orders, accept/decline)
+    // ADMIN PANEL (same as before)
     function openAdminPanel(){
       const code = prompt('Admin code:');
       if(code !== '555'){ showMessage('Wrong admin code'); return; }
@@ -612,7 +648,6 @@
           container.appendChild(el);
         });
 
-        // wire admin buttons
         container.querySelectorAll('button.viewAdmin').forEach(b=> b.onclick = e=>{
           const id = e.target.dataset.id;
           db.ref('orders/' + id).once('value').then(snap=>{
@@ -654,7 +689,7 @@
             <button id="showSteps" class="btn ghost">Show steps (iOS)</button>
           </div>
           <div style="margin-top:12px;font-size:0.95rem">
-            <div class="small"><strong>Android (Chrome):</strong> If your device supports it, tap "Install" above to use the native prompt. If nothing happens, use the browser menu → Add to home screen.</div>
+            <div class="small"><strong>Android (Chrome):</strong> Tap "Install" above or use the browser menu → Add to home screen.</div>
           </div>
           <div style="margin-top:10px">
             <strong>iOS (Safari):</strong>
