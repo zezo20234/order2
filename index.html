@@ -65,14 +65,19 @@
       background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:white; border:0; cursor:pointer;
     }
 
-    /* tutorial modal */
-    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:100000; }
-    .modal{ width:92%; max-width:720px; background:white; padding:18px; border-radius:12px; box-shadow:0 18px 40px rgba(11,15,26,0.12) }
+    /* modal / secret admin area */
+    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:100000; }
+    .modal{ width:92%; max-width:620px; background:white; padding:18px; border-radius:12px; box-shadow:0 18px 40px rgba(11,15,26,0.12); position:relative }
     .modal h3{ margin:0 0 8px 0 }
-    .steps{ margin-top:8px }
-    .steps li{ margin-bottom:8px }
-    .close-x{ position:absolute; right:18px; top:18px; background:transparent; border:0; font-weight:700; font-size:16px; color:#666; cursor:pointer; }
-    .media-preview{max-width:100%;border-radius:8px;border:1px solid rgba(0,0,0,0.04);display:block}
+    .close-x{ position:absolute; right:14px; top:10px; background:transparent; border:0; font-weight:700; font-size:18px; color:#666; cursor:pointer; }
+    .form-row{display:flex;flex-direction:column;margin-bottom:10px}
+    .form-row label{font-weight:700;margin-bottom:6px}
+    .form-row input[type="text"], .form-row input[type="number"], .form-row textarea{padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);font-size:0.95rem}
+    .form-row textarea{min-height:80px;resize:vertical}
+    .form-grid{display:grid;grid-template-columns:1fr 120px;gap:12px;align-items:end}
+    .media-preview{max-width:100%;border-radius:8px;border:1px solid rgba(0,0,0,0.04);display:block;margin-top:8px}
+    .money-label{display:flex;align-items:center;gap:8px}
+    .money-label img{width:25px;height:25px;display:inline-block}
     .stock-pill{font-weight:700;padding:6px 8px;border-radius:999px;border:1px solid rgba(15,23,42,0.06);display:inline-block}
   </style>
 </head>
@@ -83,7 +88,7 @@
     <header>
       <div>
         <h1>Mini Shop</h1>
-        <div class="small">No products yet — admin can add products (code 555).</div>
+        <div class="small">No products yet — admin can add products (secret area).</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <div id="authInfo" class="small">Not signed in</div>
@@ -109,6 +114,7 @@
     </main>
   </div>
 
+  <!-- print area & audio -->
   <div id="printArea" style="display:none;padding:18px"></div>
   <audio id="paySound" src="pay.mp3" preload="auto"></audio>
 
@@ -131,7 +137,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // APP STATE
+    // STATE
     let selections = {};
     let currentUser = null;
     let productsCache = {};
@@ -151,10 +157,10 @@
       $('btnMyOrders').onclick = showMyOrders;
       $('btnLogout').onclick = ()=>{ localStorage.removeItem('fo_user'); currentUser=null; updateAuthUI(); showMessage('Logged out'); };
       $('btnAddHome').onclick = openInstallTutorial;
-      $('btnAddProduct').onclick = addProductFlow;
+      $('btnAddProduct').onclick = openSecretAddProductArea;
       $('btnAdmin').onclick = openAdminPanel;
 
-      // register service worker
+      // register service worker (optional)
       if('serviceWorker' in navigator){
         navigator.serviceWorker.register('/sw.js').then(reg => {
           console.log('SW registered', reg);
@@ -175,13 +181,13 @@
       });
     });
 
-    // RENDER (from /products)
+    // RENDER PRODUCTS
     function renderMenuFromProducts(){
       const grid = $('menuGrid'); grid.innerHTML = '';
       const products = productsCache;
       const keys = Object.keys(products || {});
       if(keys.length === 0){
-        grid.innerHTML = '<div class="small">No products yet. Admin can add products using the "Add Product" button.</div>';
+        grid.innerHTML = '<div class="small">No products yet. Admin can add products using the secret Add Product area.</div>';
         return;
       }
       keys.forEach(pid=>{
@@ -222,9 +228,7 @@
         const u = url.trim();
         const ext = u.split('.').pop().split('?')[0].toLowerCase();
         if(['mp4','webm','ogg'].includes(ext) || u.includes('youtube.com') || u.includes('youtu.be')){
-          // video tag (use src directly)
           if(u.includes('youtube.com') || u.includes('youtu.be')){
-            // embed as iframe
             let vid = '';
             if(u.includes('youtu.be')) vid = u.split('/').pop();
             else {
@@ -240,7 +244,7 @@
       }catch(e){ return ''; }
     }
 
-    // STICKY SUMMARY (bottom)
+    // STICKY SUMMARY
     function renderStickySummary(){
       const ss = document.createElement('div'); ss.className = 'order-summary'; ss.id = 'orderSummary';
       ss.innerHTML = `
@@ -262,7 +266,7 @@
       $('btnOrderNow').disabled = (count === 0);
     }
 
-    // SIMPLE AUTH (DB-based)
+    // AUTH
     function updateAuthUI(){
       const ai = $('authInfo');
       if(currentUser){
@@ -297,36 +301,102 @@
       }).catch(err=>{ alert('Auth error: '+err.message); });
     }
 
-    // ADD PRODUCT (admin)
-    async function addProductFlow(){
-      const code = prompt('Admin code:');
+    // SECRET ADMIN AREA (modal form)
+    function openSecretAddProductArea(){
+      const code = prompt('Enter admin code to open the secret Add Product area:');
       if(code !== '555'){ showMessage('Wrong admin code'); return; }
-      const title = prompt('Product title:'); if(!title){ alert('Cancelled'); return; }
-      const media = prompt('Media URL (image or video, optional). You can paste YouTube links too:') || '';
-      const description = prompt('Short description (optional)') || '';
-      const priceRaw = prompt('Price (SAR):', '0'); const price = Number(priceRaw || 0);
-      if(isNaN(price) || price < 0){ alert('Invalid price'); return; }
-      const stockRaw = prompt('Quantity / stock (integer):', '1'); const stock = parseInt(stockRaw || '0', 10);
-      if(isNaN(stock) || stock < 0){ alert('Invalid quantity'); return; }
 
-      const pid = 'prod_' + Date.now();
-      const productObj = {
-        id: pid,
-        title: title,
-        media: media,
-        description: description,
-        price: price,
-        stock: stock,
-        createdAt: firebase.database.ServerValue.TIMESTAMP
+      // build modal
+      const backdrop = document.createElement('div'); backdrop.className='modal-backdrop'; backdrop.id='addProductModal';
+      backdrop.innerHTML = `
+        <div class="modal">
+          <button class="close-x" id="closeAddModal">✕</button>
+          <h3>Secret — Add Product</h3>
+
+          <div style="margin-top:12px">
+            <div class="form-row">
+              <label>Title</label>
+              <input id="ap_title" type="text" placeholder="Product title (required)" />
+            </div>
+
+            <div class="form-row">
+              <label>Media URL (image / video / YouTube)</label>
+              <input id="ap_media" type="text" placeholder="https://..." />
+              <div id="ap_mediaPreview"></div>
+            </div>
+
+            <div class="form-row">
+              <label>Description</label>
+              <textarea id="ap_description" placeholder="Short description (optional)"></textarea>
+            </div>
+
+            <div class="form-grid">
+              <div>
+                <label class="money-label"><img src="money.png" alt="money" /> <span>Price (SAR)</span></label>
+                <input id="ap_price" type="number" min="0" step="0.01" value="0" />
+              </div>
+              <div>
+                <label>Quantity</label>
+                <input id="ap_stock" type="number" min="0" step="1" value="1" />
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button id="ap_save" class="btn">Save Product</button>
+              <button id="ap_cancel" class="btn ghost">Cancel</button>
+            </div>
+
+            <div style="margin-top:10px" class="small">Note: Media URL can be a direct image/video link or a YouTube URL (it will embed). To upload files to Firebase Storage, ask me and I can add an uploader.</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+
+      // wire close
+      document.getElementById('closeAddModal').onclick = ()=>backdrop.remove();
+      document.getElementById('ap_cancel').onclick = ()=>backdrop.remove();
+
+      // media preview behavior
+      const mediaInput = document.getElementById('ap_media');
+      const mediaPreview = document.getElementById('ap_mediaPreview');
+      mediaInput.addEventListener('input', ()=> {
+        mediaPreview.innerHTML = buildMediaHtml(mediaInput.value || '');
+      });
+
+      // save product
+      document.getElementById('ap_save').onclick = ()=>{
+        const title = document.getElementById('ap_title').value.trim();
+        const media = document.getElementById('ap_media').value.trim();
+        const description = document.getElementById('ap_description').value.trim();
+        const priceRaw = document.getElementById('ap_price').value;
+        const stockRaw = document.getElementById('ap_stock').value;
+
+        if(!title){ alert('Please enter a title'); return; }
+        const price = Number(priceRaw || 0);
+        if(isNaN(price) || price < 0){ alert('Invalid price'); return; }
+        const stock = parseInt(stockRaw || '0', 10);
+        if(isNaN(stock) || stock < 0){ alert('Invalid quantity'); return; }
+
+        const pid = 'prod_' + Date.now();
+        const productObj = {
+          id: pid,
+          title: title,
+          media: media,
+          description: description,
+          price: price,
+          stock: stock,
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        };
+        const updates = {};
+        updates['/products/' + pid] = productObj;
+        db.ref().update(updates).then(()=>{
+          showMessage('Product added: ' + title);
+          backdrop.remove();
+        }).catch(e=>{ alert('Could not save product: ' + e.message); });
       };
-      const updates = {};
-      updates['/products/' + pid] = productObj;
-      db.ref().update(updates).then(()=>{
-        showMessage('Product added: ' + title);
-      }).catch(e=>{ alert('Could not save product: ' + e.message); });
     }
 
-    // ORDER FLOW (customer)
+    // ORDER FLOW
     function askDay(){
       const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday'];
       let tries = 0;
@@ -346,7 +416,7 @@
       return null;
     }
 
-    async function handleOrderClick(){
+    function handleOrderClick(){
       if(!currentUser){ alert('Please login or create an account first.'); return; }
       const ids = Object.keys(selections);
       if(ids.length === 0){ alert('Select at least one item'); return; }
@@ -360,7 +430,6 @@
         return { id: id, name: p.title, price: Number(p.price||0), qty: 1 };
       });
 
-      // Check stock availability
       const insufficient = items.filter(it => {
         const p = productsCache[it.id];
         return !p || (typeof p.stock !== 'number') || (p.stock < it.qty);
@@ -378,7 +447,7 @@
 
       // Create incremental order number safely via transaction
       const counterRef = db.ref('orderCounter');
-      counterRef.transaction(cur => (cur || 0) + 1, async (err, committed, snap) => {
+      counterRef.transaction(cur => (cur || 0) + 1, (err, committed, snap) => {
         if(err || !committed){ alert('Could not create order number. Try again.'); return; }
         const number = snap.val();
         const orderId = 'order_' + number + '_' + Date.now();
@@ -419,7 +488,6 @@
     }
 
     function sendDiscordWebhook(orderObj, number, total){
-      // left as-is from previous sample
       const DISCORD_WEBHOOK = '';
       if(!DISCORD_WEBHOOK) return;
       const itemsText = (orderObj.items||[]).map(i=>`${i.name} x${i.qty} (${i.price} SAR)`).join('\n');
@@ -458,7 +526,7 @@
       window.scrollTo({ top:0, behavior:'smooth' });
     }
 
-    // MY ORDERS (customer)
+    // MY ORDERS
     function showMyOrders(){
       if(!currentUser){ alert('Please login'); return; }
       const ua = $('userArea'); ua.innerHTML = '';
@@ -506,7 +574,6 @@
       const code = prompt('Admin code:');
       if(code !== '555'){ showMessage('Wrong admin code'); return; }
 
-      // build modal
       const backdrop = document.createElement('div'); backdrop.className='modal-backdrop'; backdrop.id='adminModal';
       backdrop.innerHTML = `
         <div class="modal">
@@ -550,7 +617,6 @@
           const id = e.target.dataset.id;
           db.ref('orders/' + id).once('value').then(snap=>{
             const ord = snap.val(); if(!ord) return;
-            // show ticket in print area (not closing modal)
             const pa = $('printArea'); pa.style.display='block'; pa.innerHTML = buildTicketHtml(ord);
             setTimeout(()=>{ const btn = $('printTicketBtn'); if(btn) btn.onclick = ()=>{ window.print(); setTimeout(()=>{ pa.style.display='none'; pa.innerHTML=''; },500); }; },50);
           });
