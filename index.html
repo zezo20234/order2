@@ -68,7 +68,7 @@
       measurementId: "G-6N23NYNRDB"
     };
 
-    const ADD_PAGE = 'https://zezo20234.github.io/make/'; // link to add page
+    const ADD_PAGE = 'https://zezo20234.github.io/make/'; // opens this URL when Add product clicked
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
@@ -164,7 +164,12 @@
       }
     }
 
+    // OPEN ADD PAGE (same tab)
     addBtn.addEventListener('click', ()=>{ window.location.href = ADD_PAGE; });
+
+    // If you prefer to open in a new tab, replace the line above with:
+    // addBtn.addEventListener('click', ()=>{ window.open(ADD_PAGE, '_blank', 'noopener'); });
+
     refreshBtn.addEventListener('click', ()=>{ toast('Refreshed'); });
   </script>
 </body>
