@@ -30,7 +30,17 @@
     .buy[disabled]{opacity:.35;cursor:not-allowed}
     .empty{padding:40px;border-radius:12px;background:rgba(255,255,255,0.02);text-align:center;color:var(--muted)}
     .toast{position:fixed;right:18px;bottom:18px;background:#071a2e;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.6);color:#e6eef8}
-    @media (max-width:420px){.thumb{height:110px}.wrap{padding:12px}}
+    /* Buyers panel */
+    .buyers-toggle { background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:var(--muted);cursor:pointer }
+    .buyers-panel {
+      position:fixed; right:18px; top:80px; width:320px; max-height:70vh; overflow:auto;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:12px; padding:12px; border:1px solid rgba(255,255,255,0.04); box-shadow: 0 12px 40px rgba(2,6,23,0.6);
+      display:none; z-index:9999;
+    }
+    .buyer{display:flex;justify-content:space-between;gap:8px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02); margin-bottom:8px}
+    .buyers-panel .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    @media (max-width:880px){ .buyers-panel{ right:8px; width:calc(100% - 16px); top:64px } .thumb{height:110px}.wrap{padding:12px} }
   </style>
 </head>
 <body>
@@ -40,6 +50,7 @@
       <div class="controls">
         <button id="addBtn" class="btn link-btn">➕ Add product</button>
         <button class="btn" id="refreshBtn" title="Refresh products">Refresh</button>
+        <button id="buyersBtn" class="buyers-toggle">Buyers</button>
       </div>
     </header>
 
@@ -50,11 +61,25 @@
 
   <div id="toastRoot" aria-live="polite"></div>
 
+  <!-- Buyers floating panel -->
+  <div id="buyersPanel" class="buyers-panel" aria-live="polite" role="region" aria-label="Recent buyers">
+    <div class="panel-head">
+      <strong>Recent buyers</strong>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="refreshBuyersBtn" class="buyers-toggle" title="Refresh buyers">↻</button>
+        <button id="clearBuyersBtn" class="buyers-toggle" title="Clear buyers">Clear</button>
+        <button id="closeBuyersBtn" class="buyers-toggle" title="Close">✕</button>
+      </div>
+    </div>
+    <div id="buyersList" class="small" style="color:var(--muted)">Loading…</div>
+  </div>
+
   <!-- Firebase JS (modular) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import {
-      getFirestore, collection, onSnapshot, doc, runTransaction, query, orderBy, serverTimestamp
+      getFirestore, collection, onSnapshot, doc, runTransaction, query, orderBy, serverTimestamp,
+      getDocs, deleteDoc
     } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     // --- REPLACE with your Firebase config if different ---
@@ -76,6 +101,13 @@
     const toastRoot = document.getElementById('toastRoot');
     const addBtn = document.getElementById('addBtn');
     const refreshBtn = document.getElementById('refreshBtn');
+
+    const buyersBtn = document.getElementById('buyersBtn');
+    const buyersPanel = document.getElementById('buyersPanel');
+    const buyersList = document.getElementById('buyersList');
+    const refreshBuyersBtn = document.getElementById('refreshBuyersBtn');
+    const clearBuyersBtn = document.getElementById('clearBuyersBtn');
+    const closeBuyersBtn = document.getElementById('closeBuyersBtn');
 
     function toast(text){
       const div = document.createElement('div'); div.className='toast'; div.textContent = text; toastRoot.appendChild(div);
@@ -121,7 +153,7 @@
 
         const buy = document.createElement('button'); buy.className='buy'; buy.textContent = 'Buy';
         if(!p.quantity || p.quantity <= 0){ buy.setAttribute('disabled',''); buy.textContent = 'Sold out' }
-        buy.addEventListener('click', ()=>onBuy(p.id, p.title, p.price));
+        buy.addEventListener('click', ()=>onBuy(p.id, p.title, p.price, buy));
 
         card.appendChild(thumb); card.appendChild(title); card.appendChild(desc); card.appendChild(row); card.appendChild(buy);
         productsArea.appendChild(card);
@@ -129,7 +161,7 @@
     }
 
     // Purchase transaction: decrement quantity and create buyer doc with serverTimestamp
-    async function onBuy(productId, title, price){
+    async function onBuy(productId, title, price, btnEl){
       const name = prompt('Enter your name to complete the purchase (example: zezo):', 'zezo');
       if(name === null) return;
       const buyerName = (name.trim() || 'Anonymous');
@@ -138,6 +170,7 @@
       const buyersCol = collection(db, 'buyers');
 
       try{
+        btnEl && (btnEl.disabled = true);
         await runTransaction(db, async (tx) => {
           const prodSnap = await tx.get(productRef);
           if(!prodSnap.exists()) throw new Error('Product no longer exists.');
@@ -161,16 +194,106 @@
       }catch(err){
         console.error('purchase error', err);
         alert('Purchase failed: ' + (err.message || err));
+      }finally{
+        btnEl && (btnEl.disabled = false);
       }
     }
 
     // OPEN ADD PAGE (same tab)
     addBtn.addEventListener('click', ()=>{ window.location.href = ADD_PAGE; });
 
-    // If you prefer to open in a new tab, replace the line above with:
-    // addBtn.addEventListener('click', ()=>{ window.open(ADD_PAGE, '_blank', 'noopener'); });
-
     refreshBtn.addEventListener('click', ()=>{ toast('Refreshed'); });
+
+    // Buyers panel logic: live listener + UI
+    const buyersCol = collection(db, 'buyers');
+    const buyersQ = query(buyersCol, orderBy('time', 'desc'));
+    let buyersSnapUnsub = null;
+
+    function renderBuyersFromSnapshot(snap){
+      if(!snap || snap.empty){
+        buyersList.innerHTML = '<div class="small" style="padding:8px;color:var(--muted)">No purchases yet — buyers will appear here when someone buys a product.</div>';
+        return;
+      }
+      buyersList.innerHTML = '';
+      snap.forEach(d => {
+        const b = d.data();
+        const el = document.createElement('div'); el.className = 'buyer';
+        const left = document.createElement('div'); left.style.flex = '1';
+        const name = document.createElement('div'); name.style.fontWeight='700'; name.textContent = b.name || 'Anonymous';
+        const product = document.createElement('div'); product.className='small';
+        const priceText = Number(b.price||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) + ' ر.س';
+        product.textContent = (b.productTitle || 'Product') + ' • ' + priceText;
+        left.appendChild(name); left.appendChild(product);
+
+        const right = document.createElement('div'); right.style.textAlign='right'; right.className='small';
+        try{
+          const t = b.time && b.time.toDate ? b.time.toDate() : new Date();
+          right.innerHTML = t.toLocaleString();
+        }catch(e){
+          right.innerHTML = '';
+        }
+
+        el.appendChild(left); el.appendChild(right);
+        buyersList.appendChild(el);
+      });
+    }
+
+    function attachBuyersListener(){
+      if(buyersSnapUnsub) return;
+      buyersSnapUnsub = onSnapshot(buyersQ, (snap) => {
+        renderBuyersFromSnapshot(snap);
+      }, (err) => {
+        console.error('buyers onSnapshot error', err);
+        buyersList.innerHTML = '<div class="small" style="padding:8px;color:var(--muted)">Unable to load buyers (check console/rules).</div>';
+      });
+    }
+
+    function detachBuyersListener(){
+      if(buyersSnapUnsub){ buyersSnapUnsub(); buyersSnapUnsub = null; }
+    }
+
+    buyersBtn.addEventListener('click', ()=>{
+      const shown = buyersPanel.style.display === 'block';
+      if(shown){ buyersPanel.style.display = 'none'; detachBuyersListener(); }
+      else { buyersPanel.style.display = 'block'; attachBuyersListener(); }
+    });
+
+    closeBuyersBtn.addEventListener('click', ()=>{ buyersPanel.style.display = 'none'; detachBuyersListener(); });
+
+    refreshBuyersBtn.addEventListener('click', async ()=>{
+      try{
+        const snap = await getDocs(buyersQ);
+        renderBuyersFromSnapshot(snap);
+        toast('Buyers refreshed');
+      }catch(err){
+        console.error('refresh buyers error', err);
+        alert('Failed to refresh buyers: ' + (err.message || err));
+      }
+    });
+
+    // Clear buyers: deletes all docs from buyers collection (requires permission)
+    clearBuyersBtn.addEventListener('click', async ()=>{
+      if(!confirm('Clear buyers history from Firestore? This permanently deletes buyer records.')) return;
+      try{
+        const snap = await getDocs(buyersCol);
+        const deletes = [];
+        snap.forEach(d => deletes.push(deleteDoc(doc(db, 'buyers', d.id))));
+        await Promise.all(deletes);
+        toast('Buyers cleared.');
+      }catch(err){
+        console.error('clear buyers error', err);
+        alert('Failed to clear buyers (check console/rules): ' + (err.message || err));
+      }
+    });
+
+    // Clean up listener if page unloads
+    window.addEventListener('beforeunload', ()=>{ detachBuyersListener(); });
+
+    // Notes:
+    // - purchases create docs in 'buyers' and decrement product 'quantity' in a transaction.
+    // - clearing buyers (delete) requires Firestore rules that allow delete for the client (or admin).
+    // - If you want the buyers panel open by default uncomment the following:
+    // buyersPanel.style.display = 'block'; attachBuyersListener();
   </script>
 </body>
 </html>
