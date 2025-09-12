@@ -4,558 +4,439 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Mini Shop</title>
-
-  <!-- PWA -->
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0ea5a4">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Mini Shop">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="shop.png">
-
   <style>
-    :root{--accent:#0ea5a4; --accent-2:#7c3aed; --muted:#6b7280}
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:#fff;color:#111827}
-    .wrap{max-width:980px;margin:28px auto;padding:20px}
-    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-    .small{font-size:0.9rem;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-    .card{background:#fff;border-radius:10px;padding:14px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 6px 18px rgba(11,15,26,0.02)}
-    .menu-item{display:flex;flex-direction:column;gap:10px;border-radius:10px;padding:10px;border:1px solid rgba(15,23,42,0.03)}
-    .item-name{font-weight:700}
-    .price{font-weight:700;color:var(--accent)}
-    .select-row{display:flex;justify-content:space-between;align-items:center}
-    .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));border:0;color:white;padding:9px 12px;border-radius:10px;cursor:pointer;font-weight:700}
-    .btn.ghost{background:transparent;border:1px solid rgba(15,23,42,0.06);color:var(--accent)}
-    .order-summary{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;width:92%;max-width:980px;display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;background:#fff;border:1px solid rgba(15,23,42,0.06);box-shadow:0 12px 30px rgba(11,15,26,0.06)}
-    .ticket{width:320px;padding:14px;border:2px dashed rgba(15,23,42,0.08);border-radius:10px;background:#fff;color:#111827}
-    @media print{body *{visibility:hidden}#printArea, #printArea *{visibility:visible}#printArea{position:fixed;left:0;top:0;width:100%}@page{size:portrait;margin:8mm}}
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100000}
-    .modal{width:92%;max-width:720px;background:white;padding:18px;border-radius:12px;position:relative;box-shadow:0 18px 40px rgba(11,15,26,0.12)}
-    .close-x{position:absolute;right:14px;top:10px;background:transparent;border:0;font-weight:700;font-size:18px;color:#666;cursor:pointer}
-    .form-row{display:flex;flex-direction:column;margin-bottom:10px}
-    .form-grid{display:grid;grid-template-columns:1fr 120px;gap:12px;align-items:end}
-    .media-preview{max-width:100%;border-radius:8px;border:1px solid rgba(0,0,0,0.04);display:block;margin-top:8px}
-    .money-label{display:flex;align-items:center;gap:8px}
-    .money-label img{width:25px;height:25px}
-    .stock-pill{font-weight:700;padding:6px 8px;border-radius:999px;border:1px solid rgba(15,23,42,0.06);display:inline-block}
-    .progress-bar{height:8px;background:#f1f5f9;border-radius:999px;overflow:hidden;margin-top:8px}
-    .progress-bar > div{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+    :root{--accent:#0b74de;--muted:#666}
+    body{font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;margin:0;background:#f6f8fb;color:#111}
+    header{display:flex;align-items:center;gap:12px;padding:12px 18px;background:#fff;border-bottom:1px solid #eee}
+    header img.logo{width:25px;height:25px}
+    header h1{font-size:18px;margin:0}
+    .container{max-width:1100px;margin:22px auto;padding:0 18px}
+    .toolbar{display:flex;gap:10px;margin-bottom:14px}
+    .btn{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+    .btn.secondary{background:#fff;color:var(--accent);border:1px solid #0b74de}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+    .card{background:#fff;padding:12px;border-radius:10px;box-shadow:0 4px 12px rgba(10,10,10,0.03);display:flex;flex-direction:column}
+    .card img{width:100%;height:150px;object-fit:cover;border-radius:8px}
+    .meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+    .price{font-weight:700}
+    footer{padding:18px;text-align:center;color:var(--muted);font-size:13px}
+
+    /* modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:9999}
+    .modal{background:#fff;padding:18px;border-radius:10px;min-width:320px;max-width:720px}
+    .field{display:flex;flex-direction:column;margin-bottom:8px}
+    .field label{font-size:13px;margin-bottom:6px}
+    .field input,.field textarea{padding:8px;border-radius:6px;border:1px solid #ddd}
+    .small{font-size:13px;color:var(--muted)}
+    .orders-list{display:flex;flex-direction:column;gap:8px}
+    .order-row{background:#fff;padding:10px;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
+    .chip{padding:6px 8px;border-radius:999px;background:#f1f5f9;font-size:13px}
+    .actions{display:flex;gap:8px}
+
+    @media (max-width:600px){header h1{font-size:16px}.card img{height:120px}}
   </style>
 </head>
 <body>
-  <button id="btnAddHome" title="Add to home screen" style="position:fixed;left:12px;top:12px;z-index:9999">➕ Add to Home</button>
+  <header>
+    <img src="money.png" alt="logo" class="logo" />
+    <h1>Mini Shop</h1>
+  </header>
 
-  <div class="wrap">
-    <header>
-      <div>
-        <h1>Mini Shop</h1>
-        <div class="small">Products saved to Firebase. Admin: code <strong>555</strong>.</div>
+  <main class="container">
+    <div class="toolbar">
+      <button class="btn" id="addProductBtn">+ Add Product</button>
+      <button class="btn secondary" id="adminOrdersBtn">Admin Orders (code)</button>
+      <button class="btn secondary" id="myOrdersBtn">My Orders</button>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <input id="searchInput" placeholder="Search products..." style="padding:8px;border-radius:8px;border:1px solid #ddd" />
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div id="authInfo" class="small">Not signed in</div>
-        <button id="btnAuth" class="btn">Login / Create</button>
-        <button id="btnMyOrders" class="btn ghost" style="display:none">My Orders</button>
-        <button id="btnLogout" class="btn ghost" style="display:none">Logout</button>
-        <button id="btnAddProduct" class="btn" style="margin-left:6px">Add Product</button>
-        <button id="btnAdmin" class="btn ghost">Admin Panel</button>
-      </div>
-    </header>
+    </div>
 
-    <main>
-      <section class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <strong>Products</strong>
-          <div class="small">Shared for all users. Select items and press Order.</div>
-        </div>
-        <div class="grid" id="menuGrid"></div>
-      </section>
+    <section id="productsSection" class="grid"></section>
 
-      <section id="userArea"></section>
-    </main>
+    <hr style="margin:18px 0" />
+
+    <section id="ordersSection" style="display:none">
+      <h3>Orders</h3>
+      <div id="ordersList" class="orders-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    Built with ❤️ — place money.png (25px) and pay.mp3 in the same folder.
+  </footer>
+
+  <!-- audio -->
+  <audio id="paySound" src="pay.mp3"></audio>
+
+  <!-- modal backdrop -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" id="modalContent"></div>
   </div>
 
-  <div id="printArea" style="display:none;padding:18px"></div>
-  <audio id="paySound" src="pay.mp3" preload="auto"></audio>
+  <script type="module">
+  // ---------- Firebase setup (modular) ----------
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+  import { getDatabase, ref, push, set, onValue, get, child, update, remove } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
+  import { getStorage, ref as sref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 
-  <!-- Firebase v8 -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
+    authDomain: "minishop-67dbf.firebaseapp.com",
+    databaseURL: "https://minishop-67dbf-default-rtdb.firebaseio.com",
+    projectId: "minishop-67dbf",
+    storageBucket: "minishop-67dbf.firebasestorage.app",
+    messagingSenderId: "7379826226",
+    appId: "1:7379826226:web:4d8f6f9cbc679cc600ae2b",
+    measurementId: "G-6N23NYNRDB"
+  };
 
-  <script>
-    // ---------- FIREBASE CONFIG ----------
-    var firebaseConfig = {
-      apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
-      authDomain: "minishop-67dbf.firebaseapp.com",
-      databaseURL: "https://minishop-67dbf-default-rtdb.firebaseio.com",
-      projectId: "minishop-67dbf",
-      storageBucket: "minishop-67dbf.appspot.com",
-      messagingSenderId: "7379826226",
-      appId: "1:7379826226:web:4d8f6f9cbc679cc600ae2b",
-      measurementId: "G-6N23NYNRDB"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const storage = firebase.storage();
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const storage = getStorage(app);
 
-    // ---------- APP STATE ----------
-    let selections = {};
-    let currentUser = null;
-    let productsCache = {};
-    let deferredPrompt = null;
+  // ---------- helpers ----------
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-    // ---------- HELPERS ----------
-    function $(id){ return document.getElementById(id); }
-    function escapeKey(k){ return (k||'').toString().replace(/[.$#[\]]/g,'_'); }
-    function formatMoney(n){ return Number(n).toFixed(2).replace(/\.00$/,''); }
-    function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+  const modalBackdrop = $('#modalBackdrop');
+  const modalContent = $('#modalContent');
 
-    // ---------- SERVICE WORKER REGISTER ----------
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('/sw.js').then(reg=>console.log('SW registered',reg)).catch(()=>{});
-    }
+  function showModal(html){ modalContent.innerHTML = html; modalBackdrop.style.display = 'flex'; }
+  function closeModal(){ modalBackdrop.style.display = 'none'; modalContent.innerHTML=''; }
+  modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) closeModal(); });
 
-    // ---------- INIT ----------
-    document.addEventListener('DOMContentLoaded', ()=>{
-      try{ const s = localStorage.getItem('fo_user'); if(s) currentUser = JSON.parse(s); }catch(e){ localStorage.removeItem('fo_user'); }
-      renderStickySummary(); updateAuthUI();
-      $('btnAuth').onclick = authFlow;
-      $('btnMyOrders').onclick = showMyOrders;
-      $('btnLogout').onclick = ()=>{ localStorage.removeItem('fo_user'); currentUser=null; updateAuthUI(); showMessage('Logged out'); };
-      $('btnAddHome').onclick = openInstallTutorial;
-      $('btnAddProduct').onclick = openSecretAddProductArea;
-      $('btnAdmin').onclick = openAdminPanel;
+  // ---------- UI actions ----------
+  const prodSection = $('#productsSection');
+  const ordersSection = $('#ordersSection');
+  const ordersList = $('#ordersList');
 
-      window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; $('btnAddHome').textContent = '▸ Install App'; });
+  document.getElementById('addProductBtn').addEventListener('click', async ()=>{
+    const code = prompt('Enter admin code to add product:');
+    if(code !== '555'){ alert('Wrong code'); return; }
+    showAddProductModal();
+  });
 
-      // listen for real-time products
-      db.ref('products').on('value', snap=>{
-        productsCache = snap.val() || {};
-        renderMenuFromProducts();
-        updateStickySummary();
-      });
-    });
+  document.getElementById('adminOrdersBtn').addEventListener('click', ()=>{
+    const code = prompt('Enter admin code to view/handle orders:');
+    if(code !== '555'){ alert('Wrong code'); return; }
+    showAdminOrders();
+  });
 
-    // ---------- RENDER PRODUCTS ----------
-    function renderMenuFromProducts(){
-      const grid = $('menuGrid'); grid.innerHTML = '';
-      const products = productsCache;
-      const keys = Object.keys(products || {});
-      if(keys.length === 0){
-        grid.innerHTML = '<div class="small">No products yet. Admin can add products (secret area).</div>';
-        return;
-      }
-      keys.forEach(pid=>{
-        const p = products[pid];
-        const card = document.createElement('div'); card.className = 'menu-item';
-        const mediaHtml = buildMediaHtml(p.media || '');
-        card.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="max-width:65%">
-              <div class="item-name">${escapeHtml(p.title || 'Untitled')}</div>
-              <div class="small">${escapeHtml((p.description || '').slice(0,120))}</div>
-            </div>
-            <div style="text-align:right">
-              <div class="price">${formatMoney(p.price || 0)} SAR</div>
-              <div style="margin-top:8px"><span class="stock-pill">${(typeof p.stock === 'number')? p.stock : '—'} left</span></div>
-            </div>
-          </div>
-          <div style="margin-top:8px">${mediaHtml}</div>
-          <div class="select-row" style="margin-top:10px">
-            <label class="small"><input class="itm" type="checkbox" data-id="${pid}" ${(!p.stock || p.stock <= 0) ? 'disabled' : ''} /> Add</label>
-            <div class="small">One per item</div>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-      document.querySelectorAll('input.itm').forEach(cb=>{
-        cb.addEventListener('change', e=>{
-          const id = e.target.dataset.id;
-          if(e.target.checked) selections[id] = true; else delete selections[id];
-          updateStickySummary();
-        });
-      });
-    }
+  document.getElementById('myOrdersBtn').addEventListener('click', ()=>{
+    showMyOrdersPrompt();
+  });
 
-    function buildMediaHtml(url){
-      if(!url) return '';
-      try{
-        const u = url.trim();
-        const ext = u.split('.').pop().split('?')[0].toLowerCase();
-        if(['mp4','webm','ogg'].includes(ext) || u.includes('youtube.com') || u.includes('youtu.be')){
-          if(u.includes('youtube.com') || u.includes('youtu.be')){
-            let vid = '';
-            if(u.includes('youtu.be')) vid = u.split('/').pop();
-            else { const m = u.match(/[?&]v=([^&]+)/); vid = m ? m[1] : ''; }
-            if(vid) return `<iframe class="media-preview" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen style="height:180px"></iframe>`;
-          }
-          return `<video controls class="media-preview" style="height:180px"><source src="${escapeHtml(u)}"></video>`;
-        } else {
-          return `<img src="${escapeHtml(u)}" class="media-preview" alt="media" style="height:140px;object-fit:cover">`;
-        }
-      }catch(e){ return ''; }
-    }
+  $('#searchInput').addEventListener('input',(e)=>{ renderProducts(e.target.value); });
 
-    // ---------- STICKY SUMMARY ----------
-    function renderStickySummary(){
-      const ss = document.createElement('div'); ss.className = 'order-summary'; ss.id = 'orderSummary';
-      ss.innerHTML = `
-        <div><span class="small">Selected:</span> <strong id="selCount">0</strong> &nbsp;&nbsp; <span class="small">Total:</span> <strong id="selTotal">0</strong> SAR</div>
-        <div><button id="btnOrderNow" class="btn" disabled>Order</button></div>
-      `;
-      document.body.appendChild(ss);
-      $('btnOrderNow').addEventListener('click', handleOrderClick);
-      updateStickySummary();
-    }
+  // ---------- Product modal ----------
+  function showAddProductModal(){
+    showModal(`
+      <h3>Add product (admin)</h3>
+      <div class="field"><label>Title</label><input id="p_title"/></div>
+      <div class="field"><label>Description</label><textarea id="p_desc"></textarea></div>
+      <div class="field"><label>Price (SAR)</label><input id="p_price" type="number" min="0" step="0.01"/></div>
+      <div class="field"><label>Quantity</label><input id="p_qty" type="number" min="0" value="1"/></div>
+      <div class="field"><label>Photo (optional)</label><input id="p_file" type="file" accept="image/*"/></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary" id="cancelAdd">Cancel</button>
+        <button class="btn" id="saveAdd">Save product</button>
+      </div>
+    `);
 
-    function updateStickySummary(){
-      const count = Object.keys(selections).length;
-      const total = Object.keys(selections).reduce((s,id)=>{ const it = productsCache[id]; return s + (it?Number(it.price||0):0); }, 0);
-      $('selCount').textContent = count;
-      $('selTotal').textContent = formatMoney(total);
-      $('btnOrderNow').disabled = (count === 0);
-    }
+    $('#cancelAdd').addEventListener('click', closeModal);
+    $('#saveAdd').addEventListener('click', async ()=>{
+      const title = $('#p_title').value.trim();
+      const desc = $('#p_desc').value.trim();
+      const price = parseFloat($('#p_price').value)||0;
+      const qty = parseInt($('#p_qty').value)||0;
+      const fileInput = $('#p_file');
 
-    // ---------- AUTH ----------
-    function updateAuthUI(){
-      const ai = $('authInfo');
-      if(currentUser){
-        ai.textContent = 'Signed in: ' + currentUser.name;
-        $('btnAuth').style.display = 'none';
-        $('btnMyOrders').style.display = 'inline-block';
-        $('btnLogout').style.display = 'inline-block';
-      } else {
-        ai.textContent = 'Not signed in';
-        $('btnAuth').style.display = 'inline-block';
-        $('btnMyOrders').style.display = 'none';
-        $('btnLogout').style.display = 'none';
-      }
-    }
+      if(!title){ alert('Title required'); return; }
 
-    function authFlow(){
-      const name = prompt('Username (no dots):'); if(!name) return;
-      const pw = prompt('Password (3+ chars):'); if(!pw || pw.length < 3){ alert('Password 3+ chars'); return; }
-      const ref = db.ref('users/' + escapeKey(name));
-      ref.once('value').then(snap=>{
-        if(snap.exists()){
-          const val = snap.val();
-          if(val.password !== pw){ alert('Wrong password'); return; }
-          currentUser = { name: name }; localStorage.setItem('fo_user', JSON.stringify(currentUser));
-          updateAuthUI(); showMessage('Signed in as ' + name);
-        } else {
-          ref.set({ name: name, password: pw }).then(()=>{
-            currentUser = { name: name }; localStorage.setItem('fo_user', JSON.stringify(currentUser));
-            updateAuthUI(); showMessage('Account created & signed in as ' + name);
-          });
-        }
-      }).catch(err=>{ alert('Auth error: '+err.message); });
-    }
+      const prodRef = push(ref(db, 'products'));
+      const id = prodRef.key;
+      const createdAt = Date.now();
+      let imageUrl = '';
 
-    // ---------- SECRET ADMIN AREA (file uploader that SAVES to Firebase) ----------
-    function openSecretAddProductArea(){
-      const code = prompt('Enter admin code to open the secret Add Product area:');
-      if(code !== '555'){ showMessage('Wrong admin code'); return; }
-
-      const backdrop = document.createElement('div'); backdrop.className='modal-backdrop'; backdrop.id='addProductModal';
-      backdrop.innerHTML = `
-        <div class="modal">
-          <button class="close-x" id="closeAddModal">✕</button>
-          <h3>Secret — Add Product (upload file)</h3>
-
-          <div style="margin-top:12px">
-            <div class="form-row">
-              <label>Title</label>
-              <input id="ap_title" type="text" placeholder="Product title (required)" />
-            </div>
-
-            <div class="form-row">
-              <label>Photo or video file (choose from device)</label>
-              <input id="ap_file" type="file" accept="image/*,video/*" />
-              <div id="ap_mediaPreview"></div>
-              <div class="progress-bar" id="ap_progress" style="display:none"><div></div></div>
-            </div>
-
-            <div class="form-row">
-              <label>Description</label>
-              <textarea id="ap_description" placeholder="Short description (optional)"></textarea>
-            </div>
-
-            <div class="form-grid">
-              <div>
-                <label class="money-label"><img src="money.png" alt="money" /> <span>Price (SAR)</span></label>
-                <input id="ap_price" type="number" min="0" step="0.01" value="0" />
-              </div>
-              <div>
-                <label>Quantity</label>
-                <input id="ap_stock" type="number" min="0" step="1" value="1" />
-              </div>
-            </div>
-
-            <div style="display:flex;gap:8px;margin-top:12px">
-              <button id="ap_save" class="btn">Upload & Save Product</button>
-              <button id="ap_cancel" class="btn ghost">Cancel</button>
-            </div>
-
-            <div style="margin-top:10px" class="small">Files are uploaded to Firebase Storage and the product saved to Realtime Database.</div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(backdrop);
-
-      document.getElementById('closeAddModal').onclick = ()=>backdrop.remove();
-      document.getElementById('ap_cancel').onclick = ()=>backdrop.remove();
-
-      const fileInput = document.getElementById('ap_file');
-      const previewDiv = document.getElementById('ap_mediaPreview');
-      const progressWrap = document.getElementById('ap_progress');
-      const progressInner = progressWrap.querySelector('div');
-
-      fileInput.addEventListener('change', ()=> {
-        previewDiv.innerHTML = '';
-        const f = fileInput.files[0];
-        if(!f) return;
-        const url = URL.createObjectURL(f);
-        if(f.type.startsWith('image/')) previewDiv.innerHTML = `<img class="media-preview" src="${url}" alt="preview" />`;
-        else if(f.type.startsWith('video/')) previewDiv.innerHTML = `<video class="media-preview" controls src="${url}"></video>`;
-        else previewDiv.innerHTML = `<div class="small">Selected file: ${f.name}</div>`;
-      });
-
-      document.getElementById('ap_save').onclick = async ()=>{
-        const title = document.getElementById('ap_title').value.trim();
-        const description = document.getElementById('ap_description').value.trim();
-        const priceRaw = document.getElementById('ap_price').value;
-        const stockRaw = document.getElementById('ap_stock').value;
+      if(fileInput.files.length>0){
         const file = fileInput.files[0];
-
-        if(!title){ alert('Please enter a title'); return; }
-        if(!file){ alert('Please choose a photo or video file to upload (not a link).'); return; }
-        const price = Number(priceRaw || 0); if(isNaN(price) || price < 0){ alert('Invalid price'); return; }
-        const stock = parseInt(stockRaw || '0', 10); if(isNaN(stock) || stock < 0){ alert('Invalid quantity'); return; }
-
-        const pid = 'prod_' + Date.now();
-        const nameSafe = file.name.replace(/[^\w.\-]/g, '_');
-        const path = `products/${pid}/${nameSafe}`;
-        const storageRef = storage.ref().child(path);
-        const uploadTask = storageRef.put(file);
-
-        progressWrap.style.display = 'block'; progressInner.style.width = '0%';
-
-        uploadTask.on('state_changed', snapshot => {
-          const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-          progressInner.style.width = pct + '%';
-        }, err => {
-          alert('Upload error: ' + err.message);
-          progressWrap.style.display = 'none';
-        }, async () => {
-          try {
-            const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-            const productObj = {
-              id: pid,
-              title: title,
-              media: downloadURL,
-              description: description,
-              price: price,
-              stock: stock,
-              createdAt: firebase.database.ServerValue.TIMESTAMP,
-              storagePath: path
-            };
-            const updates = {};
-            updates['/products/' + pid] = productObj;
-            db.ref().update(updates).then(()=>{
-              showMessage('Product uploaded & saved: ' + title);
-              backdrop.remove();
-            }).catch(e=>{
-              alert('Could not save product meta: ' + e.message);
-            }).finally(()=> { progressWrap.style.display = 'none'; });
-          } catch (e) {
-            alert('Could not get download URL: ' + e.message);
-            progressWrap.style.display = 'none';
-          }
-        });
-      };
-    }
-
-    // ---------- ORDER FLOW (saves to Firebase & decrements stock) ----------
-    function askDay(){
-      const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday'];
-      let tries = 0;
-      while(tries < 3){
-        let raw = prompt('Which day do you want it? (Sunday, Monday, Tuesday, Wednesday or Thursday)');
-        if(raw === null) return null;
-        raw = raw.trim().toLowerCase();
-        if(!raw) { tries++; alert('Please enter a day.'); continue; }
-        const match = DAYS.find(d=>{ const low = d.toLowerCase(); return low === raw || low.startsWith(raw) || low.startsWith(raw.slice(0,3)); });
-        if(match) return match;
-        tries++; alert('Invalid day. Please enter Sunday, Monday, Tuesday, Wednesday or Thursday.');
+        const storageRef = sref(storage, `products/${Date.now()}_${file.name}`);
+        try{
+          await uploadBytes(storageRef, file);
+          imageUrl = await getDownloadURL(storageRef);
+        }catch(err){
+          console.error('Storage upload failed',err);
+          alert('Image upload failed. Make sure your Firebase Storage rules/CORS allow uploads.');
+        }
       }
-      return null;
-    }
 
-    function handleOrderClick(){
-      if(!currentUser){ alert('Please login or create an account first.'); return; }
-      const ids = Object.keys(selections);
-      if(ids.length === 0){ alert('Select at least one item'); return; }
+      await set(prodRef, { id, title, desc, price, qty, imageUrl, createdAt });
+      closeModal();
+      loadProducts();
+    });
+  }
 
-      const chosenDay = askDay();
-      if(!chosenDay){ alert('Order cancelled (no day selected).'); return; }
-
-      const items = ids.map(id=>{ const p = productsCache[id]; return { id: id, name: p.title, price: Number(p.price||0), qty: 1 }; });
-
-      const insufficient = items.filter(it => { const p = productsCache[it.id]; return !p || (typeof p.stock !== 'number') || (p.stock < it.qty); });
-      if(insufficient.length > 0){ alert('One or more items do not have enough stock. Please refresh and try again.'); return; }
-
-      const total = items.reduce((s,it)=> s + (it.price * it.qty), 0);
-      if(!confirm(`Confirm order for ${items.length} item(s) on ${chosenDay}. Total: ${formatMoney(total)} SAR?`)) return;
-
-      const snd = $('paySound'); if(snd){ snd.currentTime=0; snd.play().catch(()=>{}); }
-
-      // transaction for order counter
-      const counterRef = db.ref('orderCounter');
-      counterRef.transaction(cur => (cur || 0) + 1, (err, committed, snap) => {
-        if(err || !committed){ alert('Could not create order number. Try again.'); return; }
-        const number = snap.val();
-        const orderId = 'order_' + number + '_' + Date.now();
-        const orderObj = { number: number, owner: currentUser.name, items: items, day: chosenDay, status: 'pending', createdAt: firebase.database.ServerValue.TIMESTAMP };
-
-        // Build multi-path updates: add order + user order + decrement stocks
-        const updates = {};
-        updates['/orders/' + orderId] = orderObj;
-        updates['/users/' + escapeKey(currentUser.name) + '/orders/' + orderId] = orderObj;
-
-        items.forEach(it=>{
-          const p = productsCache[it.id];
-          const newStock = (typeof p.stock === 'number' ? p.stock : 0) - it.qty;
-          updates['/products/' + it.id + '/stock'] = newStock;
-        });
-
-        db.ref().update(updates).then(()=>{
-          showMessage('Order placed — #' + number);
-          showTicketPreview(orderObj);
-          // reset selections
-          selections = {};
-          document.querySelectorAll('input.itm').forEach(cb=>cb.checked=false);
-          updateStickySummary();
-        }).catch(e=>{ alert('Save error: ' + e.message); });
-      });
-    }
-
-    // ---------- TICKET / MY ORDERS / ADMIN ----------
-    function buildTicketHtml(orderObj){
-      const total = (orderObj.items||[]).reduce((s,it)=> s + (it.price * it.qty), 0);
-      const itemsHtml = (orderObj.items||[]).map(it=>`<li>${escapeHtml(it.name)} x ${it.qty} — ${it.price} SAR</li>`).join('');
-      return `
-        <div class="ticket">
-          <h3>Purchase Ticket</h3>
-          <div style="font-weight:700">Order #: ${orderObj.number}</div>
-          <div class="small">By: ${escapeHtml(orderObj.owner)}</div>
-          <div class="small">For: ${escapeHtml(orderObj.day || '')}</div>
-          <div style="height:8px"></div>
-          <div><strong>Items</strong></div>
-          <ul style="margin:8px 0 0 18px;color:#111827">${itemsHtml}</ul>
-          <div style="margin-top:8px"><strong>Total: ${formatMoney(total)} SAR</strong></div>
-          <div style="margin-top:10px;display:flex;justify-content:flex-end">
-            <button id="printTicketBtn" class="btn">Print Ticket</button>
-          </div>
+  // ---------- render products ----------
+  let productsCache = {};
+  function renderProducts(filter=''){
+    prodSection.innerHTML = '';
+    const arr = Object.values(productsCache)
+      .filter(p=>p && p.title && p.title.toLowerCase().includes(filter.toLowerCase()));
+    if(arr.length===0){ prodSection.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted)">No products</div>'; return; }
+    arr.forEach(p=>{
+      const el = document.createElement('div'); el.className='card';
+      el.innerHTML = `
+        <img src="${p.imageUrl||'https://via.placeholder.com/400x300?text=No+Image'}" alt="${escapeHtml(p.title)}"/>
+        <div style="margin-top:8px">
+          <div style="font-weight:700">${escapeHtml(p.title)}</div>
+          <div class="small">${escapeHtml(p.desc||'')}</div>
+        </div>
+        <div class="meta">
+          <div class="price">${Number(p.price).toFixed(2)} SAR</div>
+          <div class="chip">Qty: ${p.qty||0}</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn" data-id="${p.id}" ${p.qty<=0? 'disabled':''}>Buy</button>
+          <button class="btn secondary" data-edit="${p.id}">Edit</button>
         </div>
       `;
-    }
+      prodSection.appendChild(el);
 
-    function showTicketPreview(orderObj){
-      const pa = $('printArea'); pa.style.display = 'block'; pa.innerHTML = buildTicketHtml(orderObj);
-      setTimeout(()=>{ const btn = $('printTicketBtn'); if(btn) btn.onclick = ()=>{ window.print(); setTimeout(()=>{ pa.style.display='none'; pa.innerHTML=''; },500); }; },50);
-      window.scrollTo({ top:0, behavior:'smooth' });
-    }
+      el.querySelector('[data-id]')?.addEventListener('click', ()=>{ promptBuy(p); });
+      el.querySelector('[data-edit]')?.addEventListener('click', ()=>{ promptEdit(p); });
+    });
+  }
 
-    function showMyOrders(){
-      if(!currentUser){ alert('Please login'); return; }
-      const ua = $('userArea'); ua.innerHTML = '';
-      const wrapper = document.createElement('section'); wrapper.className = 'card';
-      wrapper.innerHTML = `<h3>My Orders</h3><div id="ordersList" class="orders-list small">Loading...</div>`;
-      ua.appendChild(wrapper);
-      const listEl = $('ordersList');
-      const ref = db.ref('users/' + escapeKey(currentUser.name) + '/orders');
-      ref.on('value', snap=>{
-        const v = snap.val(); listEl.innerHTML = '';
-        if(!v){ listEl.innerHTML = '<div class="small">No orders yet.</div>'; return; }
-        const arr = Object.entries(v).sort((a,b)=>(a[1].number||0)-(b[1].number||0));
-        arr.forEach(([id, ord])=>{
-          const total = (ord.items||[]).reduce((s,it)=> s + (it.price * it.qty), 0);
-          const block = document.createElement('div'); block.className = 'order-card';
-          block.style.marginBottom = '8px';
-          block.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>Order #${ord.number}</strong><div class="small">Status: ${escapeHtml(ord.status)} — For: ${escapeHtml(ord.day || '')}</div></div><div class="right-align"><div class="small">Total: ${formatMoney(total)} SAR</div><div style="margin-top:6px"><button class="btn printMe" data-id="${id}">Print Ticket</button></div></div></div><div class="small" style="margin-top:8px">Items:<ul>${(ord.items||[]).map(i=>`<li>${escapeHtml(i.name)} x ${i.qty} — ${i.price} SAR</li>`).join('')}</ul></div>`;
-          listEl.appendChild(block);
-        });
+  function escapeHtml(s){ return (s+'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
-        document.querySelectorAll('button.printMe').forEach(b=>{
-          b.onclick = e=>{
-            const id = e.target.getAttribute('data-id');
-            db.ref('users/' + escapeKey(currentUser.name) + '/orders/' + id).once('value').then(snap=>{
-              const ord = snap.val(); if(!ord) return;
-              const pa = $('printArea'); pa.style.display='block'; pa.innerHTML = buildTicketHtml(ord);
-              setTimeout(()=>{ window.print(); setTimeout(()=>{ pa.style.display='none'; pa.innerHTML=''; },500); },300);
-            });
-          };
-        });
-      });
-    }
+  // ---------- load products from firebase ----------
+  function loadProducts(){
+    const productsRef = ref(db, 'products');
+    onValue(productsRef, (snapshot)=>{
+      productsCache = snapshot.val() || {};
+      renderProducts($('#searchInput').value||'');
+    });
+  }
+  loadProducts();
 
-    function openAdminPanel(){
-      const code = prompt('Admin code:');
-      if(code !== '555'){ showMessage('Wrong admin code'); return; }
-      const backdrop = document.createElement('div'); backdrop.className='modal-backdrop'; backdrop.id='adminModal';
-      backdrop.innerHTML = `<div class="modal"><button class="close-x" id="closeAdmin">✕</button><h3>Admin — Orders</h3><div style="margin-top:10px" id="adminOrdersContainer">Loading...</div></div>`;
-      document.body.appendChild(backdrop);
-      document.getElementById('closeAdmin').onclick = ()=>backdrop.remove();
+  // ---------- edit product (admin) ----------
+  function promptEdit(p){
+    const code = prompt('Enter admin code to edit product:');
+    if(code !== '555'){ alert('Wrong code'); return; }
+    showModal(`
+      <h3>Edit product</h3>
+      <div class="field"><label>Title</label><input id="e_title" value="${escapeHtml(p.title)}"/></div>
+      <div class="field"><label>Description</label><textarea id="e_desc">${escapeHtml(p.desc||'')}</textarea></div>
+      <div class="field"><label>Price (SAR)</label><input id="e_price" type="number" min="0" step="0.01" value="${p.price||0}"/></div>
+      <div class="field"><label>Quantity</label><input id="e_qty" type="number" min="0" value="${p.qty||0}"/></div>
+      <div class="field"><label>Replace Photo (optional)</label><input id="e_file" type="file" accept="image/*"/></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary" id="cancelEdit">Cancel</button>
+        <button class="btn" id="saveEdit">Save</button>
+      </div>
+    `);
 
-      const container = document.getElementById('adminOrdersContainer');
-      const ref = db.ref('orders').orderByChild('createdAt');
-      ref.on('value', snap=>{
-        const v = snap.val(); container.innerHTML = '';
-        if(!v){ container.innerHTML = '<div class="small">No orders yet.</div>'; return; }
-        const arr = Object.entries(v).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
-        arr.forEach(([id, ord])=>{
-          const total = (ord.items||[]).reduce((s,it)=> s + (it.price * it.qty), 0);
-          const el = document.createElement('div'); el.className='order-card'; el.style.marginBottom='8px';
-          el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>Order #${ord.number}</strong> <div class="small">By: ${escapeHtml(ord.owner)} — Status: ${escapeHtml(ord.status)}</div></div><div style="text-align:right"><div class="small">Total: ${formatMoney(total)} SAR</div><div style="margin-top:8px"><button class="btn viewAdmin" data-id="${id}">View / Ticket</button> <button class="btn ghost acceptAdmin" data-id="${id}">Accept</button> <button class="btn ghost declineAdmin" data-id="${id}">Decline</button></div></div></div><div class="small" style="margin-top:8px">Items:<ul>${(ord.items||[]).map(i=>`<li>${escapeHtml(i.name)} x ${i.qty} — ${i.price} SAR</li>`).join('')}</ul></div>`;
-          container.appendChild(el);
-        });
+    $('#cancelEdit').addEventListener('click', closeModal);
+    $('#saveEdit').addEventListener('click', async ()=>{
+      const title = $('#e_title').value.trim();
+      const desc = $('#e_desc').value.trim();
+      const price = parseFloat($('#e_price').value)||0;
+      const qty = parseInt($('#e_qty').value)||0;
+      const fileInput = $('#e_file');
 
-        container.querySelectorAll('button.viewAdmin').forEach(b=> b.onclick = e=>{
-          const id = e.target.dataset.id;
-          db.ref('orders/' + id).once('value').then(snap=>{
-            const ord = snap.val(); if(!ord) return;
-            const pa = $('printArea'); pa.style.display='block'; pa.innerHTML = buildTicketHtml(ord);
-            setTimeout(()=>{ const btn = $('printTicketBtn'); if(btn) btn.onclick = ()=>{ window.print(); setTimeout(()=>{ pa.style.display='none'; pa.innerHTML=''; },500); }; },50);
-          });
-        });
+      let imageUrl = p.imageUrl||'';
+      if(fileInput.files.length>0){
+        const file = fileInput.files[0];
+        const storageRef = sref(storage, `products/${Date.now()}_${file.name}`);
+        try{ await uploadBytes(storageRef, file); imageUrl = await getDownloadURL(storageRef); }
+        catch(err){ console.error(err); alert('Image upload failed'); }
+      }
 
-        container.querySelectorAll('button.acceptAdmin').forEach(b=> b.onclick = e=>{
-          const id = e.target.dataset.id;
-          db.ref('orders/' + id + '/status').set('accepted').then(()=> showMessage('Order accepted'));
-        });
-        container.querySelectorAll('button.declineAdmin').forEach(b=> b.onclick = e=>{
-          const id = e.target.dataset.id;
-          db.ref('orders/' + id + '/status').set('declined').then(()=> showMessage('Order declined'));
-        });
-      });
-    }
+      const updates = { title, desc, price, qty, imageUrl };
+      await update(ref(db, `products/${p.id}`), updates);
+      closeModal();
+    });
+  }
 
-    // ---------- TOAST & INSTALL ----------
-    function showMessage(msg){ const t=document.createElement('div'); t.style.position='fixed';t.style.right='18px';t.style.bottom='110px';t.style.background='linear-gradient(90deg,#0ea5a4,#7c3aed)';t.style.color='white';t.style.padding='10px 12px';t.style.borderRadius='8px';t.style.boxShadow='0 8px 26px rgba(2,6,23,0.12)';t.style.zIndex=99999;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.style.opacity='0',2200);setTimeout(()=>t.remove(),2600); }
+  // ---------- buy flow (no login) ----------
+  async function promptBuy(p){
+    showModal(`
+      <h3>Buy: ${escapeHtml(p.title)}</h3>
+      <div class="small">Price: ${Number(p.price).toFixed(2)} SAR</div>
+      <div class="field"><label>Your name</label><input id="b_name" placeholder="Enter your name"/></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary" id="cancelBuy">Cancel</button>
+        <button class="btn" id="confirmBuy">Order</button>
+      </div>
+    `);
 
-    function openInstallTutorial(){
-      const backdrop=document.createElement('div');backdrop.className='modal-backdrop';backdrop.id='installModal';
-      backdrop.innerHTML=`<div class="modal"><button class="close-x" id="closeInstall">✕</button><h3>Add to Home Screen</h3><p class="small">Install this web app to open it quickly from your device home screen.</p><div style="display:flex;gap:8px;margin-top:10px"><button id="doInstall" class="btn">Install / Add</button><button id="showSteps" class="btn ghost">Show steps (iOS)</button></div><div style="margin-top:12px;font-size:0.95rem"><div class="small"><strong>Android (Chrome):</strong> Tap "Install" above or use the browser menu → Add to home screen.</div></div><div style="margin-top:10px"><strong>iOS (Safari):</strong><ol class="steps small" id="iosSteps" style="display:none"><li>Tap the Safari Share button (square with arrow).</li><li>Choose "Add to Home Screen".</li><li>Tap "Add" — the app will appear on your home screen.</li></ol></div></div>`;
-      document.body.appendChild(backdrop);
-      document.getElementById('closeInstall').onclick = ()=>backdrop.remove();
-      document.getElementById('showSteps').onclick = ()=>{ const s=document.getElementById('iosSteps'); s.style.display=s.style.display==='none'?'block':'none'; };
-      document.getElementById('doInstall').onclick = async ()=>{
-        if(deferredPrompt){ deferredPrompt.prompt(); const choice = await deferredPrompt.userChoice; if(choice && choice.outcome === 'accepted') showMessage('Thanks — app installed!'); else showMessage('Install dismissed.'); deferredPrompt = null; backdrop.remove(); } else { alert('Use your browser menu → Add to Home Screen (iOS: Safari Share → Add to Home Screen).'); }
+    $('#cancelBuy').addEventListener('click', closeModal);
+    $('#confirmBuy').addEventListener('click', async ()=>{
+      const buyer = $('#b_name').value.trim();
+      if(!buyer){ alert('Name required'); return; }
+
+      // decrement product qty atomically (simple approach)
+      const prodRef = ref(db, `products/${p.id}`);
+      const snapshot = await get(prodRef);
+      const prodNow = snapshot.val();
+      if(!prodNow || (prodNow.qty||0) <= 0){ alert('Product out of stock'); closeModal(); loadProducts(); return; }
+
+      const newQty = (prodNow.qty||0) - 1;
+      await update(prodRef, { qty: newQty });
+
+      // create order
+      const orderRef = push(ref(db, 'orders'));
+      const orderId = orderRef.key;
+      const order = {
+        id: orderId,
+        productId: p.id,
+        productTitle: p.title,
+        buyerName: buyer,
+        price: p.price,
+        status: 'pending',
+        createdAt: Date.now()
       };
+      await set(orderRef, order);
+
+      // play sound
+      try{ document.getElementById('paySound').play(); }catch(e){ console.warn('play failed',e); }
+
+      alert('Order placed! Order ID: ' + orderId);
+      closeModal();
+      loadOrdersForBuyer(buyer);
+    });
+  }
+
+  // ---------- orders UI ----------
+  let allOrdersCache = {};
+
+  function watchOrders(){
+    const ordersRef = ref(db, 'orders');
+    onValue(ordersRef, (snap)=>{ allOrdersCache = snap.val()||{}; });
+  }
+  watchOrders();
+
+  function showAdminOrders(){
+    ordersSection.style.display = 'block';
+    ordersList.innerHTML = '';
+    const arr = Object.values(allOrdersCache).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+    if(arr.length===0) ordersList.innerHTML = '<div class="small">No orders</div>';
+    arr.forEach(o=>{
+      const row = document.createElement('div'); row.className='order-row';
+      row.innerHTML = `
+        <div>
+          <div style="font-weight:700">${escapeHtml(o.productTitle)} — ${escapeHtml(o.buyerName)}</div>
+          <div class="small">Order ID: ${o.id} • ${o.price?.toFixed?.(2)||o.price} SAR • Status: ${escapeHtml(o.status||'pending')}</div>
+        </div>
+        <div class="actions">
+          <button class="btn" data-accept="${o.id}">Accept</button>
+          <button class="btn secondary" data-cancel="${o.id}">Cancel</button>
+          <button class="btn secondary" data-print="${o.id}">Print</button>
+        </div>
+      `;
+      ordersList.appendChild(row);
+
+      row.querySelector('[data-accept]')?.addEventListener('click', ()=>handleAccept(o));
+      row.querySelector('[data-cancel]')?.addEventListener('click', ()=>handleCancel(o));
+      row.querySelector('[data-print]')?.addEventListener('click', ()=>printOrder(o));
+    });
+  }
+
+  async function handleAccept(o){
+    if(o.status==='accepted'){ alert('Already accepted'); return; }
+    await update(ref(db, `orders/${o.id}`), { status: 'accepted' });
+    alert('Order accepted');
+    showAdminOrders();
+  }
+
+  async function handleCancel(o){
+    if(!confirm('Cancel this order?')) return;
+    // restore qty
+    const prodRef = ref(db, `products/${o.productId}`);
+    const snap = await get(prodRef);
+    const p = snap.val();
+    const newQty = (p?.qty||0) + 1;
+    await update(prodRef, { qty: newQty });
+    await update(ref(db, `orders/${o.id}`), { status: 'cancelled' });
+    alert('Order cancelled and stock restored');
+    showAdminOrders();
+  }
+
+  function printOrder(o){
+    const w = window.open('', '_blank');
+    const html = `
+      <html><head><title>Order ${o.id}</title></head><body style="font-family:Arial;padding:20px">
+      <h2>Order #${o.id}</h2>
+      <p><strong>Product:</strong> ${escapeHtml(o.productTitle)}</p>
+      <p><strong>Buyer:</strong> ${escapeHtml(o.buyerName)}</p>
+      <p><strong>Price:</strong> ${o.price?.toFixed?.(2)||o.price} SAR</p>
+      <p><strong>Status:</strong> ${escapeHtml(o.status)}</p>
+      <hr/>
+      <p style="font-size:12px;color:#666">Printed: ${new Date(o.createdAt||Date.now()).toLocaleString()}</p>
+      </body></html>
+    `;
+    w.document.write(html); w.document.close(); w.print();
+  }
+
+  // ---------- My orders (buyer) ----------
+  function showMyOrdersPrompt(){
+    showModal(`
+      <h3>My Orders</h3>
+      <div class="field"><label>Your name</label><input id="mo_name" placeholder="Enter the name you used when ordering"/></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button class="btn secondary" id="cancelMo">Cancel</button>
+        <button class="btn" id="viewMo">View</button>
+      </div>
+    `);
+    $('#cancelMo').addEventListener('click', closeModal);
+    $('#viewMo').addEventListener('click', ()=>{
+      const name = $('#mo_name').value.trim(); if(!name){ alert('Name required'); return; }
+      closeModal(); loadOrdersForBuyer(name);
+    });
+  }
+
+  function loadOrdersForBuyer(name){
+    ordersSection.style.display = 'block';
+    ordersList.innerHTML = '';
+    const arr = Object.values(allOrdersCache).filter(o=> o.buyerName === name ).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+    if(arr.length===0) ordersList.innerHTML = '<div class="small">No orders for this name</div>';
+    arr.forEach(o=>{
+      const row = document.createElement('div'); row.className='order-row';
+      row.innerHTML = `
+        <div>
+          <div style="font-weight:700">${escapeHtml(o.productTitle)}</div>
+          <div class="small">Order ID: ${o.id} • ${o.price?.toFixed?.(2)||o.price} SAR • Status: ${escapeHtml(o.status||'pending')}</div>
+        </div>
+        <div class="actions">
+          <button class="btn secondary" data-print="${o.id}">Print</button>
+          <button class="btn secondary" data-cancel="${o.id}">Cancel</button>
+        </div>
+      `;
+      ordersList.appendChild(row);
+      row.querySelector('[data-print]')?.addEventListener('click', ()=>printOrder(o));
+      row.querySelector('[data-cancel]')?.addEventListener('click', ()=>cancelByBuyer(o, name));
+    });
+  }
+
+  async function cancelByBuyer(o, name){
+    if(o.buyerName !== name){ alert('You can only cancel your own orders'); return; }
+    if(confirm('Cancel this order?')){
+      // restore qty
+      const prodRef = ref(db, `products/${o.productId}`);
+      const snap = await get(prodRef);
+      const p = snap.val();
+      const newQty = (p?.qty||0) + 1;
+      await update(prodRef, { qty: newQty });
+      await update(ref(db, `orders/${o.id}`), { status: 'cancelled' });
+      alert('Order cancelled');
+      loadOrdersForBuyer(name);
     }
+  }
+
+  // ---------- initial load ----------
+  setTimeout(()=>{ loadProducts(); watchOrders(); }, 300);
+
   </script>
 </body>
 </html>
