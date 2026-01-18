@@ -189,9 +189,6 @@
           </div>
         </div>
 
-      
-
-
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
         <button id="tutorialClose" class="btn small">Close</button>
       </div>
@@ -333,10 +330,6 @@
     const myOrdersList = document.getElementById('myOrdersList');
 
     let currentBuyProduct = null; // {id, data}
-
-    // time constants
-    const ONE_DAY = 24 * 60 * 60 * 1000;
-    const TWO_DAYS = 2 * ONE_DAY;
 
     // ---------- UI events ----------
     addProductBtn.addEventListener('click', ()=>{
@@ -519,8 +512,7 @@
         day: day,
         quantity: qty,
         status: 'pending',
-        createdAt: Date.now(),
-        adminHidden: false
+        createdAt: Date.now()
       };
       newOrderRef.set(orderObj).then(()=>{
         localStorage.setItem('mini_shop_name', name);
@@ -529,7 +521,7 @@
       }).catch(err=>alert('Error placing order: '+err.message));
     }
 
-    // ---------- Admin orders (only Accept / Decline) ----------
+    // ---------- Admin orders (only Deliver / Decline) ----------
     function openAdminOrders(){
       const code = prompt('Enter admin code to open orders');
       if(!code){return}
@@ -541,18 +533,8 @@
       ordersList.innerHTML='';
       const val = snapshot.val() || {};
       const entries = Object.entries(val).sort((a,b)=> (b[1].createdAt||0)-(a[1].createdAt||0));
-      const visibleEntries = [];
+      if(entries.length===0){ordersList.innerHTML='<div class="muted">No orders yet</div>';return}
       entries.forEach(([id,data])=>{
-        if(data.adminHidden) return;
-        if(data.adminDeleteAt && Date.now() >= data.adminDeleteAt){
-          db.ref('orders/'+id).update({adminHidden: true, adminHiddenAt: Date.now()});
-          return;
-        }
-        visibleEntries.push([id,data]);
-      });
-
-      if(visibleEntries.length===0){ordersList.innerHTML='<div class="muted">No orders yet</div>';return}
-      visibleEntries.forEach(([id,data])=>{
         const box = document.createElement('div');box.className='ticket';
         const top = document.createElement('div'); top.className='flex';
         const title = document.createElement('div'); title.innerHTML='<strong>'+data.productTitle+'</strong>';
@@ -563,17 +545,13 @@
 
         const info = document.createElement('div'); info.className='muted'; info.style.marginTop='6px';
         let infoHtml = 'Buyer: '+(data.buyerName||'')+' — Qty: '+(data.quantity||0)+' — Day: '+(data.day||'')+'<br/>' + new Date((data.createdAt||0)).toLocaleString();
-        if(data.adminDeleteAt){
-          const when = new Date(data.adminDeleteAt);
-          infoHtml += '<br/><em style="font-size:12px;color:#666">Will be hidden from admin on: '+when.toLocaleString()+'</em>';
-        }
         info.innerHTML = infoHtml;
         box.appendChild(info);
 
         const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='8px';
-        const accept = document.createElement('button'); accept.className='btn small'; accept.textContent='Accept';
+        const accept = document.createElement('button'); accept.className='btn small'; accept.textContent='Deliver';
         const decline = document.createElement('button'); decline.className='btn small danger'; decline.textContent='Decline';
-        accept.addEventListener('click', ()=>{handleAcceptOrder(id,data)});
+        accept.addEventListener('click', ()=>{handleDeliverOrder(id,data)});
         decline.addEventListener('click', ()=>{handleDeclineOrder(id,data)});
         actions.appendChild(accept); actions.appendChild(decline);
         box.appendChild(actions);
@@ -581,9 +559,9 @@
       });
     }
 
-    async function handleAcceptOrder(orderId,orderData){
-      if(orderData.status === 'accepted'){
-        alert('Order already accepted.');
+    async function handleDeliverOrder(orderId,orderData){
+      if(orderData.status === 'delivered'){
+        alert('Order already delivered.');
         return;
       }
       const prodRefRoot = db.ref('products/'+orderData.productId);
@@ -593,7 +571,7 @@
       const available = prod.quantity || 0;
       const orderQty = parseInt(orderData.quantity) || 1;
       if(orderQty > available){
-        if(!confirm('Order quantity ('+orderQty+') exceeds available stock ('+available+'). Accept and set stock to 0?')) return;
+        if(!confirm('Order quantity ('+orderQty+') exceeds available stock ('+available+'). Deliver and set stock to 0?')) return;
       }
       const qtyRef = db.ref('products/'+orderData.productId+'/quantity');
       qtyRef.transaction(current => {
@@ -605,12 +583,9 @@
         if(error){alert('Transaction failed: '+error.message)}
         else if(!committed){alert('Could not update quantity')}
         else {
-          const adminDeleteAt = Date.now() + TWO_DAYS;
           db.ref('orders/'+orderId).update({
-            status:'accepted',
-            handledAt:Date.now(),
-            adminDeleteAt: adminDeleteAt,
-            adminHidden: false
+            status:'delivered',
+            handledAt:Date.now()
           });
         }
       });
@@ -620,16 +595,14 @@
       if(!confirm('Decline this order?')) return;
       const orderQty = parseInt(orderData.quantity) || 1;
       const doSetDeclined = (extraFields = {}) => {
-        const adminDeleteAt = Date.now() + ONE_DAY;
         db.ref('orders/'+orderId).update(Object.assign({
           status:'declined',
-          handledAt:Date.now(),
-          adminDeleteAt: adminDeleteAt,
-          adminHidden: false
+          handledAt:Date.now()
         }, extraFields));
       };
 
-      if(orderData.status === 'accepted'){
+      // If order was already delivered, restore quantity
+      if(orderData.status === 'delivered'){
         const qtyRef = db.ref('products/'+orderData.productId+'/quantity');
         qtyRef.transaction(current => {
           const now = (current || 0) + orderQty;
@@ -662,7 +635,7 @@
           box.appendChild(top);
           const info = document.createElement('div'); info.className='muted'; info.style.marginTop='6px';
           info.innerHTML = 'Qty: '+(data.quantity||0)+' — Day: '+(data.day||'')+'<br/>' + new Date((data.createdAt||0)).toLocaleString();
-          if(data.adminDeleteAt){ info.innerHTML += '<br/><em style="font-size:12px;color:#666">Admin scheduled hide: '+new Date(data.adminDeleteAt).toLocaleString()+'</em>'; }
+          if(data.restoredAt){ info.innerHTML += '<br/><em style="font-size:12px;color:#666">Admin restored stock on: '+new Date(data.restoredAt).toLocaleString()+'</em>'; }
           box.appendChild(info);
           myOrdersList.appendChild(box);
         });
