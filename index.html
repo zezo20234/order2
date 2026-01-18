@@ -264,22 +264,14 @@
     const tutorialModal = document.getElementById('tutorialModal');
     const tutorialClose = document.getElementById('tutorialClose');
     tutorialBtn.addEventListener('click', ()=>{ openModal(tutorialModal); });
-    // Modified: set "seen" when the user closes the tutorial
-    tutorialClose.addEventListener('click', ()=>{
-      localStorage.setItem('mini_shop_seen_tutorial', 'true');
-      closeModal(tutorialModal);
-    });
+    tutorialClose.addEventListener('click', ()=>{ closeModal(tutorialModal); });
 
-    // Auto-open the tutorial on first visit (only if not already seen)
+    // Auto-open tutorial EVERY load
     window.addEventListener('load', () => {
       try {
-        const seen = localStorage.getItem('mini_shop_seen_tutorial');
-        if (!seen) {
-          openModal(tutorialModal);
-        }
-      } catch(e) {
-        // localStorage may throw in some privacy modes; fail silently
-        console.warn('Could not read localStorage for tutorial:', e);
+        openModal(tutorialModal);
+      } catch (e) {
+        console.warn('Could not open tutorial modal:', e);
       }
     });
 
@@ -521,7 +513,7 @@
       }).catch(err=>alert('Error placing order: '+err.message));
     }
 
-    // ---------- Admin orders (only Deliver / Decline) ----------
+    // ---------- Admin orders (Accept / Deliver / Decline) ----------
     function openAdminOrders(){
       const code = prompt('Enter admin code to open orders');
       if(!code){return}
@@ -549,20 +541,27 @@
         box.appendChild(info);
 
         const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='8px';
-        const accept = document.createElement('button'); accept.className='btn small'; accept.textContent='Deliver';
+        const accept = document.createElement('button'); accept.className='btn small'; accept.textContent='Accept';
+        const deliver = document.createElement('button'); deliver.className='btn small'; deliver.textContent='Deliver';
         const decline = document.createElement('button'); decline.className='btn small danger'; decline.textContent='Decline';
-        accept.addEventListener('click', ()=>{handleDeliverOrder(id,data)});
+
+        accept.addEventListener('click', ()=>{handleAcceptOrder(id,data)});
+        deliver.addEventListener('click', ()=>{handleDeliverOrder(id,data)});
         decline.addEventListener('click', ()=>{handleDeclineOrder(id,data)});
-        actions.appendChild(accept); actions.appendChild(decline);
+
+        actions.appendChild(accept); actions.appendChild(deliver); actions.appendChild(decline);
         box.appendChild(actions);
         ordersList.appendChild(box);
       });
     }
 
-    async function handleDeliverOrder(orderId,orderData){
-      if(orderData.status === 'delivered'){
-        alert('Order already delivered.');
+    async function handleAcceptOrder(orderId,orderData){
+      if(orderData.status === 'accepted'){
+        alert('Order already accepted.');
         return;
+      }
+      if(orderData.status === 'declined'){
+        if(!confirm('This order is declined. Accept it anyway?')) return;
       }
       const prodRefRoot = db.ref('products/'+orderData.productId);
       const prodSnap = await prodRefRoot.get();
@@ -571,7 +570,7 @@
       const available = prod.quantity || 0;
       const orderQty = parseInt(orderData.quantity) || 1;
       if(orderQty > available){
-        if(!confirm('Order quantity ('+orderQty+') exceeds available stock ('+available+'). Deliver and set stock to 0?')) return;
+        if(!confirm('Order quantity ('+orderQty+') exceeds available stock ('+available+'). Accept and set stock to 0?')) return;
       }
       const qtyRef = db.ref('products/'+orderData.productId+'/quantity');
       qtyRef.transaction(current => {
@@ -584,16 +583,32 @@
         else if(!committed){alert('Could not update quantity')}
         else {
           db.ref('orders/'+orderId).update({
-            status:'delivered',
+            status:'accepted',
             handledAt:Date.now()
           });
         }
       });
     }
 
+    async function handleDeliverOrder(orderId,orderData){
+      if(orderData.status === 'delivered'){
+        alert('Order already delivered.');
+        return;
+      }
+      // Allow delivering from pending or accepted (but stock reduction only happens on Accept).
+      if(orderData.status === 'pending'){
+        if(!confirm('This order is still pending. Deliver it anyway? (stock will not be reduced automatically)')) return;
+      }
+      db.ref('orders/'+orderId).update({
+        status:'delivered',
+        deliveredAt:Date.now()
+      });
+    }
+
     async function handleDeclineOrder(orderId,orderData){
       if(!confirm('Decline this order?')) return;
       const orderQty = parseInt(orderData.quantity) || 1;
+
       const doSetDeclined = (extraFields = {}) => {
         db.ref('orders/'+orderId).update(Object.assign({
           status:'declined',
@@ -601,8 +616,8 @@
         }, extraFields));
       };
 
-      // If order was already delivered, restore quantity
-      if(orderData.status === 'delivered'){
+      // If order was already accepted or delivered, restore quantity
+      if(orderData.status === 'accepted' || orderData.status === 'delivered'){
         const qtyRef = db.ref('products/'+orderData.productId+'/quantity');
         qtyRef.transaction(current => {
           const now = (current || 0) + orderQty;
