@@ -334,6 +334,13 @@
     showTutorialBlock();
 
     // on load routing
+    // --- Override tutorial behavior: auto-open on load, no timer ---
+    function showTutorialBlock(){ tutorialModal.classList.remove('hidden'); }
+    // ensure close works immediately
+    tutorialCloseBtn.onclick = function(){ tutorialModal.classList.add('hidden'); };
+    // auto show now
+    try{ showTutorialBlock(); }catch(e){ /* ignore if elements not ready */ }
+
     routeFromHash();
 
     // accessibility: Escape closes tutorial ONLY after unlock
