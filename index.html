@@ -273,9 +273,23 @@
 
     // tutorial open/close
     tutorialBtn.addEventListener('click', ()=> openModal(tutorialModal));
-    tutorialClose.addEventListener('click', ()=> closeModal(tutorialModal));
-    // auto-open tutorial every load as you wanted
-    window.addEventListener('load', ()=> { try { openModal(tutorialModal); } catch(e){} });
+    tutorialClose.addEventListener('click', ()=> {
+      try { localStorage.setItem('mini_shop_seen_tutorial', 'true'); } catch(e) { /* ignore */ }
+      closeModal(tutorialModal);
+    });
+
+    // Auto-open tutorial on first visit (only if not already seen)
+    window.addEventListener('load', () => {
+      try {
+        const seen = localStorage.getItem('mini_shop_seen_tutorial');
+        if (!seen) {
+          openModal(tutorialModal);
+        }
+      } catch(e) {
+        // localStorage may throw in some privacy modes; fail silently
+        console.warn('Could not read localStorage for tutorial:', e);
+      }
+    });
 
     // basic helpers
     function readFileAsDataURL(file){
@@ -415,7 +429,6 @@
     function openImageModal(src){
       if(!src) return;
       fullImage.src = src;
-      // ensure image loads before opening to avoid flicker (optional)
       fullImage.onload = ()=> openModal(imageModal);
       fullImage.onerror = ()=> { fullImage.src = ''; alert('Could not load image'); };
     }
