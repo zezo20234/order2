@@ -42,16 +42,12 @@
     .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(15,23,36,0.04);font-size:12px}
     .flex{display:flex;gap:8px;align-items:center}
 
+    .order-image{width:100%;max-height:320px;object-fit:contain;border-radius:8px;background:#f8fafc;padding:6px}
+    .details-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .details-item{flex:1;min-width:140px}
+
     label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
     input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,36,0.06);background:transparent;color:inherit}
-
-    .install-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:linear-gradient(90deg,#ecfeff,#f0fdf4);border:1px solid rgba(15,23,36,0.04)}
-
-    .tutorial-steps{display:grid;gap:10px}
-    .step{display:flex;gap:10px;align-items:flex-start}
-    .step .icon{width:56px;height:56px;border-radius:10px;background:#f8fafc;display:flex;align-items:center;justify-content:center;border:1px solid rgba(15,23,36,0.04)}
-
-    .delete-lock{font-size:12px;color:#7f1d1d;margin-left:6px}
 
     @media (max-width:520px){.pcard .art{height:120px}}
   </style>
@@ -195,6 +191,32 @@
     </div>
   </div>
 
+  <!-- Order Details modal -->
+  <div id="orderDetailsModal" class="modal" style="display:none">
+    <div class="sheet" id="orderDetailsSheet" style="max-width:720px">
+      <h3 id="odTitle">Order details</h3>
+      <div id="odImageWrap" style="margin-top:8px;text-align:center">
+        <img id="odImage" class="order-image" src="" alt="product image" style="display:none" />
+        <div id="odNoImage" class="muted" style="display:none;padding:20px">No image available</div>
+      </div>
+
+      <div id="odDesc" class="muted" style="margin-top:10px"></div>
+
+      <div class="details-row">
+        <div class="details-item"><strong>Buyer</strong><div id="odBuyer" class="muted"></div></div>
+        <div class="details-item"><strong>Day</strong><div id="odDay" class="muted"></div></div>
+        <div class="details-item"><strong>Quantity</strong><div id="odQty" class="muted"></div></div>
+        <div class="details-item"><strong>Status</strong><div id="odStatus" class="muted"></div></div>
+      </div>
+
+      <div style="margin-top:10px" id="odTimestamps" class="muted"></div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="odClose" class="btn small">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -320,6 +342,21 @@
     const myOrdersClose = document.getElementById('myOrdersClose');
     const myName = document.getElementById('myName');
     const myOrdersList = document.getElementById('myOrdersList');
+
+    // order details modal refs
+    const orderDetailsModal = document.getElementById('orderDetailsModal');
+    const odImage = document.getElementById('odImage');
+    const odNoImage = document.getElementById('odNoImage');
+    const odTitle = document.getElementById('odTitle');
+    const odDesc = document.getElementById('odDesc');
+    const odBuyer = document.getElementById('odBuyer');
+    const odDay = document.getElementById('odDay');
+    const odQty = document.getElementById('odQty');
+    const odStatus = document.getElementById('odStatus');
+    const odTimestamps = document.getElementById('odTimestamps');
+    const odClose = document.getElementById('odClose');
+
+    odClose.addEventListener('click', ()=> closeModal(orderDetailsModal));
 
     let currentBuyProduct = null; // {id, data}
 
@@ -541,6 +578,12 @@
         box.appendChild(info);
 
         const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='8px';
+
+        // More details button
+        const detailsBtn = document.createElement('button'); detailsBtn.className='btn small'; detailsBtn.textContent='More details';
+        detailsBtn.addEventListener('click', ()=>{ openOrderDetails(id, data); });
+        actions.appendChild(detailsBtn);
+
         const accept = document.createElement('button'); accept.className='btn small'; accept.textContent='Accept';
         const deliver = document.createElement('button'); deliver.className='btn small'; deliver.textContent='Deliver';
         const decline = document.createElement('button'); decline.className='btn small danger'; decline.textContent='Decline';
@@ -632,6 +675,47 @@
       }
     }
 
+    // ---------- Order details UI ----------
+    async function openOrderDetails(orderId, orderData){
+      try{
+        // fetch product to get image + description
+        const prodSnap = await db.ref('products/'+orderData.productId).get();
+        const prod = prodSnap.exists() ? prodSnap.val() : null;
+
+        // image
+        if(prod && prod.imageData){
+          odImage.src = prod.imageData;
+          odImage.style.display = 'block';
+          odNoImage.style.display = 'none';
+        } else {
+          odImage.style.display = 'none';
+          odNoImage.style.display = 'block';
+        }
+
+        // title / desc
+        odTitle.textContent = (orderData.productTitle || (prod && prod.title) || 'Order details');
+        odDesc.textContent = (prod && prod.description) ? prod.description : (orderData.productTitle ? '' : '');
+
+        // buyer/day/qty/status
+        odBuyer.textContent = orderData.buyerName || '—';
+        odDay.textContent = orderData.day || '—';
+        odQty.textContent = (orderData.quantity || 0);
+        odStatus.textContent = (orderData.status || 'pending');
+
+        // timestamps
+        const parts = [];
+        if(orderData.createdAt) parts.push('Created: ' + new Date(orderData.createdAt).toLocaleString());
+        if(orderData.handledAt) parts.push('Handled: ' + new Date(orderData.handledAt).toLocaleString());
+        if(orderData.deliveredAt) parts.push('Delivered: ' + new Date(orderData.deliveredAt).toLocaleString());
+        if(orderData.restoredAt) parts.push('Restored stock: ' + new Date(orderData.restoredAt).toLocaleString());
+        odTimestamps.innerHTML = parts.join('<br/>');
+
+        openModal(orderDetailsModal);
+      } catch(err){
+        alert('Failed to load details: ' + err.message);
+      }
+    }
+
     function refreshMyOrders(){
       const name = (myName.value || localStorage.getItem('mini_shop_name') || '').trim();
       myOrdersList.innerHTML='';
@@ -652,6 +736,14 @@
           info.innerHTML = 'Qty: '+(data.quantity||0)+' — Day: '+(data.day||'')+'<br/>' + new Date((data.createdAt||0)).toLocaleString();
           if(data.restoredAt){ info.innerHTML += '<br/><em style="font-size:12px;color:#666">Admin restored stock on: '+new Date(data.restoredAt).toLocaleString()+'</em>'; }
           box.appendChild(info);
+
+          // add Details button for user's orders
+          const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='8px';
+          const detailsBtn = document.createElement('button'); detailsBtn.className='btn small'; detailsBtn.textContent='More details';
+          detailsBtn.addEventListener('click', ()=> openOrderDetails(id, data));
+          actions.appendChild(detailsBtn);
+          box.appendChild(actions);
+
           myOrdersList.appendChild(box);
         });
       });
@@ -663,7 +755,7 @@
     db.ref('orders').on('value', ()=>{ if(myOrdersModal.style.display === 'flex') refreshMyOrders(); });
 
     // Accessibility: close modal on escape
-    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ [productModal,buyModal,ordersModal,myOrdersModal,tutorialModal].forEach(m=>m.style.display='none'); } });
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ [productModal,buyModal,ordersModal,myOrdersModal,tutorialModal,orderDetailsModal].forEach(m=>m.style.display='none'); } });
 
   </script>
 </body>
