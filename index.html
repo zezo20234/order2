@@ -23,7 +23,7 @@
     /* Pokémon-card style */
     .pcard{background:linear-gradient(180deg,#fff,#fff7ed);border-radius:14px;border:3px solid #fde68a;box-shadow:0 12px 30px rgba(15,23,42,0.06);overflow:hidden;display:flex;flex-direction:column}
     .pcard .art{height:150px;background:linear-gradient(180deg,#f3f4f6,#e6eef6);display:flex;align-items:center;justify-content:center}
-    .pcard .art img{width:100%;height:100%;object-fit:cover}
+    .pcard .art img{width:100%;height:100%;object-fit:cover;cursor:pointer}
     .pcard .content{padding:12px}
     .pcard h3{margin:0 0 6px 0;font-size:16px}
     .muted{color:var(--muted);font-size:13px}
@@ -43,6 +43,8 @@
     .flex{display:flex;gap:8px;align-items:center}
 
     .order-image{width:100%;max-height:320px;object-fit:contain;border-radius:8px;background:#f8fafc;padding:6px}
+    .thumb{width:72px;height:72px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid rgba(15,23,36,0.04);background:#fff}
+
     .details-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
     .details-item{flex:1;min-width:140px}
 
@@ -191,28 +193,14 @@
     </div>
   </div>
 
-  <!-- Order Details modal -->
-  <div id="orderDetailsModal" class="modal" style="display:none">
-    <div class="sheet" id="orderDetailsSheet" style="max-width:720px">
-      <h3 id="odTitle">Order details</h3>
-      <div id="odImageWrap" style="margin-top:8px;text-align:center">
-        <img id="odImage" class="order-image" src="" alt="product image" style="display:none" />
-        <div id="odNoImage" class="muted" style="display:none;padding:20px">No image available</div>
+  <!-- Image fullscreen modal -->
+  <div id="imageModal" class="modal" style="display:none">
+    <div class="sheet" style="max-width:900px;background:transparent;box-shadow:none;padding:6px">
+      <div style="background:transparent;text-align:center">
+        <img id="fullImage" src="" alt="full view" style="max-width:100%;max-height:85vh;border-radius:12px;display:block;margin:0 auto;background:#fff;padding:6px" />
       </div>
-
-      <div id="odDesc" class="muted" style="margin-top:10px"></div>
-
-      <div class="details-row">
-        <div class="details-item"><strong>Buyer</strong><div id="odBuyer" class="muted"></div></div>
-        <div class="details-item"><strong>Day</strong><div id="odDay" class="muted"></div></div>
-        <div class="details-item"><strong>Quantity</strong><div id="odQty" class="muted"></div></div>
-        <div class="details-item"><strong>Status</strong><div id="odStatus" class="muted"></div></div>
-      </div>
-
-      <div style="margin-top:10px" id="odTimestamps" class="muted"></div>
-
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-        <button id="odClose" class="btn small">Close</button>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+        <button id="closeImageBtn" class="btn small">Close</button>
       </div>
     </div>
   </div>
@@ -343,20 +331,11 @@
     const myName = document.getElementById('myName');
     const myOrdersList = document.getElementById('myOrdersList');
 
-    // order details modal refs
-    const orderDetailsModal = document.getElementById('orderDetailsModal');
-    const odImage = document.getElementById('odImage');
-    const odNoImage = document.getElementById('odNoImage');
-    const odTitle = document.getElementById('odTitle');
-    const odDesc = document.getElementById('odDesc');
-    const odBuyer = document.getElementById('odBuyer');
-    const odDay = document.getElementById('odDay');
-    const odQty = document.getElementById('odQty');
-    const odStatus = document.getElementById('odStatus');
-    const odTimestamps = document.getElementById('odTimestamps');
-    const odClose = document.getElementById('odClose');
-
-    odClose.addEventListener('click', ()=> closeModal(orderDetailsModal));
+    // image modal refs
+    const imageModal = document.getElementById('imageModal');
+    const fullImage = document.getElementById('fullImage');
+    const closeImageBtn = document.getElementById('closeImageBtn');
+    closeImageBtn.addEventListener('click', ()=> closeModal(imageModal));
 
     let currentBuyProduct = null; // {id, data}
 
@@ -417,7 +396,7 @@
         }
       } catch(err){
         uploadingNote.style.display = 'none';
-        pSave.disabled = false;
+        pSave.style.disabled = false;
         alert('Image processing failed: '+err.message);
         return;
       }
@@ -448,6 +427,13 @@
       }
     }
 
+    // open image in fullscreen modal
+    function openImageModal(src){
+      if(!src) return;
+      fullImage.src = src;
+      openModal(imageModal);
+    }
+
     function renderProductsList(snapshot){
       productsEl.innerHTML='';
       const val = snapshot.val() || {};
@@ -458,7 +444,9 @@
         const card = document.createElement('div');card.className='pcard';
         const art = document.createElement('div'); art.className='art';
         if(data.imageData){
-          const img = document.createElement('img'); img.src = data.imageData; img.alt = data.title || 'product'; art.appendChild(img);
+          const img = document.createElement('img'); img.src = data.imageData; img.alt = data.title || 'product';
+          img.addEventListener('click', ()=> openImageModal(data.imageData)); // click to open full image
+          art.appendChild(img);
         } else {
           const ph = document.createElement('div'); ph.className='muted'; ph.textContent = 'No image'; art.appendChild(ph);
         }
@@ -499,9 +487,8 @@
 
     // ---------- Delete product (locked by client-side code '555') ----------
     async function attemptDeleteProduct(productId, productData){
-      // prompt for code
       const code = prompt('Enter admin code to delete this product');
-      if(code === null) return; // user cancelled
+      if(code === null) return;
       if(code !== '555') return alert('Wrong code — product not deleted.');
 
       if(!confirm('Delete product "'+(productData.title||'')+'"? This will remove it from the database.')) return;
@@ -569,7 +556,9 @@
         const title = document.createElement('div'); title.innerHTML='<strong>'+data.productTitle+'</strong>';
         const badge = document.createElement('div'); badge.className='badge'; badge.style.marginLeft='auto';
         badge.textContent=(data.status||'pending');
-        top.appendChild(title); top.appendChild(badge);
+        top.appendChild(title);
+        // we will insert thumbnail before the badge if available (async fetch)
+        top.appendChild(badge);
         box.appendChild(top);
 
         const info = document.createElement('div'); info.className='muted'; info.style.marginTop='6px';
@@ -578,11 +567,6 @@
         box.appendChild(info);
 
         const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='8px';
-
-        // More details button
-        const detailsBtn = document.createElement('button'); detailsBtn.className='btn small'; detailsBtn.textContent='More details';
-        detailsBtn.addEventListener('click', ()=>{ openOrderDetails(id, data); });
-        actions.appendChild(detailsBtn);
 
         const accept = document.createElement('button'); accept.className='btn small'; accept.textContent='Accept';
         const deliver = document.createElement('button'); deliver.className='btn small'; deliver.textContent='Deliver';
@@ -595,6 +579,25 @@
         actions.appendChild(accept); actions.appendChild(deliver); actions.appendChild(decline);
         box.appendChild(actions);
         ordersList.appendChild(box);
+
+        // Async: fetch product to show thumbnail (clickable)
+        (async ()=>{
+          try{
+            const prodSnap = await db.ref('products/'+data.productId).get();
+            const prod = prodSnap.exists() ? prodSnap.val() : null;
+            if(prod && prod.imageData){
+              const thumb = document.createElement('img');
+              thumb.src = prod.imageData;
+              thumb.className = 'thumb';
+              thumb.style.marginLeft = '10px';
+              thumb.addEventListener('click', ()=> openImageModal(prod.imageData));
+              // insert thumb before the badge
+              top.insertBefore(thumb, badge);
+            }
+          }catch(e){
+            console.warn('Could not fetch product for order thumbnail', e);
+          }
+        })();
       });
     }
 
@@ -675,47 +678,6 @@
       }
     }
 
-    // ---------- Order details UI ----------
-    async function openOrderDetails(orderId, orderData){
-      try{
-        // fetch product to get image + description
-        const prodSnap = await db.ref('products/'+orderData.productId).get();
-        const prod = prodSnap.exists() ? prodSnap.val() : null;
-
-        // image
-        if(prod && prod.imageData){
-          odImage.src = prod.imageData;
-          odImage.style.display = 'block';
-          odNoImage.style.display = 'none';
-        } else {
-          odImage.style.display = 'none';
-          odNoImage.style.display = 'block';
-        }
-
-        // title / desc
-        odTitle.textContent = (orderData.productTitle || (prod && prod.title) || 'Order details');
-        odDesc.textContent = (prod && prod.description) ? prod.description : (orderData.productTitle ? '' : '');
-
-        // buyer/day/qty/status
-        odBuyer.textContent = orderData.buyerName || '—';
-        odDay.textContent = orderData.day || '—';
-        odQty.textContent = (orderData.quantity || 0);
-        odStatus.textContent = (orderData.status || 'pending');
-
-        // timestamps
-        const parts = [];
-        if(orderData.createdAt) parts.push('Created: ' + new Date(orderData.createdAt).toLocaleString());
-        if(orderData.handledAt) parts.push('Handled: ' + new Date(orderData.handledAt).toLocaleString());
-        if(orderData.deliveredAt) parts.push('Delivered: ' + new Date(orderData.deliveredAt).toLocaleString());
-        if(orderData.restoredAt) parts.push('Restored stock: ' + new Date(orderData.restoredAt).toLocaleString());
-        odTimestamps.innerHTML = parts.join('<br/>');
-
-        openModal(orderDetailsModal);
-      } catch(err){
-        alert('Failed to load details: ' + err.message);
-      }
-    }
-
     function refreshMyOrders(){
       const name = (myName.value || localStorage.getItem('mini_shop_name') || '').trim();
       myOrdersList.innerHTML='';
@@ -737,12 +699,23 @@
           if(data.restoredAt){ info.innerHTML += '<br/><em style="font-size:12px;color:#666">Admin restored stock on: '+new Date(data.restoredAt).toLocaleString()+'</em>'; }
           box.appendChild(info);
 
-          // add Details button for user's orders
-          const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='8px';
-          const detailsBtn = document.createElement('button'); detailsBtn.className='btn small'; detailsBtn.textContent='More details';
-          detailsBtn.addEventListener('click', ()=> openOrderDetails(id, data));
-          actions.appendChild(detailsBtn);
-          box.appendChild(actions);
+          // Add thumbnail (async)
+          (async ()=>{
+            try{
+              const prodSnap = await db.ref('products/'+data.productId).get();
+              const prod = prodSnap.exists() ? prodSnap.val() : null;
+              if(prod && prod.imageData){
+                const thumb = document.createElement('img');
+                thumb.src = prod.imageData;
+                thumb.className = 'thumb';
+                thumb.style.marginLeft = '10px';
+                thumb.addEventListener('click', ()=> openImageModal(prod.imageData));
+                top.insertBefore(thumb, badge);
+              }
+            }catch(e){
+              console.warn('Could not fetch product for my-orders thumbnail', e);
+            }
+          })();
 
           myOrdersList.appendChild(box);
         });
@@ -755,7 +728,7 @@
     db.ref('orders').on('value', ()=>{ if(myOrdersModal.style.display === 'flex') refreshMyOrders(); });
 
     // Accessibility: close modal on escape
-    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ [productModal,buyModal,ordersModal,myOrdersModal,tutorialModal,orderDetailsModal].forEach(m=>m.style.display='none'); } });
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ [productModal,buyModal,ordersModal,myOrdersModal,tutorialModal,imageModal].forEach(m=>m.style.display='none'); } });
 
   </script>
 </body>
