@@ -35,7 +35,7 @@
     .small{padding:6px 8px;font-size:13px}
     .danger{background:#ef4444}
 
-    .modal{position:fixed;inset:0;background:rgba(2,6,23,0.06);display:flex;align-items:center;justify-content:center;padding:20px;z-index:999;}
+    .modal{position:fixed;inset:0;background:rgba(2,6,23,0.06);display:none;align-items:center;justify-content:center;padding:20px;z-index:999;}
     .modal .sheet{width:100%;max-width:560px;background:white;padding:16px;border-radius:12px;box-shadow:0 8px 24px rgba(2,6,23,0.06)}
     footer{margin-top:18px;color:var(--muted);font-size:13px}
     .ticket{background:#ffffff;padding:12px;border-radius:8px;border:1px solid rgba(15,23,36,0.04);box-shadow:0 6px 18px rgba(15,23,36,0.03)}
@@ -50,6 +50,11 @@
 
     label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
     input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,36,0.06);background:transparent;color:inherit}
+
+    /* Fullscreen image modal visuals */
+    #imageModal .sheet{max-width:95vw;background:transparent;padding:0;box-shadow:none}
+    #fullImage{max-width:100%;max-height:85vh;border-radius:12px;display:block;margin:0 auto;background:#fff;padding:6px;box-shadow:0 10px 30px rgba(2,6,23,0.25)}
+    .image-controls{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 
     @media (max-width:520px){.pcard .art{height:120px}}
   </style>
@@ -79,7 +84,7 @@
   </div>
 
   <!-- Modals (original + tutorial modal) -->
-  <div id="productModal" class="modal" style="display:none">
+  <div id="productModal" class="modal" style="display:none" aria-hidden="true">
     <div class="sheet">
       <h3>Add product</h3>
       <div style="margin-top:8px">
@@ -108,7 +113,7 @@
     </div>
   </div>
 
-  <div id="buyModal" class="modal" style="display:none">
+  <div id="buyModal" class="modal" style="display:none" aria-hidden="true">
     <div class="sheet">
       <h3>Place order</h3>
       <div style="margin-top:8px">
@@ -132,7 +137,7 @@
     </div>
   </div>
 
-  <div id="ordersModal" class="modal" style="display:none">
+  <div id="ordersModal" class="modal" style="display:none" aria-hidden="true">
     <div class="sheet">
       <h3>All orders (admin)</h3>
       <div id="ordersList" style="margin-top:8px;display:grid;gap:8px;max-height:60vh;overflow:auto"></div>
@@ -142,7 +147,7 @@
     </div>
   </div>
 
-  <div id="myOrdersModal" class="modal" style="display:none">
+  <div id="myOrdersModal" class="modal" style="display:none" aria-hidden="true">
     <div class="sheet">
       <h3>My orders</h3>
       <div style="margin-top:8px">
@@ -157,7 +162,7 @@
   </div>
 
   <!-- Tutorial modal -->
-  <div id="tutorialModal" class="modal" style="display:none">
+  <div id="tutorialModal" class="modal" style="display:none" aria-hidden="true">
     <div class="sheet">
       <h3>How to Add to Home Screen</h3>
       <p class="muted">Follow the steps for your device. You can also use the Install button (if shown) on Android.</p>
@@ -194,7 +199,7 @@
   </div>
 
   <!-- Image fullscreen modal -->
-  <div id="imageModal" class="modal" style="display:none">
+  <div id="imageModal" class="modal" style="display:none" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Full image view">
     <div class="sheet" style="max-width:900px;background:transparent;box-shadow:none;padding:6px">
       <div style="background:transparent;text-align:center">
         <img id="fullImage" src="" alt="full view" style="max-width:100%;max-height:85vh;border-radius:12px;display:block;margin:0 auto;background:#fff;padding:6px" />
@@ -257,7 +262,8 @@
     window.addEventListener('beforeinstallprompt', (e)=>{
       e.preventDefault();
       deferredPrompt = e; // save for later
-      document.getElementById('installBtn').style.display = 'inline-block';
+      const btn = document.getElementById('installBtn');
+      if (btn) btn.style.display = 'inline-block';
     });
 
     document.getElementById('installBtn').addEventListener('click', async ()=>{
@@ -274,14 +280,19 @@
     const tutorialModal = document.getElementById('tutorialModal');
     const tutorialClose = document.getElementById('tutorialClose');
     tutorialBtn.addEventListener('click', ()=>{ openModal(tutorialModal); });
-    tutorialClose.addEventListener('click', ()=>{ closeModal(tutorialModal); });
+    tutorialClose.addEventListener('click', ()=>{
+      try { localStorage.setItem('mini_shop_seen_tutorial', 'true'); } catch(e){/* ignore */ }
+      closeModal(tutorialModal);
+    });
 
-    // Auto-open tutorial EVERY load
+    // Auto-open tutorial only on first visit
     window.addEventListener('load', () => {
       try {
-        openModal(tutorialModal);
+        const seen = localStorage.getItem('mini_shop_seen_tutorial');
+        if (!seen) openModal(tutorialModal);
       } catch (e) {
-        console.warn('Could not open tutorial modal:', e);
+        console.warn('Could not read localStorage for tutorial modal:', e);
+        openModal(tutorialModal);
       }
     });
 
@@ -335,7 +346,13 @@
     const imageModal = document.getElementById('imageModal');
     const fullImage = document.getElementById('fullImage');
     const closeImageBtn = document.getElementById('closeImageBtn');
+
+    // ensure clicking Close hides modal
     closeImageBtn.addEventListener('click', ()=> closeModal(imageModal));
+    // clicking backdrop closes modal (only when clicking outside sheet)
+    imageModal.addEventListener('click', (ev) => { if (ev.target === imageModal) closeModal(imageModal); });
+    // avoid closing when clicking the image itself
+    fullImage.addEventListener('click', (ev) => ev.stopPropagation());
 
     let currentBuyProduct = null; // {id, data}
 
@@ -359,8 +376,8 @@
     myName.addEventListener('input', ()=>{localStorage.setItem('mini_shop_name', myName.value); refreshMyOrders();});
 
     // ---------- helpers ----------
-    function openModal(el){el.style.display='flex'}
-    function closeModal(el){el.style.display='none'}
+    function openModal(el){ if(!el) return; el.style.display='flex'; el.setAttribute('aria-hidden','false'); }
+    function closeModal(el){ if(!el) return; el.style.display='none'; el.setAttribute('aria-hidden','true'); }
     function clearProductForm(){pTitle.value='';pDesc.value='';pPrice.value='';pQty.value='';pImageFile.value='';uploadingNote.style.display='none';}
 
     function readFileAsDataURL(file){
@@ -396,7 +413,7 @@
         }
       } catch(err){
         uploadingNote.style.display = 'none';
-        pSave.style.disabled = false;
+        pSave.disabled = false;
         alert('Image processing failed: '+err.message);
         return;
       }
@@ -427,11 +444,20 @@
       }
     }
 
-    // open image in fullscreen modal
+    // open image in fullscreen modal (wait for load to avoid flicker)
     function openImageModal(src){
       if(!src) return;
+      fullImage.src = ''; // reset quickly
+      // set a temporary "loading" state (optional)
       fullImage.src = src;
-      openModal(imageModal);
+      // show modal after image loads successfully
+      fullImage.onload = () => {
+        openModal(imageModal);
+      };
+      fullImage.onerror = () => {
+        alert('Could not load image');
+        fullImage.src = '';
+      };
     }
 
     function renderProductsList(snapshot){
@@ -728,7 +754,7 @@
     db.ref('orders').on('value', ()=>{ if(myOrdersModal.style.display === 'flex') refreshMyOrders(); });
 
     // Accessibility: close modal on escape
-    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ [productModal,buyModal,ordersModal,myOrdersModal,tutorialModal,imageModal].forEach(m=>m.style.display='none'); } });
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ [productModal,buyModal,ordersModal,myOrdersModal,tutorialModal,imageModal].forEach(m=>{ if(m) m.style.display='none'; }); } });
 
   </script>
 </body>
