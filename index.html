@@ -22,22 +22,17 @@
             --card: #ffffff;
         }
 
-        /* Full Screen & Layout Reset */
         * { box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; 
-            padding: 0;
-            background: var(--bg);
-            overflow-x: hidden; /* Prevents side-scrolling */
-            width: 100vw;
+            margin: 0; padding: 0; background: var(--bg); overflow-x: hidden; width: 100vw;
         }
 
         button { cursor: pointer; padding: 12px; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; font-size: 14px; }
         button:active { transform: scale(0.98); }
+        button:disabled { background: #ccc !important; cursor: not-allowed; }
         input, textarea { padding: 12px; border: 1px solid #ccc; border-radius: 8px; width: 100%; margin-bottom: 12px; font-size: 16px; }
         
-        /* Utils */
         .hidden { display: none !important; }
         .container { width: 100%; max-width: 100%; padding: 15px; }
         
@@ -46,62 +41,40 @@
         .btn-success { background: var(--success); color: white; }
         .btn-secondary { background: #6b7280; color: white; }
 
-        /* Auth Screen */
         #auth-screen { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         .auth-box { background: var(--card); padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
         .toggle-link { color: var(--primary); cursor: pointer; margin-top: 15px; display: block; font-weight: 500; }
 
-        /* Header - Optimized for Mobile */
         header { 
-            background: var(--primary); 
-            padding: 15px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px;
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            background: var(--primary); padding: 15px; display: flex; flex-direction: column; gap: 10px; color: white; position: sticky; top: 0; z-index: 100;
         }
         .header-top { display: flex; justify-content: space-between; align-items: center; }
         .nav-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .nav-buttons button { padding: 8px; font-size: 12px; }
 
-        /* Responsive Product Grid */
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
-            gap: 12px; 
-            width: 100%;
-        }
-        
-        @media (max-width: 380px) {
-            .grid { grid-template-columns: 1fr; } /* Single column on tiny screens */
-        }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; width: 100%; }
+        @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } }
 
         .product-card { background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; }
         .product-img { width: 100%; height: 160px; object-fit: cover; background: #eee; }
         .p-details { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
         .p-title { font-size: 1rem; font-weight: bold; margin-bottom: 4px; }
-        .p-price { color: var(--success); font-weight: 800; font-size: 1.1rem; margin-bottom: 8px; }
+        .p-price { color: var(--success); font-weight: 800; font-size: 1.1rem; margin-bottom: 4px; }
+        .p-qty { font-size: 0.8rem; color: #666; margin-bottom: 8px; }
         .p-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: auto; }
         .p-actions button { padding: 6px; font-size: 11px; }
         .btn-full { grid-column: span 2; margin-bottom: 5px; }
 
-        /* Modals */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-end; z-index: 1000; }
         .modal-content { background: var(--card); padding: 20px; border-radius: 20px 20px 0 0; width: 100%; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .close-modal { float: right; font-size: 24px; font-weight: bold; padding: 0 10px; }
         
-        /* Order Lists */
         .order-item { border-bottom: 1px solid #eee; padding: 15px 0; }
         .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: white; font-weight: bold; text-transform: uppercase; }
         .st-pending { background: #f59e0b; }
         .st-accepted { background: #3b82f6; }
         .st-declined { background: #ef4444; }
         .st-delivered { background: #10b981; }
-
     </style>
 </head>
 <body>
@@ -142,8 +115,7 @@
         </header>
 
         <div class="container">
-            <div id="product-grid" class="grid">
-                </div>
+            <div id="product-grid" class="grid"></div>
         </div>
     </div>
 
@@ -154,6 +126,7 @@
             <input type="text" id="p-name" placeholder="Item Name">
             <textarea id="p-desc" placeholder="Details/Description" rows="3"></textarea>
             <input type="number" id="p-price" placeholder="Price (SAR)">
+            <input type="number" id="p-qty" placeholder="Quantity in Stock" value="1">
             <label style="font-size: 12px; color: #666;">Upload Photo:</label>
             <input type="file" id="p-file" accept="image/*">
             <button class="btn-success" onclick="submitProduct()" style="width: 100%; margin-top: 10px;">Post Product</button>
@@ -166,6 +139,7 @@
             <img id="d-img" src="" style="width:100%; border-radius: 12px; margin-bottom: 15px;">
             <h2 id="d-name" style="margin:0"></h2>
             <h3 id="d-price" style="color: var(--success); margin: 10px 0;"></h3>
+            <p id="d-qty-info" style="font-weight: bold;"></p>
             <p id="d-desc" style="color: #444; line-height: 1.5;"></p>
             <button class="btn-primary" id="detail-order-btn" style="width: 100%">Order This Now</button>
         </div>
@@ -188,7 +162,6 @@
     </div>
 
     <script>
-        // === FIREBASE CONFIG ===
         const firebaseConfig = {
             apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
             authDomain: "minishop-67dbf.firebaseapp.com",
@@ -202,17 +175,12 @@
         
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        
         let currentUser = null;
         const ADMIN_CODE = "555";
 
-        // === PERSISTENCE & STARTUP ===
         window.onload = () => {
             const savedUser = localStorage.getItem('miniShopUser');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                showApp();
-            }
+            if (savedUser) { currentUser = JSON.parse(savedUser); showApp(); }
         };
 
         function toggleAuth(view) {
@@ -224,7 +192,6 @@
             const fname = document.getElementById('signup-fname').value.trim();
             const dadname = document.getElementById('signup-dadname').value.trim();
             const pass = document.getElementById('signup-pass').value.trim();
-
             if (!fname || !dadname || !pass) return alert("Fill all fields");
             const uid = 'u' + Date.now();
             db.ref('users/' + uid).set({ fname, dadname, pass, uid })
@@ -235,7 +202,6 @@
             const name = document.getElementById('login-name').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
             const keep = document.getElementById('keep-signed-in').checked;
-
             db.ref('users').once('value', snap => {
                 let found = false;
                 snap.forEach(c => {
@@ -250,35 +216,28 @@
             });
         }
 
-        function logout() {
-            localStorage.removeItem('miniShopUser');
-            location.reload();
+        function logout() { localStorage.removeItem('miniShopUser'); location.reload(); }
+        function showApp() { 
+            document.getElementById('auth-screen').classList.add('hidden'); 
+            document.getElementById('app-screen').classList.remove('hidden'); 
+            loadProducts(); 
         }
 
-        function showApp() {
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('app-screen').classList.remove('hidden');
-            loadProducts();
-        }
-
-        // === PRODUCTS ===
         function openAddProduct() {
-            if (prompt("Security Code:") === ADMIN_CODE) 
-                document.getElementById('modal-add-product').classList.remove('hidden');
+            if (prompt("Security Code:") === ADMIN_CODE) document.getElementById('modal-add-product').classList.remove('hidden');
         }
 
         function submitProduct() {
             const name = document.getElementById('p-name').value;
             const desc = document.getElementById('p-desc').value;
             const price = document.getElementById('p-price').value;
+            const qty = parseInt(document.getElementById('p-qty').value) || 0;
             const file = document.getElementById('p-file').files[0];
-
             if (!name || !price || !file) return alert("Missing info");
-
             const reader = new FileReader();
             reader.onload = (e) => {
                 const pid = 'p' + Date.now();
-                db.ref('products/' + pid).set({ pid, name, desc, price, img: e.target.result })
+                db.ref('products/' + pid).set({ pid, name, desc, price, qty, img: e.target.result })
                 .then(() => { closeModal('modal-add-product'); });
             };
             reader.readAsDataURL(file);
@@ -290,6 +249,7 @@
                 grid.innerHTML = '';
                 snap.forEach(c => {
                     const p = c.val();
+                    const isOut = p.qty <= 0;
                     const card = document.createElement('div');
                     card.className = 'product-card';
                     card.innerHTML = `
@@ -297,7 +257,10 @@
                         <div class="p-details">
                             <div class="p-title">${p.name}</div>
                             <div class="p-price">${p.price} SAR</div>
-                            <button class="btn-primary btn-full" onclick="orderProduct('${p.pid}', '${p.name}', '${p.price}')">Order</button>
+                            <div class="p-qty">${isOut ? '<span style="color:red">Out of Stock</span>' : 'Stock: '+p.qty}</div>
+                            <button class="btn-primary btn-full" ${isOut ? 'disabled' : ''} onclick="orderProduct('${p.pid}', '${p.name}', '${p.price}')">
+                                ${isOut ? 'Sold Out' : 'Order'}
+                            </button>
                             <div class="p-actions">
                                 <button class="btn-secondary" onclick="showDetail('${p.pid}')">More</button>
                                 <button class="btn-danger" onclick="deleteProduct('${p.pid}')">Delete</button>
@@ -312,30 +275,69 @@
         function showDetail(pid) {
             db.ref('products/' + pid).once('value', snap => {
                 const p = snap.val();
+                const isOut = p.qty <= 0;
                 document.getElementById('d-img').src = p.img;
                 document.getElementById('d-name').innerText = p.name;
                 document.getElementById('d-price').innerText = p.price + " SAR";
+                document.getElementById('d-qty-info').innerHTML = isOut ? '<span style="color:red">Out of Stock</span>' : 'Items available: ' + p.qty;
                 document.getElementById('d-desc').innerText = p.desc;
-                document.getElementById('detail-order-btn').onclick = () => orderProduct(p.pid, p.name, p.price);
+                const btn = document.getElementById('detail-order-btn');
+                btn.disabled = isOut;
+                btn.innerText = isOut ? 'Sold Out' : 'Order This Now';
+                btn.onclick = () => orderProduct(p.pid, p.name, p.price);
                 document.getElementById('modal-detail').classList.remove('hidden');
             });
         }
 
-        function deleteProduct(pid) {
-            if (prompt("Admin Code:") === ADMIN_CODE) db.ref('products/' + pid).remove();
+        function orderProduct(pid, name, price) {
+            if(!confirm(`Order ${name}?`)) return;
+            
+            // Transaction: Deduct 1 from quantity safely
+            const productRef = db.ref('products/' + pid);
+            productRef.transaction((p) => {
+                if (p) {
+                    if (p.qty > 0) {
+                        p.qty--;
+                    } else {
+                        return; // Abort if out of stock
+                    }
+                }
+                return p;
+            }, (error, committed) => {
+                if (committed) {
+                    const oid = 'o' + Date.now();
+                    db.ref('orders/' + oid).set({
+                        oid, pid, name, price, 
+                        uid: currentUser.uid, uName: currentUser.fname, uDad: currentUser.dadname,
+                        status: 'Pending'
+                    }).then(() => alert("Order Sent! Stock updated."));
+                } else {
+                    alert("Sorry, this item just sold out!");
+                }
+            });
         }
 
-        // === ORDERS ===
-        function orderProduct(pid, name, price) {
-            if(!confirm(`Order ${name} for ${price} SAR?`)) return;
-            const oid = 'o' + Date.now();
-            db.ref('orders/' + oid).set({
-                oid, pid, name, price, 
-                uid: currentUser.uid, 
-                uName: currentUser.fname, 
-                uDad: currentUser.dadname,
-                status: 'Pending'
-            }).then(() => alert("Order Sent!"));
+        function updStat(oid, pid, newStatus) {
+            db.ref('orders/' + oid).once('value', snap => {
+                const order = snap.val();
+                // If moving from Pending to Declined, add stock back
+                if (order.status === 'Pending' && newStatus === 'Declined') {
+                    db.ref('products/' + pid + '/qty').transaction(q => (q || 0) + 1);
+                }
+                db.ref('orders/' + oid).update({status: newStatus});
+            });
+        }
+
+        function cancelOrder(oid, pid) {
+            if(!confirm("Cancel order and return item to stock?")) return;
+            db.ref('orders/' + oid).once('value', snap => {
+                const order = snap.val();
+                if(order.status === 'Pending') {
+                    // Restock
+                    db.ref('products/' + pid + '/qty').transaction(q => (q || 0) + 1);
+                }
+                db.ref('orders/' + oid).remove();
+            });
         }
 
         function openAdminOrders() {
@@ -353,17 +355,15 @@
                         User: ${o.uName} ${o.uDad}<br>
                         Status: <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span>
                         <div style="margin-top:10px; display:flex; gap:5px;">
-                            <button class="btn-primary" onclick="updStat('${o.oid}','Accepted')">Accept</button>
-                            <button class="btn-danger" onclick="updStat('${o.oid}','Declined')">Decline</button>
-                            <button class="btn-success" onclick="updStat('${o.oid}','Delivered')">Done</button>
+                            <button class="btn-primary" onclick="updStat('${o.oid}','${o.pid}','Accepted')">Accept</button>
+                            <button class="btn-danger" onclick="updStat('${o.oid}','${o.pid}','Declined')">Decline</button>
+                            <button class="btn-success" onclick="updStat('${o.oid}','${o.pid}','Delivered')">Done</button>
                         </div>
                     `;
                     list.appendChild(div);
                 });
             });
         }
-
-        function updStat(oid, s) { db.ref('orders/' + oid).update({status: s}); }
 
         function openMyOrders() {
             document.getElementById('modal-my-orders').classList.remove('hidden');
@@ -378,7 +378,7 @@
                         div.innerHTML = `
                             <b>${o.name}</b> - ${o.price} SAR<br>
                             Status: <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span><br>
-                            ${o.status === 'Pending' ? `<button class="btn-danger" style="margin-top:8px" onclick="db.ref('orders/${o.oid}').remove()">Cancel</button>` : ''}
+                            ${o.status === 'Pending' ? `<button class="btn-danger" style="margin-top:8px" onclick="cancelOrder('${o.oid}','${o.pid}')">Cancel Order</button>` : ''}
                         `;
                         list.appendChild(div);
                     }
@@ -386,6 +386,9 @@
             });
         }
 
+        function deleteProduct(pid) {
+            if (prompt("Admin Code:") === ADMIN_CODE) db.ref('products/' + pid).remove();
+        }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
