@@ -1,246 +1,565 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>MiniShop (Realtime DB Only)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body{font-family:Arial;margin:0;background:#f4f6fb}
-header{background:#1e5bff;color:#fff;padding:12px;display:flex;align-items:center}
-header button{margin-left:6px}
-.container{max-width:1000px;margin:auto;padding:12px}
-.card{background:#fff;padding:12px;margin-bottom:12px;border-radius:6px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
-img{width:100%;border-radius:6px}
-button{padding:6px 10px;border:none;border-radius:4px;background:#1e5bff;color:#fff;cursor:pointer}
-.red{background:#c62828}
-input,textarea{width:100%;padding:6px;margin:4px 0}
-.hidden{display:none}
-.small{font-size:13px;color:#555}
-</style>
+  <meta charset="utf-8" />
+  <title>MiniShop — Single File (Realtime DB)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{--primary:#0b5cff;--danger:#c62828}
+    body{font-family:Inter,Arial,Helvetica,sans-serif;margin:0;background:#f6f8fb;color:#111}
+    header{background:var(--primary);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px}
+    header a, header button{color:#fff;text-decoration:none;border:none;background:none;cursor:pointer}
+    .container{max-width:1000px;margin:20px auto;padding:0 12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .card{background:#fff;border-radius:10px;padding:12px;box-shadow:0 2px 8px rgba(9,30,66,.04)}
+    img.prod{width:100%;height:160px;object-fit:cover;border-radius:8px}
+    .small{font-size:.9rem;color:#555}
+    .btn{background:var(--primary);color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
+    .btn.secondary{background:#e6eefc;color:var(--primary)}
+    .btn.danger{background:var(--danger)}
+    input,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #e0e6ef;margin-top:6px}
+    .row{display:flex;gap:8px;align-items:center}
+    .hidden{display:none}
+    .muted{color:#7a8599;font-size:.9rem}
+    footer{padding:18px;text-align:center;color:#666}
+    nav a{margin-right:10px}
+    .top-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+    pre{white-space:pre-wrap;word-break:break-word}
+  </style>
 </head>
 <body>
+  <header>
+    <strong>MiniShop</strong>
+    <nav>
+      <a href="#" id="nav-home">Home</a>
+      <a href="#" id="nav-add">Add Product</a>
+      <a href="#" id="nav-my-orders">My Orders</a>
+      <a href="#" id="nav-admin-orders">Orders (Admin)</a>
+    </nav>
+    <div class="top-right" id="auth-area"></div>
+  </header>
 
-<header>
-<b>MiniShop</b>
-<div style="margin-left:auto" id="topButtons"></div>
-</header>
+  <main class="container">
+    <!-- HOME -->
+    <section id="view-home">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div id="welcome" class="small"></div>
+        <div style="margin-left:auto">
+          <button class="btn" id="btn-refresh">Refresh</button>
+        </div>
+      </div>
+      <h2>Products</h2>
+      <div id="products" class="grid"></div>
+    </section>
 
-<div class="container">
+    <!-- LOGIN -->
+    <section id="view-login" class="card hidden">
+      <h3>Login</h3>
+      <div id="login-error" class="muted"></div>
+      <label>First name (login)</label>
+      <input id="login-first" placeholder="First name" />
+      <label>Password</label>
+      <input id="login-pass" placeholder="Password" type="password" />
+      <label class="muted"><input type="checkbox" id="login-keep" /> Keep me signed in</label>
+      <div style="margin-top:8px">
+        <button class="btn" id="btn-login">Login</button>
+        <button class="btn secondary" id="btn-to-register">Create account</button>
+      </div>
+    </section>
 
-<!-- LOGIN -->
-<div id="loginView" class="card">
-<h3>Login</h3>
-<input id="loginName" placeholder="First name">
-<input id="loginPass" type="password" placeholder="Password">
-<label><input type="checkbox" id="keepLogin"> Keep me signed in</label><br><br>
-<button onclick="login()">Login</button>
-<button onclick="showRegister()">Create account</button>
-<div id="loginMsg" class="small"></div>
-</div>
+    <!-- REGISTER -->
+    <section id="view-register" class="card hidden">
+      <h3>Create account</h3>
+      <div id="register-error" class="muted"></div>
+      <label>First name</label>
+      <input id="reg-first" placeholder="e.g. zeyad" />
+      <label>Father name</label>
+      <input id="reg-father" placeholder="father's name" />
+      <label>Password</label>
+      <input id="reg-pass" type="password" />
+      <div style="margin-top:8px">
+        <button class="btn" id="btn-register">Create account</button>
+        <button class="btn secondary" id="btn-to-login">Back to login</button>
+      </div>
+      <p class="muted small">Accounts are saved in the Realtime DB. Login uses first name + password only.</p>
+    </section>
 
-<!-- REGISTER -->
-<div id="registerView" class="card hidden">
-<h3>Create Account</h3>
-<input id="regFirst" placeholder="First name">
-<input id="regFather" placeholder="Father name">
-<input id="regPass" type="password" placeholder="Password">
-<button onclick="register()">Create</button>
-<button onclick="showLogin()">Back</button>
-<div id="regMsg" class="small"></div>
-</div>
+    <!-- ADD PRODUCT -->
+    <section id="view-add" class="card hidden">
+      <h3>Add Product (Admin)</h3>
+      <div id="add-error" class="muted"></div>
 
-<!-- HOME -->
-<div id="homeView" class="hidden">
-<h3>Products</h3>
-<button onclick="showAddProduct()">Add Product</button>
-<div id="products" class="grid"></div>
-</div>
+      <!-- admin code input (not rendered elsewhere) -->
+      <label>Admin code</label>
+      <input id="admin-code-input" placeholder="Enter admin code" />
+      <div style="margin-top:8px">
+        <button class="btn" id="btn-enter-admin">Enter code</button>
+      </div>
 
-<!-- ADD PRODUCT -->
-<div id="addProductView" class="card hidden">
-<h3>Add Product (Admin)</h3>
-<input id="adminCode" placeholder="Admin code">
-<button onclick="unlockAdmin()">Unlock</button>
+      <div id="add-form" class="hidden" style="margin-top:12px">
+        <label>Product name</label>
+        <input id="prod-name" />
+        <label>Description</label>
+        <textarea id="prod-desc" rows="3"></textarea>
+        <label>Price (USD)</label>
+        <input id="prod-price" type="number" step="0.01" />
+        <label>Photo (file)</label>
+        <input id="prod-photo" type="file" accept="image/*" />
+        <div style="margin-top:8px">
+          <button class="btn" id="btn-add-product">Add product</button>
+        </div>
+      </div>
+    </section>
 
-<div id="productForm" class="hidden">
-<input id="pName" placeholder="Name">
-<textarea id="pDesc" placeholder="Description"></textarea>
-<input id="pPrice" type="number" placeholder="Price">
-<input id="pImage" type="file">
-<button onclick="addProduct()">Add</button>
-</div>
-</div>
+    <!-- PRODUCT DETAIL -->
+    <section id="view-product" class="card hidden"></section>
 
-<!-- MY ORDERS -->
-<div id="ordersView" class="card hidden">
-<h3>My Orders</h3>
-<div id="myOrders"></div>
-</div>
+    <!-- MY ORDERS -->
+    <section id="view-my-orders" class="card hidden">
+      <h3>My Orders</h3>
+      <div id="my-orders-list"></div>
+    </section>
 
-<!-- ADMIN ORDERS -->
-<div id="adminOrdersView" class="card hidden">
-<h3>All Orders (Admin)</h3>
-<div id="adminOrders"></div>
-</div>
+    <!-- ADMIN ORDERS -->
+    <section id="view-admin-orders" class="card hidden">
+      <h3>All Orders (Admin)</h3>
+      <div id="admin-orders-list"></div>
+    </section>
 
-</div>
+  </main>
 
-<!-- FIREBASE -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { getStorage, ref as sref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+  <footer>
+    <small>MiniShop • Realtime DB demo — accounts stored in DB (no Firebase Auth)</small>
+  </footer>
 
-const firebaseConfig = {
- apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
- authDomain: "minishop-67dbf.firebaseapp.com",
- databaseURL: "https://minishop-67dbf-default-rtdb.firebaseio.com",
- projectId: "minishop-67dbf",
- storageBucket: "minishop-67dbf.appspot.com",
- messagingSenderId: "7379826226",
- appId: "1:7379826226:web:4d8f6f9cbc679cc600ae2b"
-};
+  <script type="module">
+    // ---------- Firebase imports ----------
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      push,
+      set,
+      onValue,
+      get,
+      child,
+      remove,
+      update
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import {
+      getStorage,
+      ref as sref,
+      uploadBytes,
+      getDownloadURL,
+      deleteObject
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const storage = getStorage(app);
+    // ---------- CONFIG (your Firebase project) ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
+      authDomain: "minishop-67dbf.firebaseapp.com",
+      databaseURL: "https://minishop-67dbf-default-rtdb.firebaseio.com",
+      projectId: "minishop-67dbf",
+      storageBucket: "minishop-67dbf.appspot.com",
+      messagingSenderId: "7379826226",
+      appId: "1:7379826226:web:4d8f6f9cbc679cc600ae2b",
+      measurementId: "G-6N23NYNRDB"
+    };
 
-let currentUser = null;
-let isAdmin = false;
-const ADMIN_CODE = "555";
+    // init
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
 
-/* ---------- AUTH ---------- */
-window.register = async () => {
- const first = regFirst.value.trim();
- const father = regFather.value.trim();
- const pass = regPass.value.trim();
- if(!first||!father||!pass) return regMsg.textContent="Fill all fields";
+    // ---------- Admin code (kept in JS only; not shown in UI) ----------
+    const ADMIN_CODE = "555"; // edit here if needed
 
- const userRef = ref(db,"users/"+first.toLowerCase());
- const snap = await get(userRef);
- if(snap.exists()) return regMsg.textContent="User already exists";
+    // ---------- DOM refs ----------
+    const views = {
+      home: document.getElementById('view-home'),
+      login: document.getElementById('view-login'),
+      register: document.getElementById('view-register'),
+      add: document.getElementById('view-add'),
+      product: document.getElementById('view-product'),
+      myOrders: document.getElementById('view-my-orders'),
+      adminOrders: document.getElementById('view-admin-orders')
+    };
+    const authArea = document.getElementById('auth-area');
 
- await set(userRef,{first,father,pass});
- regMsg.textContent="Account created";
- showLogin();
-};
+    // ---------- app state ----------
+    let currentUser = null; // { username, firstName, fatherName }
+    let adminUnlocked = false;
 
-window.login = async () => {
- const name = loginName.value.trim().toLowerCase();
- const pass = loginPass.value.trim();
- const snap = await get(ref(db,"users/"+name));
- if(!snap.exists() || snap.val().pass!==pass){
-  loginMsg.textContent="Wrong login";
-  return;
- }
- currentUser = name;
- if(keepLogin.checked) localStorage.setItem("user",name);
- loginMsg.textContent="";
- showHome();
- loadProducts();
-};
+    // ---------- navigation helpers ----------
+    function show(viewEl) {
+      Object.values(views).forEach(v => v.classList.add('hidden'));
+      viewEl.classList.remove('hidden');
+      window.scrollTo(0,0);
+    }
+    document.getElementById('nav-home').onclick = e => { e.preventDefault(); show(views.home); };
+    document.getElementById('nav-add').onclick = e => { e.preventDefault(); show(views.add); };
+    document.getElementById('nav-my-orders').onclick = e => { e.preventDefault(); show(views.myOrders); loadMyOrders(); };
+    document.getElementById('nav-admin-orders').onclick = e => { e.preventDefault(); show(views.adminOrders); loadAdminOrders(); };
 
-window.logout = () => {
- currentUser=null;
- isAdmin=false;
- localStorage.removeItem("user");
- location.reload();
-};
+    // Login/register buttons
+    document.getElementById('btn-to-register').onclick = () => show(views.register);
+    document.getElementById('btn-to-login').onclick = () => show(views.login);
 
-/* ---------- UI ---------- */
-function showLogin(){
- loginView.classList.remove("hidden");
- registerView.classList.add("hidden");
-}
-function showRegister(){
- loginView.classList.add("hidden");
- registerView.classList.remove("hidden");
-}
-function showHome(){
- loginView.classList.add("hidden");
- homeView.classList.remove("hidden");
- topButtons.innerHTML=`<button onclick="showMyOrders()">My Orders</button><button onclick="logout()">Logout</button>`;
-}
-window.showAddProduct=()=>addProductView.classList.remove("hidden");
-window.showMyOrders=()=>{
- ordersView.classList.remove("hidden");
- loadMyOrders();
-};
+    // ---------- auth (DB-only) ----------
+    // Accounts stored at: /users/{usernameLower}
+    // Structure: { firstName, fatherName, password }
+    async function register() {
+      const first = document.getElementById('reg-first').value.trim();
+      const father = document.getElementById('reg-father').value.trim();
+      const pass = document.getElementById('reg-pass').value;
+      const err = document.getElementById('register-error');
+      err.textContent = '';
+      if (!first || !father || !pass) { err.textContent = 'All fields required.'; return; }
+      const username = first.toLowerCase();
+      const userRef = ref(db, `users/${username}`);
+      try {
+        const snap = await get(userRef);
+        if (snap.exists()) { err.textContent = 'Account with this first name already exists.'; return; }
+        await set(userRef, { firstName: first, fatherName: father, password: pass });
+        // auto-login
+        currentUser = { username, firstName: first, fatherName: father };
+        localStorage.setItem('minishop_user', username);
+        renderAuth();
+        show(views.home);
+        loadProducts();
+      } catch (e) {
+        console.error('register err', e);
+        err.textContent = 'Could not create account.';
+      }
+    }
+    document.getElementById('btn-register').onclick = register;
 
-/* ---------- ADMIN ---------- */
-window.unlockAdmin=()=>{
- if(adminCode.value===ADMIN_CODE){
-  isAdmin=true;
-  productForm.classList.remove("hidden");
- }
-};
+    async function login() {
+      const first = document.getElementById('login-first').value.trim();
+      const pass = document.getElementById('login-pass').value;
+      const keep = document.getElementById('login-keep').checked;
+      const err = document.getElementById('login-error');
+      err.textContent = '';
+      if (!first || !pass) { err.textContent = 'Enter name and password.'; return; }
+      const username = first.toLowerCase();
+      try {
+        const snap = await get(ref(db, `users/${username}`));
+        if (!snap.exists() || snap.val().password !== pass) {
+          err.textContent = 'Invalid name or password.';
+          return;
+        }
+        const data = snap.val();
+        currentUser = { username, firstName: data.firstName, fatherName: data.fatherName };
+        if (keep) localStorage.setItem('minishop_user', username);
+        else localStorage.removeItem('minishop_user');
+        renderAuth();
+        show(views.home);
+        loadProducts();
+      } catch (e) {
+        console.error('login err', e);
+        err.textContent = 'Login failed.';
+      }
+    }
+    document.getElementById('btn-login').onclick = login;
 
-/* ---------- PRODUCTS ---------- */
-window.addProduct=async()=>{
- if(!isAdmin) return;
- const file=pImage.files[0];
- const imgRef=sref(storage,"products/"+Date.now());
- await uploadBytes(imgRef,file);
- const url=await getDownloadURL(imgRef);
+    function logout() {
+      currentUser = null;
+      adminUnlocked = false;
+      localStorage.removeItem('minishop_user');
+      renderAuth();
+      show(views.login);
+    }
 
- await push(ref(db,"products"),{
-  name:pName.value,
-  desc:pDesc.value,
-  price:pPrice.value,
-  img:url
- });
- loadProducts();
-};
+    // restore session if saved
+    (async function restore() {
+      const saved = localStorage.getItem('minishop_user');
+      if (saved) {
+        try {
+          const snap = await get(ref(db, `users/${saved}`));
+          if (snap.exists()) {
+            const d = snap.val();
+            currentUser = { username: saved, firstName: d.firstName, fatherName: d.fatherName };
+            renderAuth();
+            show(views.home);
+            loadProducts();
+            return;
+          }
+        } catch(e){ console.error('restore err', e); }
+      }
+      show(views.login);
+    })();
 
-function loadProducts(){
- onValue(ref(db,"products"),snap=>{
-  products.innerHTML="";
-  snap.forEach(s=>{
-   const p=s.val();
-   products.innerHTML+=`
-   <div class="card">
-    <img src="${p.img}">
-    <h4>${p.name}</h4>
-    <p>${p.desc}</p>
-    <b>$${p.price}</b><br>
-    <button onclick="orderProduct('${s.key}')">Order</button>
-   </div>`;
-  });
- });
-}
+    // render top auth area
+    function renderAuth() {
+      authArea.innerHTML = '';
+      if (!currentUser) {
+        const l = document.createElement('button'); l.textContent = 'Login'; l.className='btn'; l.onclick = ()=> show(views.login);
+        const r = document.createElement('button'); r.textContent = 'Register'; r.className='btn secondary'; r.onclick = ()=> show(views.register);
+        authArea.appendChild(l); authArea.appendChild(r);
+        document.getElementById('welcome').textContent = '';
+      } else {
+        const span = document.createElement('span'); span.textContent = `${currentUser.firstName}`;
+        const logoutBtn = document.createElement('button'); logoutBtn.textContent = 'Logout'; logoutBtn.className='btn'; logoutBtn.onclick = logout;
+        authArea.appendChild(span); authArea.appendChild(logoutBtn);
+        document.getElementById('welcome').textContent = `Signed in as ${currentUser.firstName} ${currentUser.fatherName || ''}`;
+      }
+      // toggle add product form if adminUnlocked
+      if (adminUnlocked) {
+        document.getElementById('add-form').classList.remove('hidden');
+        document.getElementById('admin-code-input').classList.add('hidden');
+        document.getElementById('btn-enter-admin').classList.add('hidden');
+      } else {
+        document.getElementById('add-form').classList.add('hidden');
+        document.getElementById('admin-code-input').classList.remove('hidden');
+        document.getElementById('btn-enter-admin').classList.remove('hidden');
+      }
+    }
 
-window.orderProduct=async(id)=>{
- await push(ref(db,"orders"),{
-  product:id,
-  user:currentUser,
-  status:"Pending"
- });
- alert("Ordered");
-};
+    // ---------- Admin unlock (client-side) ----------
+    document.getElementById('btn-enter-admin').onclick = () => {
+      const code = document.getElementById('admin-code-input').value.trim();
+      const err = document.getElementById('add-error');
+      err.textContent = '';
+      if (code === ADMIN_CODE) {
+        adminUnlocked = true;
+        document.getElementById('add-error').textContent = 'Admin unlocked.';
+        renderAuth();
+      } else {
+        document.getElementById('add-error').textContent = 'Incorrect admin code.';
+      }
+    };
 
-/* ---------- ORDERS ---------- */
-function loadMyOrders(){
- onValue(ref(db,"orders"),snap=>{
-  myOrders.innerHTML="";
-  snap.forEach(s=>{
-   const o=s.val();
-   if(o.user===currentUser){
-    myOrders.innerHTML+=`
-    <div class="card">
-     Order: ${o.product}<br>
-     Status: ${o.status}
-     <button class="red" onclick="removeOrder('${s.key}')">Cancel</button>
-    </div>`;
-   }
-  });
- });
-}
-window.removeOrder=id=>remove(ref(db,"orders/"+id));
+    // ---------- Products: add / list / more / delete ----------
+    // Storage path: products/<timestamp>-<filename>
+    async function uploadFile(file) {
+      const path = `products/${Date.now()}-${file.name}`;
+      const sR = sref(storage, path);
+      await uploadBytes(sR, file);
+      const url = await getDownloadURL(sR);
+      return { url, path };
+    }
 
-/* AUTO LOGIN */
-const saved=localStorage.getItem("user");
-if(saved){currentUser=saved;showHome();loadProducts();}
-</script>
+    document.getElementById('btn-add-product').onclick = async () => {
+      if (!adminUnlocked) { alert('Admin required'); return; }
+      const name = document.getElementById('prod-name').value.trim();
+      const desc = document.getElementById('prod-desc').value.trim();
+      const price = parseFloat(document.getElementById('prod-price').value);
+      const fileEl = document.getElementById('prod-photo');
+      if (!name || isNaN(price) || !fileEl.files[0]) { alert('Name, price, photo required'); return; }
+      try {
+        const file = fileEl.files[0];
+        const { url, path } = await uploadFile(file);
+        const pRef = push(ref(db, 'products'));
+        await set(pRef, {
+          name, description: desc, price, imageUrl: url, imagePath: path, createdAt: Date.now()
+        });
+        // clear
+        document.getElementById('prod-name').value='';
+        document.getElementById('prod-desc').value='';
+        document.getElementById('prod-price').value='';
+        fileEl.value='';
+        loadProducts();
+        alert('Product added');
+      } catch (e) {
+        console.error('add product', e);
+        alert('Could not add product.');
+      }
+    };
+
+    // load products live
+    function loadProducts() {
+      const productsNode = ref(db, 'products');
+      onValue(productsNode, snapshot => {
+        const container = document.getElementById('products');
+        container.innerHTML = '';
+        if (!snapshot.exists()) { container.innerHTML = '<div class="card">No products yet.</div>'; return; }
+        const items = [];
+        snapshot.forEach(childSnap => {
+          const p = childSnap.val(); p._id = childSnap.key; items.push(p);
+        });
+        items.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+        items.forEach(p => {
+          const card = document.createElement('div'); card.className='card';
+          if (p.imageUrl) {
+            const img = document.createElement('img'); img.className='prod'; img.src = p.imageUrl; card.appendChild(img);
+          }
+          const title = document.createElement('h4'); title.textContent = p.name; card.appendChild(title);
+          const desc = document.createElement('p'); desc.className='small'; desc.textContent = p.description || ''; card.appendChild(desc);
+          const price = document.createElement('p'); price.innerHTML = `<strong>Price:</strong> $${parseFloat(p.price||0).toFixed(2)}`; card.appendChild(price);
+          const row = document.createElement('div'); row.className='row';
+          const more = document.createElement('button'); more.className='btn'; more.textContent='More'; more.onclick = () => showProduct(p._id); row.appendChild(more);
+          if (currentUser) {
+            const orderBtn = document.createElement('button'); orderBtn.className='btn secondary'; orderBtn.textContent = 'Order'; orderBtn.onclick = () => placeOrder(p._id); row.appendChild(orderBtn);
+          } else {
+            const loginLink = document.createElement('a'); loginLink.href='#'; loginLink.textContent='Login to order'; loginLink.onclick = (e)=>{ e.preventDefault(); show(views.login); }; row.appendChild(loginLink);
+          }
+          if (adminUnlocked) {
+            const del = document.createElement('button'); del.className='btn danger'; del.textContent='Delete'; del.onclick = () => deleteProduct(p._id, p.imagePath); row.appendChild(del);
+          }
+          card.appendChild(row);
+          container.appendChild(card);
+        });
+      }, { onlyOnce: false });
+    }
+
+    async function showProduct(id) {
+      try {
+        const snap = await get(child(ref(db), `products/${id}`));
+        if (!snap.exists()) return alert('Product not found');
+        const p = snap.val(); p._id = id;
+        const view = document.getElementById('view-product');
+        view.innerHTML = '';
+        const c = document.createElement('div'); c.className = 'card';
+        const h = document.createElement('h3'); h.textContent = p.name; c.appendChild(h);
+        if (p.imageUrl) {
+          const img = document.createElement('img'); img.className = 'prod'; img.src = p.imageUrl; c.appendChild(img);
+        }
+        const dp = document.createElement('p'); dp.textContent = p.description || ''; c.appendChild(dp);
+        const pr = document.createElement('p'); pr.innerHTML = `<strong>Price:</strong> $${parseFloat(p.price||0).toFixed(2)}`; c.appendChild(pr);
+        const row = document.createElement('div'); row.className='row';
+        if (currentUser) {
+          const orderBtn = document.createElement('button'); orderBtn.className='btn'; orderBtn.textContent='Order'; orderBtn.onclick = () => placeOrder(p._id); row.appendChild(orderBtn);
+        } else {
+          const a = document.createElement('a'); a.href='#'; a.textContent='Login to order'; a.onclick = (e)=>{ e.preventDefault(); show(views.login); }; row.appendChild(a);
+        }
+        c.appendChild(row);
+        view.appendChild(c);
+        show(views.product);
+      } catch (e) {
+        console.error('showProduct', e);
+        alert('Could not show product');
+      }
+    }
+
+    async function deleteProduct(productId, imagePath) {
+      if (!confirm('Delete product?')) return;
+      if (!adminUnlocked) return alert('Admin required');
+      try {
+        if (imagePath) {
+          try { await deleteObject(sref(storage, imagePath)); } catch(e){ /* ignore */ }
+        }
+        await remove(ref(db, `products/${productId}`));
+        alert('Deleted');
+      } catch (e) {
+        console.error('deleteProduct', e);
+        alert('Could not delete product');
+      }
+    }
+
+    // ---------- Orders ----------
+    async function placeOrder(productId) {
+      if (!currentUser) { show(views.login); return; }
+      try {
+        // snapshot product and user
+        const pSnap = await get(child(ref(db), `products/${productId}`));
+        if (!pSnap.exists()) return alert('Product no longer available');
+        const p = pSnap.val();
+        const orderRef = push(ref(db, 'orders'));
+        await set(orderRef, {
+          userName: currentUser.username,
+          userFirstName: currentUser.firstName,
+          userFatherName: currentUser.fatherName,
+          productId,
+          productName: p.name,
+          productPrice: p.price,
+          productImage: p.imageUrl || '',
+          status: 'Pending',
+          createdAt: Date.now()
+        });
+        alert('Order placed');
+        show(views.myOrders);
+        loadMyOrders();
+      } catch (e) {
+        console.error('placeOrder', e);
+        alert('Could not place order');
+      }
+    }
+
+    function loadMyOrders() {
+      if (!currentUser) { show(views.login); return; }
+      onValue(ref(db, 'orders'), snapshot => {
+        const out = document.getElementById('my-orders-list');
+        out.innerHTML = '';
+        if (!snapshot.exists()) { out.innerHTML = '<div class="card">No orders.</div>'; return; }
+        const arr = [];
+        snapshot.forEach(childSnap => {
+          const o = childSnap.val(); o._id = childSnap.key;
+          if (o.userName === currentUser.username) arr.push(o);
+        });
+        arr.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+        if (arr.length === 0) out.innerHTML = '<div class="card">You have no orders.</div>';
+        arr.forEach(o => {
+          const c = document.createElement('div'); c.className='card';
+          const title = document.createElement('h4'); title.textContent = o.productName; c.appendChild(title);
+          const s = document.createElement('p'); s.innerHTML = `<strong>Status:</strong> ${o.status}`; c.appendChild(s);
+          const t = document.createElement('p'); t.className='small'; t.textContent = `Ordered: ${new Date(o.createdAt).toLocaleString()}`; c.appendChild(t);
+          if (o.productImage) { const img = document.createElement('img'); img.className='prod'; img.src = o.productImage; img.style.height='120px'; c.appendChild(img); }
+          if (o.status !== 'Delivered') {
+            const btn = document.createElement('button'); btn.className='btn danger'; btn.textContent = 'Cancel'; btn.onclick = async () => {
+              if (!confirm('Cancel order?')) return;
+              try { await remove(ref(db, `orders/${o._id}`)); loadMyOrders(); } catch(e){ console.error(e); alert('Could not cancel'); }
+            };
+            c.appendChild(btn);
+          }
+          out.appendChild(c);
+        });
+      }, { onlyOnce: false });
+    }
+
+    async function loadAdminOrders() {
+      if (!adminUnlocked) {
+        document.getElementById('admin-orders-list').innerHTML = '<div class="card">Admin only — enter admin code on Add Product page.</div>';
+        return;
+      }
+      onValue(ref(db, 'orders'), snapshot => {
+        const out = document.getElementById('admin-orders-list');
+        out.innerHTML = '';
+        if (!snapshot.exists()) { out.innerHTML = '<div class="card">No orders yet.</div>'; return; }
+        const arr = [];
+        snapshot.forEach(childSnap => {
+          const o = childSnap.val(); o._id = childSnap.key; arr.push(o);
+        });
+        arr.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+        arr.forEach(o => {
+          const c = document.createElement('div'); c.className='card';
+          const title = document.createElement('h4'); title.textContent = o.productName; c.appendChild(title);
+          const by = document.createElement('p'); by.className='small'; by.textContent = `Ordered by: ${o.userFirstName} ${o.userFatherName} (${o.userName})`; c.appendChild(by);
+          const s = document.createElement('p'); s.innerHTML = `<strong>Status:</strong> ${o.status}`; c.appendChild(s);
+          const t = document.createElement('p'); t.className='small'; t.textContent = `At: ${new Date(o.createdAt).toLocaleString()}`; c.appendChild(t);
+          const row = document.createElement('div'); row.className='row';
+          ['Declined','Accepted','Delivered'].forEach(st => {
+            const b = document.createElement('button'); b.className='btn'; b.textContent = st;
+            b.onclick = async () => {
+              try { await update(ref(db, `orders/${o._id}`), { status: st }); loadAdminOrders(); } catch(e){ console.error(e); alert('Could not update'); }
+            };
+            row.appendChild(b);
+          });
+          c.appendChild(row);
+          out.appendChild(c);
+        });
+      }, { onlyOnce: false });
+    }
+
+    // ---------- initial wiring ----------
+    document.getElementById('btn-refresh').onclick = () => loadProducts();
+    document.getElementById('btn-to-register').onclick = () => show(views.register);
+    document.getElementById('btn-to-login').onclick = () => show(views.login);
+    document.getElementById('btn-login').addEventListener('click', login);
+    document.getElementById('btn-register').addEventListener('click', register);
+
+    // expose some functions for buttons in generated HTML
+    window.showProduct = showProduct;
+    window.placeOrder = placeOrder;
+    window.loadProducts = loadProducts;
+    window.loadMyOrders = loadMyOrders;
+    window.loadAdminOrders = loadAdminOrders;
+    window.orderProduct = placeOrder;
+    window.deleteProduct = deleteProduct;
+
+    // start
+    renderAuth();
+    loadProducts();
+
+  </script>
 </body>
 </html>
