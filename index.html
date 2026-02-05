@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>MiniShop (fixed)</title>
+  <title>MiniShop — Fixed (diagnostics)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     body{font-family:Inter,Arial,Helvetica,sans-serif;margin:0;background:#f4f6f8;color:#111}
@@ -20,8 +20,10 @@
     .top-controls{margin-bottom:12px;display:flex;gap:8px;align-items:center}
     .hidden{display:none}
     .error{color:#b00000}
+    .ok{color:green}
     footer{padding:24px;text-align:center;color:#666}
     .placeholder{width:100%;height:160px;border-radius:6px;background:#e9eef8;display:flex;align-items:center;justify-content:center;color:#6b7a9a}
+    pre{background:#f1f4f8;padding:8px;border-radius:6px;overflow:auto}
   </style>
 </head>
 <body>
@@ -119,11 +121,17 @@
       <div id="admin-orders-list"></div>
     </div>
 
+    <div class="card" style="margin-top:12px">
+      <h4>Diagnostics</h4>
+      <p class="small">If you see Firebase error <code>auth/configuration-not-found</code>, open Firebase Console → Authentication → Sign-in method and enable <strong>Email/Password</strong>. Also ensure your config's <code>authDomain</code> matches the project.</p>
+      <button class="btn" id="btn-diagnostics">Run Firebase diagnostics</button>
+      <div id="diag-output" style="margin-top:8px"><small class="small">No diagnostics run yet.</small></div>
+    </div>
+
   </div>
 
   <footer><small>MiniShop demo • Data saved in your Firebase project</small></footer>
 
-  <!-- Firebase scripts (modular SDK) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import {
@@ -135,7 +143,8 @@
       browserLocalPersistence,
       browserSessionPersistence,
       onAuthStateChanged,
-      getIdTokenResult
+      getIdTokenResult,
+      fetchSignInMethodsForEmail
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import {
       getFirestore,
@@ -147,7 +156,7 @@
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
     import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
-    // ---------- Firebase config (provided) ----------
+    // ---------- Firebase config (your config) ----------
     const firebaseConfig = {
       apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
       authDomain: "minishop-67dbf.firebaseapp.com",
@@ -159,13 +168,14 @@
       measurementId: "G-6N23NYNRDB"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const storage = getStorage(app);
     const functions = getFunctions(app);
 
-    // ---------- UI helpers ----------
+    // UI refs
     const views = {
       home: document.getElementById('view-home'),
       login: document.getElementById('view-login'),
@@ -176,7 +186,7 @@
       adminOrders: document.getElementById('view-admin-orders')
     };
     function show(view) {
-      Object.values(views).forEach(v => v.classList.add('hidden'));
+      Object.values(views).forEach(v=>v.classList.add('hidden'));
       view.classList.remove('hidden');
     }
     document.getElementById('link-home').onclick = e => { e.preventDefault(); show(views.home); loadProducts(); };
@@ -184,26 +194,23 @@
     document.getElementById('link-my-orders').onclick = e => { e.preventDefault(); show(views.myOrders); loadMyOrders(); };
     document.getElementById('link-admin-orders').onclick = e => { e.preventDefault(); show(views.adminOrders); loadAdminOrders(); };
 
-    // ---------- Auth UI logic ----------
+    // Auth UI
     const authArea = document.getElementById('auth-area');
-    function renderAuthArea(user, isAdmin) {
+    function renderAuthArea(user, isAdmin){
       authArea.innerHTML = '';
-      if (!user) {
-        const l = document.createElement('button'); l.textContent='Login'; l.className='btn'; l.onclick = ()=> show(views.login);
-        const r = document.createElement('button'); r.textContent='Register'; r.className='secondary btn'; r.onclick = ()=> show(views.register);
+      if (!user){
+        const l = document.createElement('button'); l.textContent='Login'; l.className='btn'; l.onclick=()=>show(views.login);
+        const r = document.createElement('button'); r.textContent='Register'; r.className='secondary btn'; r.onclick=()=>show(views.register);
         authArea.appendChild(l); authArea.appendChild(document.createTextNode(' ')); authArea.appendChild(r);
         document.getElementById('welcome-text').textContent = '';
       } else {
         const span = document.createElement('span'); span.textContent = `Hi, ${user.firstName}`;
-        authArea.appendChild(span);
-        authArea.appendChild(document.createTextNode(' '));
+        authArea.appendChild(span); authArea.appendChild(document.createTextNode(' '));
         const logout = document.createElement('button'); logout.textContent='Logout'; logout.className='btn';
-        logout.onclick = async ()=>{
-          try { await signOut(auth); } catch(e){ console.error('Signout failed', e); }
-        };
+        logout.onclick = async ()=> { try{ await signOut(auth); } catch(e){ console.error('signOut',e); } };
         authArea.appendChild(logout);
-        if (isAdmin) {
-          const badge = document.createElement('span'); badge.textContent = ' Admin'; badge.style.marginLeft='8px';
+        if (isAdmin){
+          const badge = document.createElement('span'); badge.textContent=' Admin'; badge.style.marginLeft='8px';
           badge.style.background='#ffefc2'; badge.style.padding='4px 6px'; badge.style.borderRadius='6px';
           authArea.appendChild(badge);
         }
@@ -211,17 +218,17 @@
       }
     }
 
-    // ---------- small navigation helpers ----------
+    // Navigation small helpers
     document.getElementById('btn-to-login').onclick = ()=> show(views.login);
     document.getElementById('btn-to-register').onclick = ()=> show(views.register);
 
-    // ---------- Registration ----------
+    // Registration (with better error handling for configuration-not-found)
     document.getElementById('btn-register').onclick = async () => {
       const first = document.getElementById('reg-first').value.trim();
       const father = document.getElementById('reg-father').value.trim();
       const pass = document.getElementById('reg-pass').value;
-      document.getElementById('register-error').textContent = '';
-      if (!first || !father || !pass) { document.getElementById('register-error').textContent = 'All fields required.'; return; }
+      const out = document.getElementById('register-error'); out.textContent = '';
+      if (!first || !father || !pass) { out.textContent='All fields required.'; return; }
       try {
         const email = `${first.toLowerCase()}@minishop.local`;
         const cred = await createUserWithEmailAndPassword(auth, email, pass);
@@ -229,61 +236,67 @@
         await setDoc(doc(db, 'users', u.uid), { firstName: first, fatherName: father });
         show(views.home);
       } catch (err) {
-        console.error(err);
-        document.getElementById('register-error').textContent = err?.message || 'Could not create account.';
+        console.error('register error', err);
+        if (err.code === 'auth/configuration-not-found') {
+          out.innerHTML = 'Firebase Auth not configured for Email/Password. <strong>Enable Email/Password provider</strong> in Firebase Console → Authentication → Sign-in method.';
+        } else {
+          out.textContent = err.message || 'Could not create account.';
+        }
       }
     };
 
-    // ---------- Login ----------
+    // Login
     document.getElementById('btn-login').onclick = async () => {
-      document.getElementById('login-error').textContent = '';
+      const out = document.getElementById('login-error'); out.textContent='';
       const first = document.getElementById('login-first').value.trim();
       const pass = document.getElementById('login-pass').value;
       const keep = document.getElementById('login-keep').checked;
-      if (!first || !pass) { document.getElementById('login-error').textContent = 'Name and password required.'; return; }
+      if (!first || !pass) { out.textContent='Name and password required.'; return; }
       try {
         if (keep) await setPersistence(auth, browserLocalPersistence); else await setPersistence(auth, browserSessionPersistence);
         const email = `${first.toLowerCase()}@minishop.local`;
         await signInWithEmailAndPassword(auth, email, pass);
         show(views.home);
       } catch (err) {
-        console.error(err);
-        document.getElementById('login-error').textContent = 'Invalid name or password.';
+        console.error('login error', err);
+        if (err.code === 'auth/configuration-not-found') {
+          out.innerHTML = 'Firebase Auth not configured for Email/Password. <strong>Enable Email/Password provider</strong> in Firebase Console → Authentication → Sign-in method.';
+        } else {
+          out.textContent = 'Invalid name or password.';
+        }
       }
     };
 
-    // ---------- Admin callable ----------
+    // Admin callable (requires deployed function)
     const makeAdminFn = httpsCallable(functions, 'makeAdmin');
     document.getElementById('btn-enter-admin').onclick = async () => {
       const code = document.getElementById('admin-code').value.trim();
-      document.getElementById('add-error').textContent = '';
-      if (!code) { document.getElementById('add-error').textContent = 'Enter admin code.'; return; }
-      if (!auth.currentUser) { document.getElementById('add-error').textContent = 'Sign in first.'; return; }
+      const out = document.getElementById('add-error'); out.textContent='';
+      if (!code) { out.textContent='Enter admin code.'; return; }
+      if (!auth.currentUser) { out.textContent='Sign in first.'; return; }
       try {
         await makeAdminFn({ code });
-        // force-refresh token so we see custom claim
-        await auth.currentUser.getIdToken(true);
+        await auth.currentUser.getIdToken(true); // force refresh
         alert('Admin claim (if code correct) applied.');
         const admin = await isCurrentUserAdmin();
         toggleAddProductForm(admin);
         renderAuthArea(currentProfile, admin);
       } catch (err) {
-        console.error(err);
-        document.getElementById('add-error').textContent = 'Incorrect admin code or error.';
+        console.error('makeAdmin error', err);
+        out.textContent = (err?.code === 'permission-denied' || err?.code === 'unauthenticated') ? 'Incorrect admin code or you are not signed in.' : 'Admin function error.';
       }
     };
 
-    // ---------- Products (listing, add, delete) ----------
+    // Products
     const productsDiv = document.getElementById('products');
-
-    async function loadProducts() {
+    async function loadProducts(){
       productsDiv.innerHTML = 'Loading...';
       try {
         const snap = await getDocs(collection(db, 'products'));
         const docs = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
         productsDiv.innerHTML = '';
         if (docs.length === 0) productsDiv.innerHTML = '<div class="card">No products.</div>';
-        docs.forEach(p => {
+        docs.forEach(p=>{
           const c = document.createElement('div'); c.className='card';
           if (p.imageUrl) {
             const img = document.createElement('img'); img.className='prod'; img.src = p.imageUrl; c.appendChild(img);
@@ -300,14 +313,13 @@
           } else {
             const loginToOrder = document.createElement('a'); loginToOrder.href='#'; loginToOrder.textContent='Login to order'; loginToOrder.onclick = (e)=>{ e.preventDefault(); show(views.login); }; row.appendChild(loginToOrder);
           }
-          // show delete if admin
           isCurrentUserAdmin().then(isAdmin=>{
             if (isAdmin) {
               const del = document.createElement('button'); del.className='btn'; del.style.background='#b00020'; del.textContent='Delete';
               del.onclick = ()=> deleteProduct(p.id, p.imagePath, p.imageUrl);
               row.appendChild(del);
             }
-          }).catch(err=>console.warn('admin check error', err));
+          }).catch(()=>{/*ignore*/});
           c.appendChild(row);
           productsDiv.appendChild(c);
         });
@@ -317,7 +329,8 @@
       }
     }
 
-    async function showProduct(productId) {
+    // show single product
+    async function showProduct(productId){
       try {
         const d = await getDoc(doc(db,'products',productId));
         if (!d.exists()) { alert('Product not found'); return; }
@@ -343,12 +356,12 @@
         view.appendChild(c);
         show(views.product);
       } catch (err) {
-        console.error(err);
+        console.error('showProduct', err);
         alert('Could not load product.');
       }
     }
 
-    function toggleAddProductForm(isAdmin) {
+    function toggleAddProductForm(isAdmin){
       if (isAdmin) {
         document.getElementById('admin-code-box').classList.add('hidden');
         document.getElementById('add-form').classList.remove('hidden');
@@ -358,27 +371,27 @@
       }
     }
 
-    async function isCurrentUserAdmin() {
+    async function isCurrentUserAdmin(){
       if (!auth.currentUser) return false;
       try {
-        const tok = await getIdTokenResult(auth.currentUser); // correct usage
+        const tok = await getIdTokenResult(auth.currentUser);
         return !!tok?.claims?.admin;
       } catch (err) {
-        console.error('isCurrentUserAdmin error', err);
+        console.error('isAdmin error', err);
         return false;
       }
     }
 
     // add product
     document.getElementById('btn-add-product').onclick = async () => {
-      document.getElementById('add-error').textContent = '';
+      const out = document.getElementById('add-error'); out.textContent='';
       const name = document.getElementById('prod-name').value.trim();
       const desc = document.getElementById('prod-desc').value.trim();
       const price = parseFloat(document.getElementById('prod-price').value);
       const file = document.getElementById('prod-photo').files[0];
-      if (!name || !price || !file) { document.getElementById('add-error').textContent = 'Name, price and photo required.'; return; }
+      if (!name || !price || !file) { out.textContent = 'Name, price and photo required.'; return; }
       const ok = await isCurrentUserAdmin();
-      if (!ok) { document.getElementById('add-error').textContent = 'Admin required.'; return; }
+      if (!ok) { out.textContent = 'Admin required.'; return; }
       try {
         const stRef = sref(storage, `products/${Date.now()}-${file.name}`);
         await uploadBytes(stRef, file);
@@ -391,7 +404,7 @@
         loadProducts();
       } catch (err) {
         console.error('add product', err);
-        document.getElementById('add-error').textContent = 'Could not add product.';
+        out.textContent = 'Could not add product. Ensure storage rules allow admin uploads and you are admin.';
       }
     };
 
@@ -414,7 +427,7 @@
       }
     }
 
-    // ---------- Orders ----------
+    // Orders
     async function placeOrder(productOrId) {
       let p = productOrId;
       try {
@@ -445,7 +458,7 @@
       }
     }
 
-    async function loadMyOrders() {
+    async function loadMyOrders(){
       if (!auth.currentUser) { show(views.login); return; }
       try {
         const q = query(collection(db, 'orders'), where('userId', '==', auth.currentUser.uid), orderBy('createdAt','desc'));
@@ -474,7 +487,6 @@
       }
     }
 
-    // ---------- Admin: load & update orders ----------
     async function loadAdminOrders() {
       const ok = await isCurrentUserAdmin();
       if (!ok) { document.getElementById('admin-orders-list').innerHTML = '<div class="card">Admin only. Enter admin code to manage.</div>'; return; }
@@ -504,7 +516,7 @@
       }
     }
 
-    // ---------- Auth state ----------
+    // Auth state observer
     let currentProfile = null;
     onAuthStateChanged(auth, async user => {
       try {
@@ -522,11 +534,60 @@
           loadProducts();
         }
       } catch (err) {
-        console.error('onAuthStateChanged handler', err);
+        console.error('onAuthStateChanged error', err);
       }
     });
 
-    // ---------- initial UI ----------
+    // Diagnostics button: give clear Firebase error info
+    document.getElementById('btn-diagnostics').onclick = async () => {
+      const out = document.getElementById('diag-output'); out.innerHTML = '<small>Running diagnostics...</small>';
+      try {
+        // quick check: ensure authDomain exists and is non-empty
+        if (!firebaseConfig.authDomain) {
+          out.innerHTML = '<div class="error">authDomain missing from config. Check firebaseConfig.authDomain.</div>';
+          return;
+        }
+        // Attempt a harmless operation: fetchSignInMethodsForEmail for a fake email.
+        const testEmail = 'test@minishop.local';
+        try {
+          const methods = await fetchSignInMethodsForEmail(auth, testEmail);
+          out.innerHTML = `<div class="ok">fetchSignInMethodsForEmail succeeded. (This does NOT mean Email/Password is enabled; it returned: ${JSON.stringify(methods)})</div>`;
+        } catch (err) {
+          console.error('fetchSignInMethodsForEmail error', err);
+          if (err.code === 'auth/configuration-not-found') {
+            out.innerHTML = `<div class="error">Error: auth/configuration-not-found — Firebase Authentication Email/Password provider is likely not enabled. Open Firebase Console → Authentication → Sign-in method and enable Email/Password.</div><pre>${err.message}</pre>`;
+            return;
+          } else {
+            out.innerHTML = `<div class="error">Auth check error: ${err.code || err.message}</div><pre>${err.message || err}</pre>`;
+          }
+        }
+
+        // Check Firestore simple read
+        try {
+          const snap = await getDocs(collection(db, 'products').withConverter ? collection(db, 'products') : collection(db, 'products'));
+          out.innerHTML += `<div class="ok">Firestore read OK (able to query products).</div>`;
+        } catch (err) {
+          console.error('firestore read', err);
+          out.innerHTML += `<div class="error">Firestore read error: ${err.code || err.message}</div><pre>${err.message || err}</pre>`;
+        }
+
+        // Check Functions callable presence by trying to call (non-fatal)
+        try {
+          const makeAdmin = httpsCallable(functions, 'makeAdmin');
+          // do not actually call with secret here; just check that calling returns a well-formed function reference
+          out.innerHTML += `<div class="ok">Functions client ready. (If you need makeAdmin, deploy it in your project.)</div>`;
+        } catch (err) {
+          console.error('functions check', err);
+          out.innerHTML += `<div class="error">Functions client error: ${err.message || err}</div>`;
+        }
+
+      } catch (err) {
+        console.error('diagnostics error', err);
+        document.getElementById('diag-output').innerHTML = `<div class="error">Diagnostics failed: ${err.message || err}</div>`;
+      }
+    };
+
+    // initial UI
     show(views.home);
     document.getElementById('btn-refresh').onclick = loadProducts;
     loadProducts();
