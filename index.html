@@ -3,752 +3,505 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase Single-File E-Commerce Demo</title>
+    <title>E-Comm Demo | Firebase Single-File</title>
     <style>
-        /* * GLOBAL STYLES & LAYOUT 
-         */
         :root {
             --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --secondary: #64748b;
+            --primary-dark: #1e40af;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
             --danger: #ef4444;
             --success: #22c55e;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #0f172a;
             --border: #e2e8f0;
         }
 
-        * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
-        
-        /* Typography & Utilities */
-        h1, h2, h3 { margin-top: 0; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        * { box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+        body { margin: 0; background: var(--bg); color: var(--text-main); line-height: 1.5; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
         .hidden { display: none !important; }
-        .text-sm { font-size: 0.875rem; color: var(--secondary); }
-        .text-center { text-align: center; }
-        .mt-2 { margin-top: 1rem; }
-        .flex-row { display: flex; gap: 10px; align-items: center; }
-        
-        /* Buttons & Inputs */
-        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 6px; }
-        .btn { cursor: pointer; padding: 8px 16px; border: none; border-radius: 6px; background: var(--primary); color: white; font-weight: 600; transition: 0.2s; }
-        .btn:hover { background: var(--primary-hover); }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn.secondary { background: var(--secondary); }
-        .btn.danger { background: var(--danger); }
-        .btn.success { background: var(--success); }
-        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
 
-        /* Navigation */
-        header { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 15px 0; position: sticky; top: 0; z-index: 100; }
-        nav { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-        .brand { font-size: 1.25rem; font-weight: bold; color: var(--primary); text-decoration: none; }
-        .nav-links button { background: transparent; color: var(--text); margin-left: 10px; }
-        .nav-links button:hover { background: var(--bg); color: var(--primary); }
-        .user-panel { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
+        /* Header & Nav */
+        header { background: white; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        nav { display: flex; justify-content: space-between; align-items: center; height: 60px; }
+        .logo { font-weight: 800; font-size: 1.4rem; color: var(--primary); text-decoration: none; }
+        .nav-links { display: flex; gap: 15px; align-items: center; }
+        .nav-link { cursor: pointer; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; text-decoration: none; }
+        .nav-link:hover { color: var(--primary); }
 
-        /* Auth Forms */
-        .auth-container { max-width: 400px; margin: 50px auto; background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .auth-toggle { margin-top: 15px; text-align: center; cursor: pointer; color: var(--primary); text-decoration: underline; }
+        /* Buttons & Forms */
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
+
+        input, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; font-size: 0.95rem; }
+        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.85rem; }
 
         /* Product Grid */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
-        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        .card-img { height: 200px; width: 100%; object-fit: cover; background: #eee; }
-        .card-body { padding: 15px; flex: 1; display: flex; flex-direction: column; }
-        .card-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
-        .card-price { font-size: 1.2rem; color: var(--primary); font-weight: bold; margin-bottom: 10px; }
-        .card-desc { font-size: 0.9rem; color: var(--secondary); margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .card-actions { margin-top: auto; display: flex; gap: 5px; }
-        .card-actions .btn { flex: 1; font-size: 0.8rem; padding: 8px 4px; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 24px; margin-top: 20px; }
+        .product-card { background: white; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s; }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .product-img { width: 100%; height: 180px; object-fit: cover; background: #f1f5f9; }
+        .product-info { padding: 16px; flex-grow: 1; display: flex; flex-direction: column; }
+        .product-name { font-weight: 700; margin: 0 0 8px 0; font-size: 1.1rem; }
+        .product-desc { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-price { font-weight: 800; color: var(--primary); font-size: 1.2rem; margin-top: auto; }
+        .card-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+        /* Tables & Lists */
+        .data-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+        .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .data-table th { background: #f8fafc; color: var(--text-muted); font-weight: 600; }
+        .status-pill { padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+        .status-Pending { background: #fef9c3; color: #854d0e; }
+        .status-Accepted { background: #dcfce7; color: #166534; }
 
         /* Modal */
-        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: var(--card-bg); border-radius: 12px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 25px; position: relative; }
-        .close-modal { position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--secondary); }
-        .modal-img { width: 100%; max-height: 300px; object-fit: contain; background: #f1f5f9; border-radius: 8px; margin-bottom: 20px; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 100%; position: relative; max-height: 90vh; overflow-y: auto; }
+        .close-modal { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; border: none; background: none; }
 
-        /* Tables (Orders) */
-        .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: var(--card-bg); border-radius: 8px; overflow: hidden; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background-color: #f1f5f9; font-weight: 600; }
-        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
-        .status-Pending { background: #fef9c3; color: #854d0e; }
-        .status-Accepted { background: #dbeafe; color: #1e40af; }
-        .status-Declined { background: #fee2e2; color: #991b1b; }
-        .status-Delivered { background: #dcfce7; color: #166534; }
-
-        /* Messages */
-        .msg-box { padding: 10px; margin-bottom: 10px; border-radius: 6px; font-size: 0.9rem; text-align: center; }
-        .msg-error { background: #fee2e2; color: #b91c1c; }
-        .msg-success { background: #dcfce7; color: #15803d; }
+        /* Alerts */
+        .alert { padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; font-weight: 500; }
+        .alert-error { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .alert-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
     </style>
 </head>
 <body>
 
-    <header>
+<header>
+    <div class="container">
         <nav>
-            <a href="#" class="brand" onclick="app.router('home')">ShopDemo</a>
-            
-            <div id="nav-actions" class="nav-links hidden">
-                <button class="btn secondary" onclick="app.router('home')">Home</button>
-                <button class="btn secondary" onclick="app.router('my-orders')">My Orders</button>
-                <button class="btn secondary" onclick="app.router('admin-add')">Add Product</button>
-                <button class="btn secondary" onclick="app.router('admin-orders')">Orders (Admin)</button>
-            </div>
-
-            <div class="user-panel">
-                <div id="auth-buttons">
-                    <button class="btn" onclick="app.router('login')">Login</button>
-                </div>
-                <div id="user-info" class="hidden flex-row">
-                    <span id="display-username">User</span>
-                    <button class="btn secondary" onclick="app.auth.logout()">Logout</button>
-                </div>
+            <a href="#" class="logo" onclick="app.navigate('home')">DEMO<span>STORE</span></a>
+            <div class="nav-links">
+                <span class="nav-link" onclick="app.navigate('home')">Home</span>
+                <span class="nav-link auth-only hidden" onclick="app.navigate('my-orders')">My Orders</span>
+                <span class="nav-link auth-only hidden" onclick="app.navigate('admin-add')">Add Product</span>
+                <span class="nav-link auth-only hidden" onclick="app.navigate('admin-orders')">Admin Orders</span>
+                <div id="user-display" class="hidden" style="font-size: 0.8rem; font-weight: bold; border-left: 1px solid #ddd; padding-left: 10px;"></div>
+                <button id="btn-login-nav" class="btn btn-primary btn-sm" onclick="app.navigate('login')">Login</button>
+                <button id="btn-logout" class="btn btn-outline btn-sm hidden" onclick="app.logout()">Logout</button>
             </div>
         </nav>
-    </header>
-
-    <div class="container">
-        <div id="global-msg" class="msg-box hidden"></div>
-
-        <div id="view-auth" class="auth-container hidden">
-            <h2 id="auth-title" class="text-center">Login</h2>
-            <form id="auth-form" onsubmit="app.auth.handleSubmit(event)">
-                <div id="register-fields" class="hidden">
-                    <label>First Name (Unique ID)</label>
-                    <input type="text" id="reg-firstname" placeholder="e.g. Zeyad" autocomplete="off">
-                    <label>Father's Name</label>
-                    <input type="text" id="reg-fathername" placeholder="e.g. Ahmed">
-                </div>
-                
-                <div id="login-fields">
-                    <label>First Name</label>
-                    <input type="text" id="login-firstname" placeholder="Enter your first name">
-                </div>
-
-                <label>Password</label>
-                <input type="password" id="auth-password" placeholder="******" required>
-                <p class="text-sm">Note: Password stored in DB (Not secure for production)</p>
-
-                <div id="login-options">
-                    <label style="display:flex; align-items:center; gap:8px;">
-                        <input type="checkbox" id="keep-signed-in" style="width:auto; margin:0;"> Keep me signed in
-                    </label>
-                </div>
-
-                <button type="submit" class="btn" style="width:100%; margin-top:10px;">Submit</button>
-                
-                <div class="auth-toggle" onclick="app.auth.toggleMode()">
-                    <span id="auth-toggle-text">Need an account? Register</span>
-                </div>
-            </form>
-        </div>
-
-        <div id="view-home" class="hidden">
-            <h2>Products</h2>
-            <div id="product-list" class="grid">
-                <p class="text-sm">Loading products...</p>
-            </div>
-        </div>
-
-        <div id="view-admin-add" class="hidden">
-            <div class="auth-container" style="max-width: 600px;">
-                <h2>Add Product (Admin)</h2>
-                
-                <div id="admin-lock-panel">
-                    <p>Enter Admin Code to unlock (Code is: 555)</p>
-                    <input type="password" id="admin-code-input" placeholder="Admin Code">
-                    <button class="btn" onclick="app.admin.unlock()">Unlock</button>
-                </div>
-
-                <form id="product-form" class="hidden" onsubmit="app.admin.addProduct(event)">
-                    <label>Product Name</label>
-                    <input type="text" id="prod-name" required>
-                    
-                    <label>Description</label>
-                    <textarea id="prod-desc" rows="3" required></textarea>
-                    
-                    <label>Price</label>
-                    <input type="number" id="prod-price" required min="0" step="0.01">
-                    
-                    <label>Image</label>
-                    <input type="file" id="prod-image" accept="image/*" required>
-                    
-                    <div id="upload-progress" class="hidden text-sm">Uploading...</div>
-                    <button type="submit" class="btn success" style="width:100%; margin-top:10px;">Upload & Save Product</button>
-                </form>
-            </div>
-        </div>
-
-        <div id="view-my-orders" class="hidden">
-            <h2>My Orders</h2>
-            <div class="table-responsive">
-                <table id="my-orders-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Product</th>
-                            <th>Price</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-            <p id="no-my-orders" class="text-center text-sm hidden mt-2">No orders found.</p>
-        </div>
-
-        <div id="view-admin-orders" class="hidden">
-            <h2>All Orders (Admin)</h2>
-            <div class="table-responsive">
-                <table id="admin-orders-table">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Product</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
+</header>
 
-    <div id="product-modal" class="modal-backdrop hidden" onclick="if(event.target === this) app.ui.closeModal()">
-        <div class="modal-content">
-            <button class="close-modal" onclick="app.ui.closeModal()">&times;</button>
-            <div id="modal-body">
-                </div>
+<div class="container">
+    <div id="feedback-area"></div>
+
+    <section id="view-home">
+        <div class="product-grid" id="product-list">
+            <p>Loading products...</p>
         </div>
+    </section>
+
+    <section id="view-login" class="hidden" style="max-width: 400px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; border: 1px solid var(--border);">
+        <h2 id="auth-title">Welcome Back</h2>
+        <div id="reg-extra-fields" class="hidden">
+            <label>First Name</label>
+            <input type="text" id="auth-firstname" placeholder="Zeyad">
+            <label>Father's Name</label>
+            <input type="text" id="auth-fathername" placeholder="Ahmed">
+        </div>
+        <div id="login-fields">
+            <label>Username (First Name)</label>
+            <input type="text" id="auth-username" placeholder="zeyad">
+        </div>
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••">
+        <div style="margin-bottom: 15px;">
+            <input type="checkbox" id="auth-remember" style="width: auto; margin-right: 5px;"> 
+            <label style="display: inline; font-weight: 400;">Keep me signed in</label>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;" onclick="app.handleAuth()">Continue</button>
+        <p style="text-align: center; font-size: 0.85rem; margin-top: 15px; color: var(--text-muted);">
+            <span id="auth-toggle-msg">Don't have an account?</span> 
+            <a href="#" onclick="app.toggleAuthMode()" id="auth-toggle-link" style="color: var(--primary); font-weight: 600;">Register</a>
+        </p>
+    </section>
+
+    <section id="view-my-orders" class="hidden">
+        <h2>My Orders</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="my-orders-list"></tbody>
+        </table>
+    </section>
+
+    <section id="view-admin-add" class="hidden" style="max-width: 600px; margin: 0 auto;">
+        <div id="admin-lock-screen">
+            <h2>Admin Verification</h2>
+            <p class="text-muted">Enter the admin secret to unlock the form.</p>
+            <input type="password" id="admin-secret-input" placeholder="Secret Code">
+            <button class="btn btn-primary" onclick="app.unlockAdmin()">Unlock Form</button>
+        </div>
+        <div id="admin-form-screen" class="hidden">
+            <h2>Add New Product</h2>
+            <label>Product Name</label>
+            <input type="text" id="p-name">
+            <label>Description</label>
+            <textarea id="p-desc" rows="3"></textarea>
+            <label>Price ($)</label>
+            <input type="number" id="p-price">
+            <label>Product Image</label>
+            <input type="file" id="p-image" accept="image/*">
+            <div id="upload-status" style="font-size: 0.8rem; margin-bottom: 10px;"></div>
+            <button class="btn btn-primary" id="btn-save-product" onclick="app.saveProduct()">Save Product</button>
+        </div>
+    </section>
+
+    <section id="view-admin-orders" class="hidden">
+        <h2>System Orders</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="admin-orders-list"></tbody>
+        </table>
+    </section>
+</div>
+
+<div id="product-modal" class="modal hidden">
+    <div class="modal-content">
+        <button class="close-modal" onclick="app.closeModal()">&times;</button>
+        <div id="modal-body"></div>
     </div>
+</div>
 
-    <script type="module">
-        // 1. FIREBASE IMPORTS
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, push, onValue, remove, update, child } 
-            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject } 
-            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, get, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-        /**
-         * 2. CONFIGURATION
-         * Replace the values below with your Firebase Project settings.
-         * Found in Firebase Console -> Project Overview -> Project Settings -> General -> Your apps
-         */
-        const firebaseConfig = {
-            apiKey: "REPLACE_WITH_YOUR_API_KEY",
-            authDomain: "REPLACE_WITH_YOUR_PROJECT.firebaseapp.com",
-            databaseURL: "https://REPLACE_WITH_YOUR_PROJECT-default-rtdb.firebaseio.com",
-            projectId: "REPLACE_WITH_YOUR_PROJECT",
-            storageBucket: "REPLACE_WITH_YOUR_PROJECT.appspot.com",
-            messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
-            appId: "REPLACE_WITH_YOUR_APP_ID"
-        };
+    // --- CONFIGURATION ---
+    // Replace these placeholder values with your project's settings!
+    const firebaseConfig = {
+        apiKey: "<API_KEY>",
+        authDomain: "<PROJECT>.firebaseapp.com",
+        databaseURL: "https://<PROJECT>-default-rtdb.firebaseio.com",
+        projectId: "<PROJECT>",
+        storageBucket: "<PROJECT>.appspot.com",
+        messagingSenderId: "<SENDER_ID>",
+        appId: "<APP_ID>"
+    };
 
-        // Initialize Firebase
-        const firebaseApp = initializeApp(firebaseConfig);
-        const db = getDatabase(firebaseApp);
-        const storage = getStorage(firebaseApp);
+    // Admin secret for this demo. Ideally, check this via Cloud Function.
+    const ADMIN_SECRET = '555';
 
-        // Security Constants
-        // NOTE: In production, moving this check to a Cloud Function or Custom Claims is required.
-        // Client-side checks are insecure as the code is visible to the user.
-        const ADMIN_CODE = '555'; 
+    // Initialize Firebase
+    const fireApp = initializeApp(firebaseConfig);
+    const db = getDatabase(fireApp);
+    const storage = getStorage(fireApp);
 
-        /**
-         * 3. APPLICATION STATE & HELPERS
-         */
-        const state = {
-            currentUser: null, // Object: { username, firstName, fatherName }
-            adminUnlocked: false,
-            products: {},
-            orders: {}
-        };
+    // --- APP STATE ---
+    const appState = {
+        user: null, // { username, firstName, fatherName }
+        isRegister: false,
+        adminUnlocked: false,
+        products: [],
+        orders: []
+    };
 
-        const dom = {
-            get: (id) => document.getElementById(id),
-            show: (id) => document.getElementById(id).classList.remove('hidden'),
-            hide: (id) => document.getElementById(id).classList.add('hidden'),
-            msg: (text, type = 'error') => {
-                const el = document.getElementById('global-msg');
-                el.textContent = text;
-                el.className = `msg-box ${type === 'error' ? 'msg-error' : 'msg-success'}`;
-                el.classList.remove('hidden');
-                setTimeout(() => el.classList.add('hidden'), 4000);
+    // --- CORE LOGIC ---
+    const app = {
+        init() {
+            this.checkPersistence();
+            this.syncProducts();
+            this.syncOrders();
+            this.navigate('home');
+        },
+
+        // Navigation Controller
+        navigate(view) {
+            const views = ['home', 'login', 'my-orders', 'admin-add', 'admin-orders'];
+            views.forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+            document.getElementById(`view-${view}`).classList.remove('hidden');
+            this.clearFeedback();
+        },
+
+        // Sync Products from RTDB
+        syncProducts() {
+            const pRef = ref(db, 'products');
+            onValue(pRef, (snapshot) => {
+                const data = snapshot.val();
+                appState.products = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+                this.renderProducts();
+            });
+        },
+
+        // Sync Orders from RTDB
+        syncOrders() {
+            const oRef = ref(db, 'orders');
+            onValue(oRef, (snapshot) => {
+                const data = snapshot.val();
+                appState.orders = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+                this.renderMyOrders();
+                this.renderAdminOrders();
+            });
+        },
+
+        // --- AUTH LOGIC (DB Based) ---
+        toggleAuthMode() {
+            appState.isRegister = !appState.isRegister;
+            document.getElementById('auth-title').innerText = appState.isRegister ? 'Create Account' : 'Welcome Back';
+            document.getElementById('reg-extra-fields').classList.toggle('hidden', !appState.isRegister);
+            document.getElementById('login-fields').classList.toggle('hidden', appState.isRegister);
+            document.getElementById('auth-toggle-link').innerText = appState.isRegister ? 'Login' : 'Register';
+            document.getElementById('auth-toggle-msg').innerText = appState.isRegister ? 'Already have an account?' : 'Don\'t have an account?';
+        },
+
+        async handleAuth() {
+            const user = document.getElementById(appState.isRegister ? 'auth-firstname' : 'auth-username').value.trim().toLowerCase();
+            const pass = document.getElementById('auth-password').value;
+            const remember = document.getElementById('auth-remember').checked;
+
+            if (!user || !pass) return this.showFeedback("Please fill all fields", "error");
+
+            if (appState.isRegister) {
+                const fName = document.getElementById('auth-firstname').value;
+                const fatName = document.getElementById('auth-fathername').value;
+                const userRef = ref(db, `users/${user}`);
+                
+                const snap = await get(userRef);
+                if (snap.exists()) return this.showFeedback("Username taken", "error");
+
+                await set(userRef, { firstName: fName, fatherName: fatName, password: pass });
+                this.showFeedback("Registered! You can login now.", "success");
+                this.toggleAuthMode();
+            } else {
+                const userRef = ref(db, `users/${user}`);
+                const snap = await get(userRef);
+                if (snap.exists() && snap.val().password === pass) {
+                    const userData = snap.val();
+                    this.login({ username: user, firstName: userData.firstName, fatherName: userData.fatherName }, remember);
+                } else {
+                    this.showFeedback("Invalid credentials", "error");
+                }
             }
-        };
+        },
 
-        /**
-         * 4. APP LOGIC CONTROLLER
-         */
-        const app = {
+        login(userObj, persist) {
+            appState.user = userObj;
+            if (persist) localStorage.setItem('demo_user', JSON.stringify(userObj));
+            this.updateUIForAuth();
+            this.navigate('home');
+            this.showFeedback(`Welcome, ${userObj.firstName}!`, "success");
+        },
+
+        logout() {
+            appState.user = null;
+            appState.adminUnlocked = false;
+            localStorage.removeItem('demo_user');
+            location.reload();
+        },
+
+        checkPersistence() {
+            const saved = localStorage.getItem('demo_user');
+            if (saved) {
+                appState.user = JSON.parse(saved);
+                this.updateUIForAuth();
+            }
+        },
+
+        updateUIForAuth() {
+            const isAuth = !!appState.user;
+            document.querySelectorAll('.auth-only').forEach(el => el.classList.toggle('hidden', !isAuth));
+            document.getElementById('btn-login-nav').classList.toggle('hidden', isAuth);
+            document.getElementById('btn-logout').classList.toggle('hidden', !isAuth);
+            if (isAuth) {
+                document.getElementById('user-display').innerText = appState.user.firstName.toUpperCase();
+                document.getElementById('user-display').classList.remove('hidden');
+            }
+        },
+
+        // --- PRODUCT MGMT ---
+        unlockAdmin() {
+            const input = document.getElementById('admin-secret-input').value;
+            if (input === ADMIN_SECRET) {
+                appState.adminUnlocked = true;
+                document.getElementById('admin-lock-screen').classList.add('hidden');
+                document.getElementById('admin-form-screen').classList.remove('hidden');
+                this.renderProducts(); // Re-render to show delete buttons
+            } else {
+                this.showFeedback("Wrong secret code", "error");
+            }
+        },
+
+        async saveProduct() {
+            const name = document.getElementById('p-name').value;
+            const desc = document.getElementById('p-desc').value;
+            const price = document.getElementById('p-price').value;
+            const file = document.getElementById('p-image').files[0];
+
+            if (!name || !file || !price) return this.showFeedback("Missing info", "error");
+
+            const btn = document.getElementById('btn-save-product');
+            btn.disabled = true;
+            document.getElementById('upload-status').innerText = "Uploading image...";
+
+            try {
+                const path = `products/${Date.now()}_${file.name}`;
+                const storageReference = sRef(storage, path);
+                await uploadBytes(storageReference, file);
+                const url = await getDownloadURL(storageReference);
+
+                const newProdRef = push(ref(db, 'products'));
+                await set(newProdRef, {
+                    name, description: desc, price: Number(price),
+                    imageUrl: url, imagePath: path, createdAt: Date.now()
+                });
+
+                this.showFeedback("Product Added!", "success");
+                document.getElementById('p-name').value = '';
+                document.getElementById('p-image').value = '';
+                document.getElementById('upload-status').innerText = "";
+            } catch (e) {
+                this.showFeedback("Upload failed: " + e.message, "error");
+            } finally {
+                btn.disabled = false;
+            }
+        },
+
+        async deleteProduct(id, path) {
+            if (!confirm("Delete this product?")) return;
+            try {
+                await remove(ref(db, `products/${id}`));
+                if (path) await deleteObject(sRef(storage, path));
+                this.showFeedback("Product removed", "success");
+            } catch (e) { console.error(e); }
+        },
+
+        // --- ORDER MGMT ---
+        async placeOrder(pid) {
+            if (!appState.user) return this.navigate('login');
+            const p = appState.products.find(x => x.id === pid);
             
-            init: () => {
-                // Check localStorage for persisted session
-                const savedUser = localStorage.getItem('shop_user');
-                if (savedUser) {
-                    state.currentUser = JSON.parse(savedUser);
-                    app.ui.updateAuthHeader();
-                }
-                
-                // Start Realtime Listeners
-                app.data.listenProducts();
-                app.data.listenOrders();
-                
-                // Initial Route
-                app.router('home');
-            },
+            const newOrder = {
+                userName: appState.user.username,
+                userFirstName: appState.user.firstName,
+                userFatherName: appState.user.fatherName,
+                productId: pid,
+                productName: p.name,
+                productPrice: p.price,
+                productImage: p.imageUrl,
+                status: 'Pending',
+                createdAt: Date.now()
+            };
 
-            // --- ROUTER ---
-            router: (viewName) => {
-                // Hide all views
-                ['view-home', 'view-auth', 'view-admin-add', 'view-my-orders', 'view-admin-orders'].forEach(id => dom.hide(id));
-                
-                // Guard: Admin routes
-                if ((viewName === 'admin-add' || viewName === 'admin-orders') && !state.currentUser) {
-                    dom.msg("Please login first", "error");
-                    app.router('login');
-                    return;
-                }
-                
-                if (viewName === 'my-orders' && !state.currentUser) {
-                    app.router('login');
-                    return;
-                }
+            await push(ref(db, 'orders'), newOrder);
+            this.closeModal();
+            this.showFeedback("Order placed successfully!", "success");
+            this.navigate('my-orders');
+        },
 
-                // Show target
-                dom.show(`view-${viewName}`);
+        async cancelOrder(id) {
+            if (confirm("Cancel order?")) await remove(ref(db, `orders/${id}`));
+        },
 
-                // View specific logic
-                if (viewName === 'admin-add') {
-                    // Reset lock UI if locked
-                    if (!state.adminUnlocked) {
-                        dom.show('admin-lock-panel');
-                        dom.hide('product-form');
-                        dom.get('admin-code-input').value = '';
-                    } else {
-                        dom.hide('admin-lock-panel');
-                        dom.show('product-form');
-                    }
-                }
-            },
+        async updateOrderStatus(id, status) {
+            await update(ref(db, `orders/${id}`), { status });
+        },
 
-            // --- AUTHENTICATION (DB Based) ---
-            auth: {
-                isRegistering: false,
-
-                toggleMode: () => {
-                    app.auth.isRegistering = !app.auth.isRegistering;
-                    dom.get('auth-title').innerText = app.auth.isRegistering ? 'Register' : 'Login';
-                    dom.get('auth-toggle-text').innerText = app.auth.isRegistering ? 'Have an account? Login' : 'Need an account? Register';
-                    if (app.auth.isRegistering) {
-                        dom.show('register-fields');
-                        dom.hide('login-fields');
-                        dom.hide('login-options');
-                    } else {
-                        dom.hide('register-fields');
-                        dom.show('login-fields');
-                        dom.show('login-options');
-                    }
-                },
-
-                handleSubmit: async (e) => {
-                    e.preventDefault();
-                    
-                    const password = dom.get('auth-password').value.trim();
-                    if (!password) return dom.msg("Password required");
-
-                    if (app.auth.isRegistering) {
-                        // REGISTER FLOW
-                        const firstName = dom.get('reg-firstname').value.trim();
-                        const fatherName = dom.get('reg-fathername').value.trim();
-                        if (!firstName || !fatherName) return dom.msg("All fields required");
-
-                        const username = firstName.toLowerCase();
-                        const userRef = ref(db, `users/${username}`);
-
-                        try {
-                            const snapshot = await get(userRef);
-                            if (snapshot.exists()) {
-                                dom.msg("User with this First Name already exists. Choose another.", "error");
-                            } else {
-                                // Create User
-                                await set(userRef, {
-                                    firstName,
-                                    fatherName,
-                                    password: password // Plain text for demo only
-                                });
-                                dom.msg("Account created! Please login.", "success");
-                                app.auth.toggleMode(); // Switch to login
-                            }
-                        } catch (err) {
-                            console.error(err);
-                            dom.msg("Error registering: " + err.message);
-                        }
-
-                    } else {
-                        // LOGIN FLOW
-                        const firstName = dom.get('login-firstname').value.trim();
-                        if (!firstName) return dom.msg("First Name required");
-
-                        const username = firstName.toLowerCase();
-                        const userRef = ref(db, `users/${username}`);
-
-                        try {
-                            const snapshot = await get(userRef);
-                            if (snapshot.exists()) {
-                                const userData = snapshot.val();
-                                if (userData.password === password) {
-                                    // Success
-                                    state.currentUser = { 
-                                        username: username, 
-                                        firstName: userData.firstName, 
-                                        fatherName: userData.fatherName 
-                                    };
-                                    
-                                    if (dom.get('keep-signed-in').checked) {
-                                        localStorage.setItem('shop_user', JSON.stringify(state.currentUser));
-                                    }
-
-                                    app.ui.updateAuthHeader();
-                                    dom.msg(`Welcome back, ${userData.firstName}`, "success");
-                                    app.router('home');
-                                } else {
-                                    dom.msg("Invalid password", "error");
-                                }
-                            } else {
-                                dom.msg("User not found", "error");
-                            }
-                        } catch (err) {
-                            console.error(err);
-                            dom.msg("Login error: " + err.message);
-                        }
-                    }
-                },
-
-                logout: () => {
-                    state.currentUser = null;
-                    state.adminUnlocked = false;
-                    localStorage.removeItem('shop_user');
-                    app.ui.updateAuthHeader();
-                    app.router('home');
-                    dom.msg("Logged out", "success");
-                }
-            },
-
-            // --- ADMIN LOGIC ---
-            admin: {
-                unlock: () => {
-                    const code = dom.get('admin-code-input').value;
-                    if (code === ADMIN_CODE) {
-                        state.adminUnlocked = true;
-                        dom.hide('admin-lock-panel');
-                        dom.show('product-form');
-                        dom.msg("Admin privileges unlocked (Client-side)", "success");
-                        app.ui.renderProducts(); // Re-render to show delete buttons
-                    } else {
-                        dom.msg("Incorrect Admin Code", "error");
-                    }
-                },
-
-                addProduct: async (e) => {
-                    e.preventDefault();
-                    const name = dom.get('prod-name').value;
-                    const desc = dom.get('prod-desc').value;
-                    const price = parseFloat(dom.get('prod-price').value);
-                    const file = dom.get('prod-image').files[0];
-
-                    if (!file) return dom.msg("Please select an image");
-
-                    try {
-                        // 1. Upload to Storage
-                        dom.show('upload-progress');
-                        const storagePath = `products/${Date.now()}-${file.name}`;
-                        const storageRef = sRef(storage, storagePath);
-                        
-                        await uploadBytes(storageRef, file);
-                        const downloadURL = await getDownloadURL(storageRef);
-
-                        // 2. Save to Realtime DB
-                        const newProdRef = push(ref(db, 'products'));
-                        await set(newProdRef, {
-                            name,
-                            description: desc,
-                            price,
-                            imageUrl: downloadURL,
-                            imagePath: storagePath,
-                            createdAt: Date.now()
-                        });
-
-                        dom.msg("Product added successfully", "success");
-                        e.target.reset();
-                    } catch (err) {
-                        console.error(err);
-                        dom.msg("Failed to add product: " + err.message);
-                    } finally {
-                        dom.hide('upload-progress');
-                    }
-                },
-
-                deleteProduct: async (prodId, imagePath) => {
-                    if (!confirm("Are you sure you want to delete this product?")) return;
-
-                    try {
-                        // Delete from DB
-                        await remove(ref(db, `products/${prodId}`));
-                        
-                        // Try delete from Storage
-                        if (imagePath) {
-                            const imgRef = sRef(storage, imagePath);
-                            await deleteObject(imgRef).catch(e => console.warn("Image delete skipped/failed", e));
-                        }
-                        dom.msg("Product deleted", "success");
-                    } catch (err) {
-                        dom.msg("Error deleting: " + err.message);
-                    }
-                },
-
-                updateOrderStatus: async (orderId, newStatus) => {
-                    try {
-                        await update(ref(db, `orders/${orderId}`), { status: newStatus });
-                        dom.msg(`Order marked as ${newStatus}`, "success");
-                    } catch (err) {
-                        dom.msg("Update failed: " + err.message);
-                    }
-                }
-            },
-
-            // --- DATA HANDLERS ---
-            data: {
-                listenProducts: () => {
-                    const productsRef = ref(db, 'products');
-                    onValue(productsRef, (snapshot) => {
-                        state.products = snapshot.val() || {};
-                        app.ui.renderProducts();
-                    });
-                },
-
-                listenOrders: () => {
-                    const ordersRef = ref(db, 'orders');
-                    onValue(ordersRef, (snapshot) => {
-                        state.orders = snapshot.val() || {};
-                        app.ui.renderMyOrders();
-                        app.ui.renderAdminOrders();
-                    });
-                },
-
-                placeOrder: async (prodId) => {
-                    if (!state.currentUser) {
-                        app.router('login');
-                        return;
-                    }
-
-                    const product = state.products[prodId];
-                    if (!product) return dom.msg("Product unavailable");
-
-                    // Confirmation
-                    if (!confirm(`Confirm order for ${product.name} (${product.price})?`)) return;
-
-                    try {
-                        const newOrderRef = push(ref(db, 'orders'));
-                        await set(newOrderRef, {
-                            userName: state.currentUser.username,
-                            userFirstName: state.currentUser.firstName,
-                            userFatherName: state.currentUser.fatherName,
-                            productId: prodId,
-                            productName: product.name,
-                            productPrice: product.price,
-                            productImage: product.imageUrl,
-                            status: "Pending",
-                            createdAt: Date.now()
-                        });
-                        
-                        app.ui.closeModal();
-                        dom.msg("Order placed! Check 'My Orders'.", "success");
-                    } catch (err) {
-                        dom.msg("Order failed: " + err.message);
-                    }
-                },
-
-                cancelOrder: async (orderId) => {
-                    if(!confirm("Cancel this order?")) return;
-                    try {
-                        await remove(ref(db, `orders/${orderId}`));
-                        dom.msg("Order canceled", "success");
-                    } catch (err) {
-                        dom.msg("Cancel failed: " + err.message);
-                    }
-                }
-            },
-
-            // --- UI RENDERERS ---
-            ui: {
-                updateAuthHeader: () => {
-                    if (state.currentUser) {
-                        dom.show('user-info');
-                        dom.hide('auth-buttons');
-                        dom.show('nav-actions'); // Show nav links
-                        dom.get('display-username').innerText = state.currentUser.firstName;
-                    } else {
-                        dom.hide('user-info');
-                        dom.show('auth-buttons');
-                        dom.hide('nav-actions');
-                    }
-                },
-
-                renderProducts: () => {
-                    const container = dom.get('product-list');
-                    container.innerHTML = '';
-                    
-                    const keys = Object.keys(state.products);
-                    if (keys.length === 0) {
-                        container.innerHTML = '<p class="text-center" style="grid-column: 1/-1">No products yet.</p>';
-                        return;
-                    }
-
-                    keys.forEach(key => {
-                        const p = state.products[key];
-                        const card = document.createElement('div');
-                        card.className = 'card';
-                        
-                        // Logic for Buttons
-                        let actionButtons = '';
-                        
-                        // 1. More Button (Always)
-                        actionButtons += `<button class="btn secondary" onclick="app.ui.openProductModal('${key}')">More</button>`;
-
-                        // 2. Order Button
-                        if (state.currentUser) {
-                            actionButtons += `<button class="btn" onclick="app.data.placeOrder('${key}')">Order</button>`;
-                        } else {
-                            actionButtons += `<button class="btn secondary" onclick="app.router('login')">Login to Order</button>`;
-                        }
-
-                        // 3. Delete Button (Admin Only)
-                        if (state.adminUnlocked) {
-                            actionButtons += `<button class="btn danger" onclick="app.admin.deleteProduct('${key}', '${p.imagePath}')">Del</button>`;
-                        }
-
-                        card.innerHTML = `
-                            <img src="${p.imageUrl}" class="card-img" alt="${p.name}" loading="lazy">
-                            <div class="card-body">
-                                <div class="card-title">${p.name}</div>
-                                <div class="card-price">$${p.price}</div>
-                                <div class="card-desc">${p.description}</div>
-                                <div class="card-actions">
-                                    ${actionButtons}
-                                </div>
-                            </div>
-                        `;
-                        container.appendChild(card);
-                    });
-                },
-
-                openProductModal: (key) => {
-                    const p = state.products[key];
-                    const modalBody = dom.get('modal-body');
-                    
-                    modalBody.innerHTML = `
-                        <img src="${p.imageUrl}" class="modal-img">
-                        <h2>${p.name}</h2>
-                        <h3 style="color:var(--primary)">$${p.price}</h3>
-                        <p>${p.description}</p>
-                        <p class="text-sm">Added: ${new Date(p.createdAt).toLocaleDateString()}</p>
-                        <div style="margin-top:20px">
-                             ${state.currentUser 
-                                ? `<button class="btn" style="width:100%" onclick="app.data.placeOrder('${key}')">Place Order Now</button>`
-                                : `<button class="btn secondary" style="width:100%" onclick="app.ui.closeModal(); app.router('login')">Login to Order</button>`
-                             }
+        // --- UI RENDERING ---
+        renderProducts() {
+            const list = document.getElementById('product-list');
+            list.innerHTML = appState.products.map(p => `
+                <div class="product-card">
+                    <img src="${p.imageUrl}" class="product-img">
+                    <div class="product-info">
+                        <h3 class="product-name">${p.name}</h3>
+                        <p class="product-desc">${p.description}</p>
+                        <div class="product-price">$${p.price}</div>
+                        <div class="card-actions">
+                            <button class="btn btn-outline btn-sm" onclick="app.openModal('${p.id}')">More</button>
+                            ${appState.user ? `<button class="btn btn-primary btn-sm" onclick="app.placeOrder('${p.id}')">Order</button>` : `<button class="btn btn-primary btn-sm" onclick="app.navigate('login')">Login</button>`}
+                            ${appState.adminUnlocked ? `<button class="btn btn-danger btn-sm" onclick="app.deleteProduct('${p.id}', '${p.imagePath}')">Delete</button>` : ''}
                         </div>
-                    `;
-                    
-                    dom.show('product-modal');
-                },
+                    </div>
+                </div>
+            `).join('') || '<p>No products available.</p>';
+        },
 
-                closeModal: () => {
-                    dom.hide('product-modal');
-                },
+        renderMyOrders() {
+            if (!appState.user) return;
+            const list = document.getElementById('my-orders-list');
+            const myData = appState.orders.filter(o => o.userName === appState.user.username);
+            list.innerHTML = myData.map(o => `
+                <tr>
+                    <td>${o.productName}</td>
+                    <td>$${o.productPrice}</td>
+                    <td>${new Date(o.createdAt).toLocaleDateString()}</td>
+                    <td><span class="status-pill status-${o.status}">${o.status}</span></td>
+                    <td>${o.status !== 'Delivered' ? `<button class="btn btn-danger btn-sm" onclick="app.cancelOrder('${o.id}')">Cancel</button>` : '-'}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="5">No orders found.</td></tr>';
+        },
 
-                renderMyOrders: () => {
-                    const tbody = document.querySelector('#my-orders-table tbody');
-                    tbody.innerHTML = '';
-                    let count = 0;
+        renderAdminOrders() {
+            const list = document.getElementById('admin-orders-list');
+            list.innerHTML = appState.orders.map(o => `
+                <tr>
+                    <td>${o.userFirstName} ${o.userFatherName} (${o.userName})</td>
+                    <td>${o.productName}</td>
+                    <td><span class="status-pill status-${o.status}">${o.status}</span></td>
+                    <td>
+                        <select onchange="app.updateOrderStatus('${o.id}', this.value)" style="padding:2px; font-size:0.8rem; margin:0;">
+                            <option value="">Update...</option>
+                            <option value="Accepted">Accepted</option>
+                            <option value="Declined">Declined</option>
+                            <option value="Delivered">Delivered</option>
+                        </select>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="4">No orders in system.</td></tr>';
+        },
 
-                    if (!state.currentUser) return;
+        // --- UTILS ---
+        showFeedback(msg, type) {
+            const div = document.getElementById('feedback-area');
+            div.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+            window.scrollTo(0,0);
+            setTimeout(() => this.clearFeedback(), 4000);
+        },
 
-                    Object.keys(state.orders).forEach(key => {
-                        const o = state.orders[key];
-                        if (o.userName === state.currentUser.username) {
-                            count++;
-                            const tr = document.createElement('tr');
-                            
-                            // Cancel Logic: Only if not delivered
-                            const canCancel = o.status !== 'Delivered';
-                            const cancelBtn = canCancel 
-                                ? `<button class="btn danger" style="padding:4px 8px; font-size:0.8rem" onclick="app.data.cancelOrder('${key}')">Cancel</button>` 
-                                : '-';
+        clearFeedback() { document.getElementById('feedback-area').innerHTML = ''; },
 
-                            tr.innerHTML = `
-                                <td>${new Date(o.createdAt).toLocaleDateString()}</td>
-                                <td>${o.productName}</td>
-                                <td>$${o.productPrice}</td>
-                                <td><span class="status-badge status-${o.status}">${o.status}</span></td>
-                                <td>${cancelBtn}</td>
-                            `;
-                            tbody.appendChild(tr);
-                        }
-                    });
+        openModal(id) {
+            const p = appState.products.find(x => x.id === id);
+            document.getElementById('modal-body').innerHTML = `
+                <img src="${p.imageUrl}" style="width:100%; border-radius:8px; margin-bottom:15px;">
+                <h2>${p.name}</h2>
+                <p style="color:var(--text-muted)">${p.description}</p>
+                <div style="font-size:1.5rem; font-weight:800; color:var(--primary); margin: 15px 0;">$${p.price}</div>
+                <button class="btn btn-primary" style="width:100%" onclick="app.placeOrder('${p.id}')">Order Now</button>
+            `;
+            document.getElementById('product-modal').classList.remove('hidden');
+        },
 
-                    if (count === 0) dom.show('no-my-orders');
-                    else dom.hide('no-my-orders');
-                },
+        closeModal() { document.getElementById('product-modal').classList.add('hidden'); }
+    };
 
-                renderAdminOrders: () => {
-                    const tbody = document.querySelector('#admin-orders-table tbody');
-                    tbody.innerHTML = '';
+    // Attach to window for HTML onclick access
+    window.app = app;
+    app.init();
+</script>
 
-                    // Sort by newest
-                    const keys = Object.keys(state.orders).sort((a,b) => state.orders[b].createdAt - state.orders[a].createdAt);
-
-                    keys.forEach(key => {
-                        const o = state.orders[key];
-                        const tr = document.createElement('tr');
-                        
-                        tr.innerHTML = `
-                            <td>
-                                <b>${o.userFirstName}</b><br>
-                                <span class="text-sm">(${o.userFatherName})</span>
-                            </td>
-                            <td>${o.productName} <span class="text-sm">($${o.productPrice})</span></td>
-                            <td><span class="status-badge status-${o.status}">${o.status}</span></td>
-                            <td>
-                                <div class="btn-group">
-                                    <button class="btn success" style="font-size:0.7rem; padding:4px;" onclick="app.admin.updateOrderStatus('${key}', 'Accepted')">Accept</button>
-                                    <button class="btn secondary" style="font-size:0.7rem; padding:4px;" onclick="app.admin.updateOrderStatus('${key}', 'Delivered')">Deliver</button>
-                                    <button class="btn danger" style="font-size:0.7rem; padding:4px;" onclick="app.admin.updateOrderStatus('${key}', 'Declined')">Decline</button>
-                                </div>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                }
-            }
-        };
-
-        // Initialize App
-        window.app = app; // Expose for HTML onclicks
-        app.init();
-
-    </script>
-    
-    </body>
+</body>
 </html>
