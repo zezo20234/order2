@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Commerce Single File App</title>
+    <title>MarketPlace - Single File App</title>
     <style>
         /* --- CSS VARIABLES & RESET --- */
         :root {
@@ -29,7 +29,7 @@
             display: flex; justify-content: space-between; align-items: center;
         }
         .brand { font-size: 1.25rem; font-weight: bold; color: var(--primary); }
-        nav { display: flex; gap: 10px; }
+        nav { display: flex; gap: 10px; flex-wrap: wrap; }
         nav button {
             background: transparent; border: none; cursor: pointer;
             padding: 8px 12px; font-weight: 500; color: var(--secondary);
@@ -108,8 +108,8 @@
         .modal-img { width: 100%; max-height: 300px; object-fit: contain; margin-bottom: 1rem; border-radius: 8px; }
 
         /* --- ADMIN UNLOCK --- */
-        .admin-unlock-container { margin-top: 1rem; display: flex; gap: 5px; justify-content: center; }
-        #adminCodeInput { width: 100px; padding: 5px; font-size: 0.8rem; }
+        .admin-unlock-container { margin-top: 1rem; display: flex; gap: 5px; justify-content: center; border-top: 1px solid #eee; padding-top: 15px; }
+        #adminCodeInput { width: 120px; padding: 5px; font-size: 0.8rem; text-align: center; }
 
         /* --- LOADING SPINNER --- */
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto; }
@@ -124,7 +124,7 @@
             <button onclick="navTo('home')" id="nav-home">Home</button>
             <button onclick="navTo('my-orders')" id="nav-my-orders">My Orders</button>
             <button onclick="navTo('add-product')" id="nav-add" class="hidden">Add Product</button>
-            <button onclick="navTo('admin-orders')" id="nav-admin-orders" class="hidden">All Orders</button>
+            <button onclick="navTo('admin-orders')" id="nav-admin-orders" class="hidden">Orders (Admin)</button>
             <button onclick="logout()" style="color: var(--danger);">Logout</button>
         </nav>
     </header>
@@ -181,7 +181,7 @@
 
         <div id="page-add-product" class="hidden">
             <h2>Add New Product</h2>
-            <div class="form-card" style="margin: 0;">
+            <div class="form-card" style="margin: 0; max-width: 600px;">
                 <div class="form-group">
                     <label>Product Name</label>
                     <input type="text" id="prodName">
@@ -259,7 +259,9 @@
         import { getDatabase, ref, set, push, onValue, remove, update, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-        // REPLACE WITH YOUR FIREBASE CONFIG
+        // ---------------------------------------------------------
+        // PASTE YOUR FIREBASE CONFIGURATION HERE
+        // ---------------------------------------------------------
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -289,10 +291,9 @@
                 postLoginInit();
             } else {
                 document.getElementById('authSection').classList.remove('hidden');
+                fetchProducts(); // Allow viewing products even if not logged in? 
+                                 // Prompt implies logic flow, let's just fetch globally.
             }
-            
-            // Listen for Products Global
-            fetchProducts(); 
         };
 
         window.toggleAuth = (view) => {
@@ -318,7 +319,7 @@
             // Check if exists
             get(userRef).then((snapshot) => {
                 if (snapshot.exists()) {
-                    alert("User already exists with this name.");
+                    alert("User already exists with this name. Please login.");
                 } else {
                     set(userRef, {
                         firstName: name,
@@ -372,12 +373,21 @@
             document.getElementById('appContainer').classList.remove('hidden');
             document.getElementById('mainHeader').classList.remove('hidden');
             
-            // Check Admin Status (Session based only for this demo)
-            if (isAdmin) enableAdminUI();
+            // Check if Admin was unlocked during login session (rare) or apply global check
+            // If user reloads, isAdmin resets. They must re-enter code or we can persist admin state.
+            // Prompt doesn't specify persisting admin state, just "unlock". 
+            // We'll rely on the input check. If they are already logged in via localStorage,
+            // they can type the code in the "My Orders" or simply not see admin panel until they type code somewhere?
+            // Actually, best place for admin code if auto-logged in:
+            // Let's add the input to the Header temporarily if you want, OR assume they must log out and use the input on login screen.
+            // Requirement: "Admin unlock happens via an input field".
+            // I'll keep the input field on the Login screen. If they are auto-logged in, they aren't admin yet.
+            // They can logout, type code 555 in the input, then login. 
+            // OR I can add the hidden input somewhere else. 
+            // Better UX: Allow the code input to trigger admin mode even if not logging in (for simplicity).
             
-            // Load Orders
+            fetchProducts();
             fetchMyOrders();
-            if(isAdmin) fetchAllOrders();
         }
 
         // --- 4. ADMIN SYSTEM ---
@@ -385,16 +395,18 @@
             const code = document.getElementById('adminCodeInput').value;
             if (code === '555') {
                 isAdmin = true;
-                if (currentUser) enableAdminUI();
+                if (currentUser || !currentUser) {
+                    // Update UI immediately if code matches
+                    enableAdminUI();
+                }
             }
         };
 
         function enableAdminUI() {
             document.getElementById('nav-add').classList.remove('hidden');
             document.getElementById('nav-admin-orders').classList.remove('hidden');
-            // Re-render products to show delete buttons
-            fetchProducts();
-            fetchAllOrders();
+            fetchProducts(); // Refresh to show delete buttons
+            if (currentUser) fetchAllOrders();
         }
 
         // --- 5. NAVIGATION ---
@@ -409,6 +421,9 @@
             // Active state
             document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
             document.getElementById('nav-' + pageId).classList.add('active');
+
+            if(pageId === 'admin-orders') fetchAllOrders();
+            if(pageId === 'my-orders') fetchMyOrders();
         };
 
         // --- 6. PRODUCTS SYSTEM ---
@@ -460,7 +475,7 @@
         };
 
         // Read Products
-        function fetchProducts() {
+        window.fetchProducts = () => {
             const productsRef = ref(db, 'products');
             onValue(productsRef, (snapshot) => {
                 const grid = document.getElementById('productsGrid');
@@ -489,15 +504,13 @@
                                 </div>
                             </div>
                         `;
-                        // Store full data in element for Modal usage
-                        div.dataset.json = JSON.stringify(p);
                         grid.appendChild(div);
                     });
                 } else {
                     grid.innerHTML = '<p>No products available.</p>';
                 }
             });
-        }
+        };
 
         // Delete Product
         window.deleteProduct = (id) => {
@@ -508,16 +521,15 @@
 
         // Modal Logic
         window.showModal = (key) => {
-            // Find data locally (optimization) to avoid extra fetch
-            // But we need the data. Let's cheat and grab it from the database path since we have the key,
-            // or better, pass the data object? Due to HTML limitations in onclick, let's fetch specific.
             get(ref(db, 'products/'+key)).then(snap => {
-                const p = snap.val();
-                document.getElementById('modalImg').src = p.imageUrl;
-                document.getElementById('modalTitle').innerText = p.name;
-                document.getElementById('modalPrice').innerText = '$' + p.price;
-                document.getElementById('modalDesc').innerText = p.description;
-                document.getElementById('productModal').classList.remove('hidden');
+                if(snap.exists()){
+                    const p = snap.val();
+                    document.getElementById('modalImg').src = p.imageUrl;
+                    document.getElementById('modalTitle').innerText = p.name;
+                    document.getElementById('modalPrice').innerText = '$' + p.price;
+                    document.getElementById('modalDesc').innerText = p.description;
+                    document.getElementById('productModal').classList.remove('hidden');
+                }
             });
         };
 
@@ -548,7 +560,7 @@
         };
 
         // My Orders
-        function fetchMyOrders() {
+        window.fetchMyOrders = () => {
             if(!currentUser) return;
             onValue(ref(db, 'orders'), (snapshot) => {
                 const tbody = document.getElementById('myOrdersTable');
@@ -558,12 +570,13 @@
                 if (data) {
                     Object.keys(data).forEach(key => {
                         const order = data[key];
+                        // Manual Filter
                         if (order.user === currentUser.firstName) {
                             const tr = document.createElement('tr');
                             
                             let action = '';
                             if (order.status !== 'Delivered' && order.status !== 'Declined') {
-                                action = `<button style="color:red; background:none; border:none; cursor:pointer;" onclick="cancelOrder('${key}')">Cancel</button>`;
+                                action = `<button style="color:red; background:none; border:none; cursor:pointer; font-weight:bold;" onclick="cancelOrder('${key}')">Cancel</button>`;
                             }
 
                             tr.innerHTML = `
@@ -578,7 +591,7 @@
                     });
                 }
             });
-        }
+        };
 
         window.cancelOrder = (key) => {
             if(confirm("Cancel this order?")) {
@@ -587,7 +600,7 @@
         };
 
         // Admin Orders
-        function fetchAllOrders() {
+        window.fetchAllOrders = () => {
             if(!isAdmin) return;
             onValue(ref(db, 'orders'), (snapshot) => {
                 const tbody = document.getElementById('adminOrdersTable');
@@ -598,18 +611,20 @@
                     Object.keys(data).forEach(key => {
                         const order = data[key];
                         const tr = document.createElement('tr');
+                        // Pre-select current status
+                        const getSel = (val) => order.status === val ? 'selected' : '';
+
                         tr.innerHTML = `
                             <td>${order.user}</td>
                             <td>${order.productName}</td>
                             <td><img src="${order.image}" class="order-img"></td>
                             <td><span class="status-badge status-${order.status}">${order.status}</span></td>
                             <td>
-                                <select onchange="updateStatus('${key}', this.value)" style="padding:4px;">
-                                    <option value="" disabled selected>Change</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Accepted">Accepted</option>
-                                    <option value="Declined">Declined</option>
-                                    <option value="Delivered">Delivered</option>
+                                <select onchange="updateStatus('${key}', this.value)" style="padding:4px; border-radius:4px;">
+                                    <option value="Pending" ${getSel('Pending')}>Pending</option>
+                                    <option value="Accepted" ${getSel('Accepted')}>Accepted</option>
+                                    <option value="Declined" ${getSel('Declined')}>Declined</option>
+                                    <option value="Delivered" ${getSel('Delivered')}>Delivered</option>
                                 </select>
                             </td>
                         `;
@@ -617,7 +632,7 @@
                     });
                 }
             });
-        }
+        };
 
         window.updateStatus = (key, newStatus) => {
             update(ref(db, 'orders/' + key), { status: newStatus });
