@@ -41,16 +41,19 @@
         .btn-success { background: var(--success); color: white; }
         .btn-secondary { background: #6b7280; color: white; }
 
+        /* Auth Screen */
         #auth-screen { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         .auth-box { background: var(--card); padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
         .toggle-link { color: var(--primary); cursor: pointer; margin-top: 15px; display: block; font-weight: 500; }
 
+        /* Header */
         header { 
             background: var(--primary); padding: 15px; display: flex; flex-direction: column; gap: 10px; color: white; position: sticky; top: 0; z-index: 100;
         }
         .header-top { display: flex; justify-content: space-between; align-items: center; }
         .nav-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
+        /* Grid */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; width: 100%; }
         @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } }
 
@@ -64,6 +67,7 @@
         .p-actions button { padding: 6px; font-size: 11px; }
         .btn-full { grid-column: span 2; margin-bottom: 5px; }
 
+        /* Modals */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-end; z-index: 1000; }
         .modal-content { background: var(--card); padding: 20px; border-radius: 20px 20px 0 0; width: 100%; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -95,6 +99,7 @@
             <h2 style="margin-top:0">Create Account</h2>
             <input type="text" id="signup-fname" placeholder="First Name">
             <input type="text" id="signup-dadname" placeholder="Father's Name">
+            <input type="text" id="signup-class" placeholder="Class (Example: 7c)">
             <input type="password" id="signup-pass" placeholder="Password">
             <button class="btn-success" onclick="handleSignup()" style="width: 100%">Sign Up Now</button>
             <span class="toggle-link" onclick="toggleAuth('login')">Already have an account? Log In</span>
@@ -191,10 +196,11 @@
         function handleSignup() {
             const fname = document.getElementById('signup-fname').value.trim();
             const dadname = document.getElementById('signup-dadname').value.trim();
+            const uClass = document.getElementById('signup-class').value.trim();
             const pass = document.getElementById('signup-pass').value.trim();
-            if (!fname || !dadname || !pass) return alert("Fill all fields");
+            if (!fname || !dadname || !uClass || !pass) return alert("Fill all fields");
             const uid = 'u' + Date.now();
-            db.ref('users/' + uid).set({ fname, dadname, pass, uid })
+            db.ref('users/' + uid).set({ fname, dadname, uClass, pass, uid })
                 .then(() => { alert("Created! Now login."); toggleAuth('login'); });
         }
 
@@ -291,28 +297,23 @@
 
         function orderProduct(pid, name, price) {
             if(!confirm(`Order ${name}?`)) return;
-            
-            // Transaction: Deduct 1 from quantity safely
             const productRef = db.ref('products/' + pid);
             productRef.transaction((p) => {
-                if (p) {
-                    if (p.qty > 0) {
-                        p.qty--;
-                    } else {
-                        return; // Abort if out of stock
-                    }
-                }
+                if (p && p.qty > 0) p.qty--;
                 return p;
             }, (error, committed) => {
                 if (committed) {
                     const oid = 'o' + Date.now();
                     db.ref('orders/' + oid).set({
                         oid, pid, name, price, 
-                        uid: currentUser.uid, uName: currentUser.fname, uDad: currentUser.dadname,
+                        uid: currentUser.uid, 
+                        uName: currentUser.fname, 
+                        uDad: currentUser.dadname,
+                        uClass: currentUser.uClass, // Saving class to the order
                         status: 'Pending'
-                    }).then(() => alert("Order Sent! Stock updated."));
+                    }).then(() => alert("Order Sent!"));
                 } else {
-                    alert("Sorry, this item just sold out!");
+                    alert("Sold out!");
                 }
             });
         }
@@ -320,7 +321,6 @@
         function updStat(oid, pid, newStatus) {
             db.ref('orders/' + oid).once('value', snap => {
                 const order = snap.val();
-                // If moving from Pending to Declined, add stock back
                 if (order.status === 'Pending' && newStatus === 'Declined') {
                     db.ref('products/' + pid + '/qty').transaction(q => (q || 0) + 1);
                 }
@@ -329,13 +329,10 @@
         }
 
         function cancelOrder(oid, pid) {
-            if(!confirm("Cancel order and return item to stock?")) return;
+            if(!confirm("Cancel order? Item will return to stock.")) return;
             db.ref('orders/' + oid).once('value', snap => {
                 const order = snap.val();
-                if(order.status === 'Pending') {
-                    // Restock
-                    db.ref('products/' + pid + '/qty').transaction(q => (q || 0) + 1);
-                }
+                if(order.status === 'Pending') db.ref('products/' + pid + '/qty').transaction(q => (q || 0) + 1);
                 db.ref('orders/' + oid).remove();
             });
         }
@@ -352,7 +349,7 @@
                     div.className = 'order-item';
                     div.innerHTML = `
                         <b>${o.name}</b> (${o.price} SAR)<br>
-                        User: ${o.uName} ${o.uDad}<br>
+                        <span style="color:var(--primary)">User: ${o.uName} ${o.uDad} | <strong>Class: ${o.uClass}</strong></span><br>
                         Status: <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span>
                         <div style="margin-top:10px; display:flex; gap:5px;">
                             <button class="btn-primary" onclick="updStat('${o.oid}','${o.pid}','Accepted')">Accept</button>
