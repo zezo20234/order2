@@ -22,6 +22,7 @@
             --card: #ffffff;
         }
 
+        /* Full Screen & Layout Reset */
         * { box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
@@ -53,7 +54,7 @@
         .header-top { display: flex; justify-content: space-between; align-items: center; }
         .nav-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-        /* Grid */
+        /* Product Grid */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; width: 100%; }
         @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } }
 
@@ -86,20 +87,21 @@
     <div id="auth-screen">
         <div id="login-form" class="auth-box">
             <h2 style="margin-top:0">MiniShop Login</h2>
-            <input type="text" id="login-name" placeholder="First Name">
+            <input type="text" id="login-fname" placeholder="First Name">
+            <input type="text" id="login-dadname" placeholder="Father's Name">
             <input type="password" id="login-pass" placeholder="Password">
             <div style="text-align: left; margin-bottom: 15px; font-size: 14px;">
                 <input type="checkbox" id="keep-signed-in" style="width: auto; margin:0"> <label for="keep-signed-in">Keep me signed in</label>
             </div>
             <button class="btn-primary" onclick="handleLogin()" style="width: 100%">Log In</button>
-            <span class="toggle-link" onclick="toggleAuth('signup')">Create a New Account</span>
+            <span class="toggle-link" onclick="toggleAuth('signup')">Need an account? Sign Up</span>
         </div>
 
         <div id="signup-form" class="auth-box hidden">
             <h2 style="margin-top:0">Create Account</h2>
             <input type="text" id="signup-fname" placeholder="First Name">
             <input type="text" id="signup-dadname" placeholder="Father's Name">
-            <input type="text" id="signup-class" placeholder="Class (Example: 7c)">
+            <input type="text" id="signup-class" placeholder="Class (e.g. 7c)">
             <input type="password" id="signup-pass" placeholder="Password">
             <button class="btn-success" onclick="handleSignup()" style="width: 100%">Sign Up Now</button>
             <span class="toggle-link" onclick="toggleAuth('login')">Already have an account? Log In</span>
@@ -167,6 +169,7 @@
     </div>
 
     <script>
+        // === FIREBASE CONFIG ===
         const firebaseConfig = {
             apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
             authDomain: "minishop-67dbf.firebaseapp.com",
@@ -183,6 +186,7 @@
         let currentUser = null;
         const ADMIN_CODE = "555";
 
+        // === STARTUP & PERSISTENCE ===
         window.onload = () => {
             const savedUser = localStorage.getItem('miniShopUser');
             if (savedUser) { currentUser = JSON.parse(savedUser); showApp(); }
@@ -193,44 +197,61 @@
             document.getElementById('signup-form').classList.toggle('hidden', view === 'login');
         }
 
+        // === AUTH LOGIC ===
         function handleSignup() {
             const fname = document.getElementById('signup-fname').value.trim();
             const dadname = document.getElementById('signup-dadname').value.trim();
             const uClass = document.getElementById('signup-class').value.trim();
             const pass = document.getElementById('signup-pass').value.trim();
-            if (!fname || !dadname || !uClass || !pass) return alert("Fill all fields");
+            
+            if (!fname || !dadname || !uClass || !pass) return alert("Please fill all fields");
+            
             const uid = 'u' + Date.now();
             db.ref('users/' + uid).set({ fname, dadname, uClass, pass, uid })
-                .then(() => { alert("Created! Now login."); toggleAuth('login'); });
+                .then(() => { 
+                    alert("Account Created! You can now log in."); 
+                    toggleAuth('login'); 
+                });
         }
 
         function handleLogin() {
-            const name = document.getElementById('login-name').value.trim();
+            const fname = document.getElementById('login-fname').value.trim();
+            const dadname = document.getElementById('login-dadname').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
             const keep = document.getElementById('keep-signed-in').checked;
+
+            if (!fname || !dadname || !pass) return alert("Please enter both names and password");
+
             db.ref('users').once('value', snap => {
                 let found = false;
                 snap.forEach(c => {
                     const u = c.val();
-                    if (u.fname.toLowerCase() === name.toLowerCase() && u.pass === pass) {
-                        found = true; currentUser = u;
+                    // Checking First Name AND Father Name AND Password
+                    if (u.fname.toLowerCase() === fname.toLowerCase() && 
+                        u.dadname.toLowerCase() === dadname.toLowerCase() && 
+                        u.pass === pass) {
+                        found = true; 
+                        currentUser = u;
                         if (keep) localStorage.setItem('miniShopUser', JSON.stringify(u));
                         showApp();
                     }
                 });
-                if (!found) alert("Error in Name or Password");
+                if (!found) alert("Incorrect Name or Password. Please try again.");
             });
         }
 
         function logout() { localStorage.removeItem('miniShopUser'); location.reload(); }
+        
         function showApp() { 
             document.getElementById('auth-screen').classList.add('hidden'); 
             document.getElementById('app-screen').classList.remove('hidden'); 
             loadProducts(); 
         }
 
+        // === PRODUCT LOGIC ===
         function openAddProduct() {
-            if (prompt("Security Code:") === ADMIN_CODE) document.getElementById('modal-add-product').classList.remove('hidden');
+            if (prompt("Admin Security Code:") === ADMIN_CODE) 
+                document.getElementById('modal-add-product').classList.remove('hidden');
         }
 
         function submitProduct() {
@@ -239,7 +260,9 @@
             const price = document.getElementById('p-price').value;
             const qty = parseInt(document.getElementById('p-qty').value) || 0;
             const file = document.getElementById('p-file').files[0];
-            if (!name || !price || !file) return alert("Missing info");
+
+            if (!name || !price || !file) return alert("Please provide name, price and photo.");
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 const pid = 'p' + Date.now();
@@ -265,7 +288,7 @@
                             <div class="p-price">${p.price} SAR</div>
                             <div class="p-qty">${isOut ? '<span style="color:red">Out of Stock</span>' : 'Stock: '+p.qty}</div>
                             <button class="btn-primary btn-full" ${isOut ? 'disabled' : ''} onclick="orderProduct('${p.pid}', '${p.name}', '${p.price}')">
-                                ${isOut ? 'Sold Out' : 'Order'}
+                                ${isOut ? 'Sold Out' : 'Order Now'}
                             </button>
                             <div class="p-actions">
                                 <button class="btn-secondary" onclick="showDetail('${p.pid}')">More</button>
@@ -295,12 +318,18 @@
             });
         }
 
+        function deleteProduct(pid) {
+            if (prompt("Admin Code:") === ADMIN_CODE) db.ref('products/' + pid).remove();
+        }
+
+        // === ORDER & STOCK LOGIC ===
         function orderProduct(pid, name, price) {
-            if(!confirm(`Order ${name}?`)) return;
+            if(!confirm(`Place order for ${name}?`)) return;
+            
             const productRef = db.ref('products/' + pid);
             productRef.transaction((p) => {
-                if (p && p.qty > 0) p.qty--;
-                return p;
+                if (p && p.qty > 0) { p.qty--; return p; }
+                return p; 
             }, (error, committed) => {
                 if (committed) {
                     const oid = 'o' + Date.now();
@@ -309,11 +338,11 @@
                         uid: currentUser.uid, 
                         uName: currentUser.fname, 
                         uDad: currentUser.dadname,
-                        uClass: currentUser.uClass, // Saving class to the order
+                        uClass: currentUser.uClass,
                         status: 'Pending'
-                    }).then(() => alert("Order Sent!"));
+                    }).then(() => alert("Order placed successfully!"));
                 } else {
-                    alert("Sold out!");
+                    alert("Sorry, it just sold out!");
                 }
             });
         }
@@ -329,10 +358,12 @@
         }
 
         function cancelOrder(oid, pid) {
-            if(!confirm("Cancel order? Item will return to stock.")) return;
+            if(!confirm("Cancel this order? Item will return to stock.")) return;
             db.ref('orders/' + oid).once('value', snap => {
                 const order = snap.val();
-                if(order.status === 'Pending') db.ref('products/' + pid + '/qty').transaction(q => (q || 0) + 1);
+                if(order.status === 'Pending') {
+                    db.ref('products/' + pid + '/qty').transaction(q => (q || 0) + 1);
+                }
                 db.ref('orders/' + oid).remove();
             });
         }
@@ -383,9 +414,6 @@
             });
         }
 
-        function deleteProduct(pid) {
-            if (prompt("Admin Code:") === ADMIN_CODE) db.ref('products/' + pid).remove();
-        }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
