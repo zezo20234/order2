@@ -1,302 +1,155 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8" />
+  <title>MiniShop</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mini Shop</title>
-  <!-- PWA / iOS meta -->
-  <meta name="theme-color" content="#0ea5a3">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <!-- Important: place shop.jpg in the same folder as this HTML file -->
-  <link rel="apple-touch-icon" href="shop.jpg">
   <style>
-    :root{--bg:#ffffff;--card:#fff9f0;--muted:#4b5563;--accent:#ef4444;--accent2:#0ea5a3}
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;background:var(--bg);color:#0f1724}
-    .container{max-width:1100px;margin:28px auto;padding:18px}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-    h1{margin:0;font-size:22px}
-    .controls{display:flex;align-items:center}
-    .controls button{margin-left:8px;padding:8px 12px;border-radius:8px;border:0;background:var(--accent2);color:white;cursor:pointer}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
-
-    /* Pokémon-card style */
-    .pcard{background:linear-gradient(180deg,#fff,#fff7ed);border-radius:14px;border:3px solid #fde68a;box-shadow:0 12px 30px rgba(15,23,42,0.06);overflow:hidden;display:flex;flex-direction:column}
-    .pcard .art{height:150px;background:linear-gradient(180deg,#f3f4f6,#e6eef6);display:flex;align-items:center;justify-content:center}
-    .pcard .art img{width:100%;height:100%;object-fit:cover;cursor:pointer}
-    .pcard .content{padding:12px}
-    .pcard h3{margin:0 0 6px 0;font-size:16px}
-    .muted{color:var(--muted);font-size:13px}
-    .stats{display:flex;gap:8px;align-items:center;margin-top:8px}
-    .stat{background:rgba(0,0,0,0.03);padding:6px 8px;border-radius:999px;font-weight:600;font-size:13px}
-    .moneyicon{width:25px;height:25px;vertical-align:middle;margin-right:6px;border-radius:4px;} 
-    .pfooter{display:flex;gap:8px;padding:12px;border-top:1px dashed rgba(15,23,36,0.04);background:linear-gradient(180deg,rgba(255,255,255,0.6),transparent)}
-    .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent2);color:#fff;cursor:pointer}
-    .small{padding:6px 8px;font-size:13px}
-    .danger{background:#ef4444}
-
-    .modal{position:fixed;inset:0;background:rgba(2,6,23,0.06);display:none;align-items:center;justify-content:center;padding:20px;z-index:999;}
-    .modal .sheet{width:100%;max-width:560px;background:white;padding:16px;border-radius:12px;box-shadow:0 8px 24px rgba(2,6,23,0.06)}
-    footer{margin-top:18px;color:var(--muted);font-size:13px}
-    .ticket{background:#ffffff;padding:12px;border-radius:8px;border:1px solid rgba(15,23,36,0.04);box-shadow:0 6px 18px rgba(15,23,36,0.03)}
-    .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(15,23,36,0.04);font-size:12px}
-    .flex{display:flex;gap:8px;align-items:center}
-
-    .order-image{width:100%;max-height:320px;object-fit:contain;border-radius:8px;background:#f8fafc;padding:6px}
-    .thumb{width:72px;height:72px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid rgba(15,23,36,0.04);background:#fff}
-
-    .details-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-    .details-item{flex:1;min-width:140px}
-
-    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
-    input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(15,23,36,0.06);background:transparent;color:inherit}
-
-    /* Fullscreen image modal visuals */
-    #imageModal .sheet{max-width:95vw;background:transparent;padding:0;box-shadow:none}
-    #fullImage{max-width:100%;max-height:85vh;border-radius:12px;display:block;margin:0 auto;background:#fff;padding:6px;box-shadow:0 10px 30px rgba(2,6,23,0.25)}
-    .image-controls{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
-
-    @media (max-width:520px){.pcard .art{height:120px}}
+    body{font-family:Inter,Arial,Helvetica,sans-serif;margin:0;background:#f4f6f8;color:#111}
+    header{background:#0b5cff;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px}
+    header a, header button{color:#fff;text-decoration:none}
+    .container{max-width:1000px;margin:20px auto;padding:0 12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .card{background:#fff;border-radius:8px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+    img.prod{width:100%;height:160px;object-fit:cover;border-radius:6px}
+    .small{font-size:.9rem;color:#555}
+    .btn{background:#0b5cff;color:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer}
+    .secondary{background:#e6eefc;color:#0b5cff}
+    input,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #d9dce1}
+    .row{display:flex;gap:8px;align-items:center}
+    .top-controls{margin-bottom:12px;display:flex;gap:8px;align-items:center}
+    .hidden{display:none}
+    .error{color:#b00000}
+    footer{padding:24px;text-align:center;color:#666}
   </style>
 </head>
 <body>
+  <header>
+    <strong>MiniShop</strong>
+    <nav style="margin-left:12px">
+      <a href="#" id="link-home">Home</a> |
+      <a href="#" id="link-add-product">Add Product</a> |
+      <a href="#" id="link-my-orders">My Orders</a> |
+      <a href="#" id="link-admin-orders">Orders (Admin)</a>
+    </nav>
+    <div style="margin-left:auto" id="auth-area">
+      <!-- filled by JS -->
+    </div>
+  </header>
+
   <div class="container">
-    <header>
-      <h1>Mini Shop</h1>
-      <div class="controls">
-        <button id="addProductBtn" class="btn">➕ Add product</button>
-        <button id="ordersBtn" class="btn small">🔒 Orders</button>
-        <button id="myOrdersBtn" class="btn small">🧾 My Orders</button>
-        <!-- New: Install & Tutorial buttons -->
-        <button id="installBtn" class="btn small" style="display:none;margin-left:8px">⬇️ Install</button>
-        <button id="tutorialBtn" class="btn small" style="margin-left:8px">📱 Tutorial</button>
+    <!-- Views -->
+    <div id="view-home" class="view">
+      <div class="top-controls">
+        <div id="welcome-text" class="small"></div>
+        <div style="margin-left:auto">
+          <button class="btn" id="btn-refresh">Refresh</button>
+        </div>
       </div>
-    </header>
+      <h2>Products</h2>
+      <div id="products" class="grid"></div>
+    </div>
 
-    <section>
-      <h2 class="muted">Products</h2>
-      <div id="products" class="grid" aria-live="polite"></div>
-    </section>
-
-    <footer>
-      <div class="muted">Tip: For best experience, add this app to your home screen.</div>
-    </footer>
-  </div>
-
-  <!-- Modals (original + tutorial modal) -->
-  <div id="productModal" class="modal" style="display:none" aria-hidden="true">
-    <div class="sheet">
-      <h3>Add product</h3>
+    <div id="view-login" class="view hidden card">
+      <h3>Login</h3>
+      <div id="login-error" class="error"></div>
+      <div>
+        <label>First name (login name)</label><br>
+        <input id="login-first" />
+      </div>
+      <div>
+        <label>Password</label><br>
+        <input id="login-pass" type="password" />
+      </div>
+      <div>
+        <label><input type="checkbox" id="login-keep"> Keep me signed in</label>
+      </div>
       <div style="margin-top:8px">
-        <label>Title</label>
-        <input id="pTitle" placeholder="e.g. Blue Potion" />
-        <label style="margin-top:8px">Description</label>
-        <textarea id="pDesc" rows="3"></textarea>
-        <label style="margin-top:8px">Choose image from device</label>
-        <input id="pImageFile" type="file" accept="image/*" />
-        <div id="uploadingNote" class="muted" style="margin-top:6px;display:none">Processing image…</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-          <div>
-            <label>Price</label>
-            <input id="pPrice" type="number" min="0" />
-          </div>
-          <div>
-            <label>Quantity</label>
-            <input id="pQty" type="number" min="0" />
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="pCancel" class="btn small">Cancel</button>
-          <button id="pSave" class="btn">Save product</button>
-        </div>
+        <button class="btn" id="btn-login">Login</button>
+        <button class="secondary btn" id="btn-to-register">Create account</button>
       </div>
     </div>
-  </div>
 
-  <div id="buyModal" class="modal" style="display:none" aria-hidden="true">
-    <div class="sheet">
-      <h3>Place order</h3>
+    <div id="view-register" class="view hidden card">
+      <h3>Create Account</h3>
+      <div id="register-error" class="error"></div>
+      <div>
+        <label>First name</label><br><input id="reg-first" />
+      </div>
+      <div>
+        <label>Father name</label><br><input id="reg-father" />
+      </div>
+      <div>
+        <label>Password</label><br><input id="reg-pass" type="password" />
+      </div>
       <div style="margin-top:8px">
-        <label>Name</label>
-        <input id="oName" />
-        <label style="margin-top:8px">Day</label>
-        <select id="oDay">
-          <option>Sunday</option>
-          <option>Monday</option>
-          <option>Tuesday</option>
-          <option>Wednesday</option>
-          <option>Thursday</option>
-        </select>
-        <label style="margin-top:8px">Quantity</label>
-        <input id="oQty" type="number" min="1" />
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="oCancel" class="btn small">Cancel</button>
-          <button id="oPlace" class="btn">Place order</button>
+        <button class="btn" id="btn-register">Create account</button>
+        <button class="secondary btn" id="btn-to-login">Back to login</button>
+      </div>
+      <p class="small">Login uses first name + password (note: first names must be unique for registration to succeed).</p>
+    </div>
+
+    <div id="view-add-product" class="view hidden card">
+      <h3>Add Product (Admin only)</h3>
+      <div id="add-error" class="error"></div>
+      <div id="admin-notice" class="small">If you are not admin yet, click "Enter admin code" below to become admin (server checks code). The admin code is not stored in this site.</div>
+      <div style="margin-top:8px" id="admin-code-box">
+        <input id="admin-code" placeholder="Enter admin code" />
+        <button class="btn" id="btn-enter-admin">Enter admin code</button>
+      </div>
+
+      <div id="add-form" class="hidden" style="margin-top:12px">
+        <div><label>Product name</label><br><input id="prod-name" /></div>
+        <div><label>Description</label><br><textarea id="prod-desc"></textarea></div>
+        <div><label>Price (USD)</label><br><input id="prod-price" type="number" step="0.01" /></div>
+        <div><label>Photo</label><br><input id="prod-photo" type="file" accept="image/*" /></div>
+        <div style="margin-top:8px">
+          <button class="btn" id="btn-add-product">Add product</button>
         </div>
       </div>
     </div>
-  </div>
 
-  <div id="ordersModal" class="modal" style="display:none" aria-hidden="true">
-    <div class="sheet">
-      <h3>All orders (admin)</h3>
-      <div id="ordersList" style="margin-top:8px;display:grid;gap:8px;max-height:60vh;overflow:auto"></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-        <button id="ordersClose" class="btn small">Close</button>
-      </div>
+    <div id="view-product" class="view hidden card"></div>
+
+    <div id="view-my-orders" class="view hidden card">
+      <h3>My Orders</h3>
+      <div id="my-orders-list"></div>
     </div>
-  </div>
 
-  <div id="myOrdersModal" class="modal" style="display:none" aria-hidden="true">
-    <div class="sheet">
-      <h3>My orders</h3>
-      <div style="margin-top:8px">
-        <label>Enter name to view your orders</label>
-        <input id="myName" />
-        <div id="myOrdersList" style="margin-top:12px;display:grid;gap:8px;max-height:50vh;overflow:auto"></div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="myOrdersClose" class="btn small">Close</button>
-        </div>
-      </div>
+    <div id="view-admin-orders" class="view hidden card">
+      <h3>All Orders (Admin)</h3>
+      <div id="admin-orders-list"></div>
     </div>
+
   </div>
 
-  <!-- Tutorial modal -->
-  <div id="tutorialModal" class="modal" style="display:none" aria-hidden="true">
-    <div class="sheet">
-      <h3>How to Add to Home Screen</h3>
-      <p class="muted">Follow the steps for your device. You can also use the Install button (if shown) on Android.</p>
-      <div class="tutorial-steps" style="margin-top:12px">
-        <div>
-          <strong>Android (Chrome / Edge)</strong>
-          <div class="step" style="margin-top:8px">
-            <div class="icon"><img src="shop.jpg" alt="icon" style="width:36px;height:36px;border-radius:6px;object-fit:cover"></div>
-            <div>
-              <div class="muted">1. Tap the browser menu (⋮) and choose <strong>Add to Home screen</strong>.</div>
-              <div class="muted">2. Confirm the name and tap <strong>Add</strong>.</div>
-              <div class="muted">3. The app will appear on your launcher like a normal app.</div>
-            </div>
-          </div>
-        </div>
+  <footer><small>MiniShop demo • Data saved in your Firebase project</small></footer>
 
-        <div style="margin-top:12px">
-          <strong>iOS (Safari)</strong>
-          <div class="step" style="margin-top:8px">
-            <div class="icon">📤</div>
-            <div>
-              <div class="muted">1. Tap the <strong>Share</strong> button (square with arrow) at the bottom of Safari.</div>
-              <div class="muted">2. Scroll the share sheet and tap <strong>Add to Home Screen</strong>.</div>
-              <div class="muted">3. Choose a name and tap <strong>Add</strong>. The icon will be placed on your home screen.</div>
-              <div class="muted" style="margin-top:6px">Note: iOS requires Safari and does not support the automatic install prompt.</div>
-            </div>
-          </div>
-        </div>
+  <!-- Firebase scripts (modular SDK) -->
+  <script type="module">
+    // ---------- CONFIG (you provided these keys) ----------
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signOut,
+      setPersistence,
+      browserLocalPersistence,
+      browserSessionPersistence,
+      onAuthStateChanged,
+      getIdTokenResult
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import {
+      getFirestore,
+      collection, addDoc, getDocs, onSnapshot, doc, setDoc, getDoc,
+      query, where, orderBy, deleteDoc, updateDoc
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import {
+      getStorage, ref as sref, uploadBytes, getDownloadURL, deleteObject
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-        <button id="tutorialClose" class="btn small">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Image fullscreen modal -->
-  <div id="imageModal" class="modal" style="display:none" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Full image view">
-    <div class="sheet" style="max-width:900px;background:transparent;box-shadow:none;padding:6px">
-      <div style="background:transparent;text-align:center">
-        <img id="fullImage" src="" alt="full view" style="max-width:100%;max-height:85vh;border-radius:12px;display:block;margin:0 auto;background:#fff;padding:6px" />
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
-        <button id="closeImageBtn" class="btn small">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Firebase SDK (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
-  <script>
-    // ---------- PWA: generate manifest & service-worker dynamically (so you only need this single file)
-    (function createManifestAndSW(){
-      const manifest = {
-        name: 'Mini Shop',
-        short_name: 'MiniShop',
-        start_url: '.',
-        display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#0ea5a3',
-        icons: [
-          {src:'shop.jpg', sizes:'192x192', type:'image/jpeg'},
-          {src:'shop.jpg', sizes:'512x512', type:'image/jpeg'}
-        ]
-      };
-
-      const manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-      const manifestURL = URL.createObjectURL(manifestBlob);
-      let link = document.querySelector('link[rel="manifest"]');
-      if(!link){ link = document.createElement('link'); link.rel = 'manifest'; document.head.appendChild(link); }
-      link.href = manifestURL;
-
-      // service worker source (basic offline cache)
-      const swSource = `
-        const CACHE = 'mini-shop-cache-v1';
-        const ASSETS = ['.', 'index.html', 'shop.jpg'];
-        self.addEventListener('install', event => {
-          event.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
-        });
-        self.addEventListener('activate', event => {
-          event.waitUntil(clients.claim());
-        });
-        self.addEventListener('fetch', event => {
-          event.respondWith(caches.match(event.request).then(r => r || fetch(event.request).catch(()=>caches.match('index.html'))));
-        });
-      `;
-      const swBlob = new Blob([swSource], {type:'text/javascript'});
-      const swURL = URL.createObjectURL(swBlob);
-      if('serviceWorker' in navigator){
-        navigator.serviceWorker.register(swURL).catch(err=>console.warn('SW register failed',err));
-      }
-    })();
-
-    // capture beforeinstallprompt for Android-like install
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e)=>{
-      e.preventDefault();
-      deferredPrompt = e; // save for later
-      const btn = document.getElementById('installBtn');
-      if (btn) btn.style.display = 'inline-block';
-    });
-
-    document.getElementById('installBtn').addEventListener('click', async ()=>{
-      if(!deferredPrompt) return alert('Install prompt not available (maybe already installed or not supported).');
-      deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      if(choice.outcome === 'accepted') alert('Thanks — app installed!');
-      deferredPrompt = null;
-      document.getElementById('installBtn').style.display = 'none';
-    });
-
-    // Tutorial modal
-    const tutorialBtn = document.getElementById('tutorialBtn');
-    const tutorialModal = document.getElementById('tutorialModal');
-    const tutorialClose = document.getElementById('tutorialClose');
-    tutorialBtn.addEventListener('click', ()=>{ openModal(tutorialModal); });
-    tutorialClose.addEventListener('click', ()=>{
-      try { localStorage.setItem('mini_shop_seen_tutorial', 'true'); } catch(e){/* ignore */ }
-      closeModal(tutorialModal);
-    });
-
-    // Auto-open tutorial only on first visit
-    window.addEventListener('load', () => {
-      try {
-        const seen = localStorage.getItem('mini_shop_seen_tutorial');
-        if (!seen) openModal(tutorialModal);
-      } catch (e) {
-        console.warn('Could not read localStorage for tutorial modal:', e);
-        openModal(tutorialModal);
-      }
-    });
-
-    // ---------- Firebase config (from user) ----------
     const firebaseConfig = {
       apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
       authDomain: "minishop-67dbf.firebaseapp.com",
@@ -308,454 +161,355 @@
       measurementId: "G-6N23NYNRDB"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    const functions = getFunctions(app);
 
-    // ---------- Helpers & DOM refs ----------
-    const productsEl = document.getElementById('products');
-    const addProductBtn = document.getElementById('addProductBtn');
-    const productModal = document.getElementById('productModal');
-    const pCancel = document.getElementById('pCancel');
-    const pSave = document.getElementById('pSave');
-    const pTitle = document.getElementById('pTitle');
-    const pDesc = document.getElementById('pDesc');
-    const pPrice = document.getElementById('pPrice');
-    const pQty = document.getElementById('pQty');
-    const pImageFile = document.getElementById('pImageFile');
-    const uploadingNote = document.getElementById('uploadingNote');
-
-    const buyModal = document.getElementById('buyModal');
-    const oName = document.getElementById('oName');
-    const oDay = document.getElementById('oDay');
-    const oQty = document.getElementById('oQty');
-    const oCancel = document.getElementById('oCancel');
-    const oPlace = document.getElementById('oPlace');
-
-    const ordersBtn = document.getElementById('ordersBtn');
-    const ordersModal = document.getElementById('ordersModal');
-    const ordersList = document.getElementById('ordersList');
-    const ordersClose = document.getElementById('ordersClose');
-
-    const myOrdersBtn = document.getElementById('myOrdersBtn');
-    const myOrdersModal = document.getElementById('myOrdersModal');
-    const myOrdersClose = document.getElementById('myOrdersClose');
-    const myName = document.getElementById('myName');
-    const myOrdersList = document.getElementById('myOrdersList');
-
-    // image modal refs
-    const imageModal = document.getElementById('imageModal');
-    const fullImage = document.getElementById('fullImage');
-    const closeImageBtn = document.getElementById('closeImageBtn');
-
-    // ensure clicking Close hides modal
-    closeImageBtn.addEventListener('click', ()=> closeModal(imageModal));
-    // clicking backdrop closes modal (only when clicking outside sheet)
-    imageModal.addEventListener('click', (ev) => { if (ev.target === imageModal) closeModal(imageModal); });
-    // avoid closing when clicking the image itself
-    fullImage.addEventListener('click', (ev) => ev.stopPropagation());
-
-    let currentBuyProduct = null; // {id, data}
-
-    // ---------- UI events ----------
-    addProductBtn.addEventListener('click', ()=>{
-      const code = prompt('Enter code');
-      if(code !== '555') return;
-      openModal(productModal);
-    });
-    pCancel.addEventListener('click', ()=>{closeModal(productModal); clearProductForm();});
-    pSave.addEventListener('click', saveProduct);
-
-    oCancel.addEventListener('click', ()=>{closeModal(buyModal)});
-    oPlace.addEventListener('click', placeOrder);
-
-    ordersBtn.addEventListener('click', openAdminOrders);
-    ordersClose.addEventListener('click', ()=>{closeModal(ordersModal)});
-
-    myOrdersBtn.addEventListener('click', ()=>{openModal(myOrdersModal); const saved = localStorage.getItem('mini_shop_name'); if(saved) myName.value = saved; refreshMyOrders();});
-    myOrdersClose.addEventListener('click', ()=>{closeModal(myOrdersModal)});
-    myName.addEventListener('input', ()=>{localStorage.setItem('mini_shop_name', myName.value); refreshMyOrders();});
-
-    // ---------- helpers ----------
-    function openModal(el){ if(!el) return; el.style.display='flex'; el.setAttribute('aria-hidden','false'); }
-    function closeModal(el){ if(!el) return; el.style.display='none'; el.setAttribute('aria-hidden','true'); }
-    function clearProductForm(){pTitle.value='';pDesc.value='';pPrice.value='';pQty.value='';pImageFile.value='';uploadingNote.style.display='none';}
-
-    function readFileAsDataURL(file){
-      return new Promise((res,rej)=>{
-        const reader = new FileReader();
-        reader.onload = ()=>res(reader.result);
-        reader.onerror = ()=>rej(new Error('Failed to read file'));
-        reader.readAsDataURL(file);
-      });
+    // ---------- UI helpers ----------
+    const views = {
+      home: document.getElementById('view-home'),
+      login: document.getElementById('view-login'),
+      register: document.getElementById('view-register'),
+      addProduct: document.getElementById('view-add-product'),
+      product: document.getElementById('view-product'),
+      myOrders: document.getElementById('view-my-orders'),
+      adminOrders: document.getElementById('view-admin-orders')
+    };
+    function show(view) {
+      Object.values(views).forEach(v => v.classList.add('hidden'));
+      view.classList.remove('hidden');
     }
+    // nav links
+    document.getElementById('link-home').onclick = e => { e.preventDefault(); show(views.home); loadProducts(); };
+    document.getElementById('link-add-product').onclick = e => { e.preventDefault(); show(views.addProduct); };
+    document.getElementById('link-my-orders').onclick = e => { e.preventDefault(); show(views.myOrders); loadMyOrders(); };
+    document.getElementById('link-admin-orders').onclick = e => { e.preventDefault(); show(views.adminOrders); loadAdminOrders(); };
 
-    // ---------- Products logic (store images in Realtime DB as data URLs) ----------
-    async function saveProduct(){
-      const title = pTitle.value.trim();
-      const description = pDesc.value.trim();
-      const price = parseFloat(pPrice.value) || 0;
-      const quantity = parseInt(pQty.value) || 0;
-      if(!title){alert('Please add a title');return}
-
-      let imageData = '';
-      const file = pImageFile.files && pImageFile.files[0];
-      try{
-        if(file){
-          // read file as data URL (base64). This stores image data directly in the Realtime DB.
-          uploadingNote.style.display = 'block';
-          pSave.disabled = true;
-          // Optional: downscale large images client-side to reduce size (basic approach)
-          const dataUrl = await readFileAsDataURL(file);
-          // try to downsize by drawing to canvas if large
-          imageData = await downsizeDataUrlIfNeeded(dataUrl);
-          uploadingNote.style.display = 'none';
-          pSave.disabled = false;
-        }
-      } catch(err){
-        uploadingNote.style.display = 'none';
-        pSave.disabled = false;
-        alert('Image processing failed: '+err.message);
-        return;
-      }
-
-      const newRef = db.ref('products').push();
-      newRef.set({title,description,price,quantity,imageData,createdAt:Date.now()}).then(()=>{
-        closeModal(productModal); clearProductForm();
-      }).catch(err=>alert('Error saving product: '+err.message));
-    }
-
-    async function downsizeDataUrlIfNeeded(dataUrl){
-      try{
-        const approxKb = Math.ceil((dataUrl.length * 3/4) / 1024);
-        if(approxKb <= 500) return dataUrl;
-        const img = await new Promise((res, rej)=>{const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('img load fail')); i.src=dataUrl});
-        const maxDim = 1200; // max width/height
-        let w = img.width, h = img.height;
-        if(w>maxDim || h>maxDim){
-          const ratio = Math.min(maxDim/w, maxDim/h);
-          w = Math.round(w*ratio); h = Math.round(h*ratio);
-        }
-        const canv = document.createElement('canvas'); canv.width = w; canv.height = h;
-        const ctx = canv.getContext('2d'); ctx.drawImage(img,0,0,w,h);
-        const compressed = canv.toDataURL('image/jpeg', 0.8);
-        return compressed;
-      } catch(e){
-        return dataUrl;
-      }
-    }
-
-    // open image in fullscreen modal (wait for load to avoid flicker)
-    function openImageModal(src){
-      if(!src) return;
-      fullImage.src = ''; // reset quickly
-      // set a temporary "loading" state (optional)
-      fullImage.src = src;
-      // show modal after image loads successfully
-      fullImage.onload = () => {
-        openModal(imageModal);
-      };
-      fullImage.onerror = () => {
-        alert('Could not load image');
-        fullImage.src = '';
-      };
-    }
-
-    function renderProductsList(snapshot){
-      productsEl.innerHTML='';
-      const val = snapshot.val() || {};
-      const entries = Object.entries(val).filter(([id,data]) => (data.quantity || 0) > 0);
-      if(entries.length===0){productsEl.innerHTML='<div class="muted">No products yet. Add one!</div>';return}
-      entries.sort((a,b)=> (b[1].createdAt||0)-(a[1].createdAt||0));
-      entries.forEach(([id,data])=>{
-        const card = document.createElement('div');card.className='pcard';
-        const art = document.createElement('div'); art.className='art';
-        if(data.imageData){
-          const img = document.createElement('img'); img.src = data.imageData; img.alt = data.title || 'product';
-          img.addEventListener('click', ()=> openImageModal(data.imageData)); // click to open full image
-          art.appendChild(img);
-        } else {
-          const ph = document.createElement('div'); ph.className='muted'; ph.textContent = 'No image'; art.appendChild(ph);
-        }
-        card.appendChild(art);
-        const content = document.createElement('div'); content.className='content';
-        const title = document.createElement('h3'); title.textContent = data.title || '';
-        content.appendChild(title);
-        const desc = document.createElement('div'); desc.className='muted'; desc.textContent = data.description || '';
-        content.appendChild(desc);
-        const stats = document.createElement('div'); stats.className='stats';
-        const price = document.createElement('div'); price.className='stat'; price.innerHTML = '<img src="money.png" alt="riy" class="moneyicon" />' + (Number(data.price).toFixed(2)||'0.00');
-        const qty = document.createElement('div'); qty.className='stat'; qty.textContent = 'Qty: '+(data.quantity||0);
-        stats.appendChild(price); stats.appendChild(qty);
-        content.appendChild(stats);
-        card.appendChild(content);
-        const footer = document.createElement('div'); footer.className='pfooter';
-        const buyBtn = document.createElement('button'); buyBtn.className='btn small'; buyBtn.textContent='Buy';
-        buyBtn.disabled = !(data.quantity>0);
-        buyBtn.addEventListener('click', ()=>{openBuy(id,data)});
-        footer.appendChild(buyBtn);
-
-        // Delete button locked with code 555
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'btn small danger';
-        deleteBtn.style.marginLeft = '8px';
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.title = 'Requires admin code';
-        deleteBtn.addEventListener('click', ()=>{ attemptDeleteProduct(id, data); });
-        footer.appendChild(deleteBtn);
-
-        const meta = document.createElement('div'); meta.style.marginLeft='auto'; meta.className='muted'; meta.style.fontSize='12px';
-        meta.textContent = new Date((data.createdAt||0)).toLocaleDateString();
-        footer.appendChild(meta);
-        card.appendChild(footer);
-        productsEl.appendChild(card);
-      });
-    }
-
-    // ---------- Delete product (locked by client-side code '555') ----------
-    async function attemptDeleteProduct(productId, productData){
-      const code = prompt('Enter admin code to delete this product');
-      if(code === null) return;
-      if(code !== '555') return alert('Wrong code — product not deleted.');
-
-      if(!confirm('Delete product "'+(productData.title||'')+'"? This will remove it from the database.')) return;
-      try{
-        await db.ref('products/'+productId).remove();
-        alert('Product deleted.');
-      } catch(err){
-        alert('Failed to delete product: '+err.message);
-      }
-    }
-
-    // ---------- Buy flow ----------
-    function openBuy(id,data){
-      currentBuyProduct = {id,data};
-      oName.value = localStorage.getItem('mini_shop_name') || '';
-      oDay.value = 'Sunday';
-      oQty.value = 1;
-      oQty.max = Math.max(1,(data.quantity||0));
-      openModal(buyModal);
-    }
-
-    function placeOrder(){
-      if(!currentBuyProduct) return;
-      const name = oName.value.trim();
-      const day = oDay.value;
-      let qty = parseInt(oQty.value) || 1;
-      const prodId = currentBuyProduct.id;
-      const prod = currentBuyProduct.data;
-      if(!name){alert('Please enter your name');return}
-      if(qty < 1) {alert('Quantity must be at least 1');return}
-      if(qty > (prod.quantity||0)){alert('Not enough quantity available');return}
-      const newOrderRef = db.ref('orders').push();
-      const orderObj = {
-        productId: prodId,
-        productTitle: prod.title || '',
-        buyerName: name,
-        day: day,
-        quantity: qty,
-        status: 'pending',
-        createdAt: Date.now()
-      };
-      newOrderRef.set(orderObj).then(()=>{
-        localStorage.setItem('mini_shop_name', name);
-        closeModal(buyModal);
-        alert('Order placed! Admin will accept or decline it.');
-      }).catch(err=>alert('Error placing order: '+err.message));
-    }
-
-    // ---------- Admin orders (Accept / Deliver / Decline) ----------
-    function openAdminOrders(){
-      const code = prompt('Enter admin code to open orders');
-      if(!code){return}
-      if(code !== '555'){alert('Wrong code');return}
-      openModal(ordersModal);
-    }
-
-    function renderOrders(snapshot){
-      ordersList.innerHTML='';
-      const val = snapshot.val() || {};
-      const entries = Object.entries(val).sort((a,b)=> (b[1].createdAt||0)-(a[1].createdAt||0));
-      if(entries.length===0){ordersList.innerHTML='<div class="muted">No orders yet</div>';return}
-      entries.forEach(([id,data])=>{
-        const box = document.createElement('div');box.className='ticket';
-        const top = document.createElement('div'); top.className='flex';
-        const title = document.createElement('div'); title.innerHTML='<strong>'+data.productTitle+'</strong>';
-        const badge = document.createElement('div'); badge.className='badge'; badge.style.marginLeft='auto';
-        badge.textContent=(data.status||'pending');
-        top.appendChild(title);
-        // we will insert thumbnail before the badge if available (async fetch)
-        top.appendChild(badge);
-        box.appendChild(top);
-
-        const info = document.createElement('div'); info.className='muted'; info.style.marginTop='6px';
-        let infoHtml = 'Buyer: '+(data.buyerName||'')+' — Qty: '+(data.quantity||0)+' — Day: '+(data.day||'')+'<br/>' + new Date((data.createdAt||0)).toLocaleString();
-        info.innerHTML = infoHtml;
-        box.appendChild(info);
-
-        const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.marginTop='8px';
-
-        const accept = document.createElement('button'); accept.className='btn small'; accept.textContent='Accept';
-        const deliver = document.createElement('button'); deliver.className='btn small'; deliver.textContent='Deliver';
-        const decline = document.createElement('button'); decline.className='btn small danger'; decline.textContent='Decline';
-
-        accept.addEventListener('click', ()=>{handleAcceptOrder(id,data)});
-        deliver.addEventListener('click', ()=>{handleDeliverOrder(id,data)});
-        decline.addEventListener('click', ()=>{handleDeclineOrder(id,data)});
-
-        actions.appendChild(accept); actions.appendChild(deliver); actions.appendChild(decline);
-        box.appendChild(actions);
-        ordersList.appendChild(box);
-
-        // Async: fetch product to show thumbnail (clickable)
-        (async ()=>{
-          try{
-            const prodSnap = await db.ref('products/'+data.productId).get();
-            const prod = prodSnap.exists() ? prodSnap.val() : null;
-            if(prod && prod.imageData){
-              const thumb = document.createElement('img');
-              thumb.src = prod.imageData;
-              thumb.className = 'thumb';
-              thumb.style.marginLeft = '10px';
-              thumb.addEventListener('click', ()=> openImageModal(prod.imageData));
-              // insert thumb before the badge
-              top.insertBefore(thumb, badge);
-            }
-          }catch(e){
-            console.warn('Could not fetch product for order thumbnail', e);
-          }
-        })();
-      });
-    }
-
-    async function handleAcceptOrder(orderId,orderData){
-      if(orderData.status === 'accepted'){
-        alert('Order already accepted.');
-        return;
-      }
-      if(orderData.status === 'declined'){
-        if(!confirm('This order is declined. Accept it anyway?')) return;
-      }
-      const prodRefRoot = db.ref('products/'+orderData.productId);
-      const prodSnap = await prodRefRoot.get();
-      const prod = prodSnap.val();
-      if(!prod){alert('Product not found');return}
-      const available = prod.quantity || 0;
-      const orderQty = parseInt(orderData.quantity) || 1;
-      if(orderQty > available){
-        if(!confirm('Order quantity ('+orderQty+') exceeds available stock ('+available+'). Accept and set stock to 0?')) return;
-      }
-      const qtyRef = db.ref('products/'+orderData.productId+'/quantity');
-      qtyRef.transaction(current => {
-        if(current === null) return 0;
-        let next = current - orderQty;
-        if(next < 0) next = 0;
-        return next;
-      }, function(error, committed, snapshot){
-        if(error){alert('Transaction failed: '+error.message)}
-        else if(!committed){alert('Could not update quantity')}
-        else {
-          db.ref('orders/'+orderId).update({
-            status:'accepted',
-            handledAt:Date.now()
-          });
-        }
-      });
-    }
-
-    async function handleDeliverOrder(orderId,orderData){
-      if(orderData.status === 'delivered'){
-        alert('Order already delivered.');
-        return;
-      }
-      // Allow delivering from pending or accepted (but stock reduction only happens on Accept).
-      if(orderData.status === 'pending'){
-        if(!confirm('This order is still pending. Deliver it anyway? (stock will not be reduced automatically)')) return;
-      }
-      db.ref('orders/'+orderId).update({
-        status:'delivered',
-        deliveredAt:Date.now()
-      });
-    }
-
-    async function handleDeclineOrder(orderId,orderData){
-      if(!confirm('Decline this order?')) return;
-      const orderQty = parseInt(orderData.quantity) || 1;
-
-      const doSetDeclined = (extraFields = {}) => {
-        db.ref('orders/'+orderId).update(Object.assign({
-          status:'declined',
-          handledAt:Date.now()
-        }, extraFields));
-      };
-
-      // If order was already accepted or delivered, restore quantity
-      if(orderData.status === 'accepted' || orderData.status === 'delivered'){
-        const qtyRef = db.ref('products/'+orderData.productId+'/quantity');
-        qtyRef.transaction(current => {
-          const now = (current || 0) + orderQty;
-          return now;
-        }, function(error, committed, snapshot){
-          if(error){alert('Could not restore quantity: '+error.message);} 
-          else if(!committed){alert('Could not restore quantity');}
-          else { doSetDeclined({restoredAt:Date.now()}); }
-        });
+    // ---------- Auth UI logic ----------
+    const authArea = document.getElementById('auth-area');
+    function renderAuthArea(user, isAdmin) {
+      authArea.innerHTML = '';
+      if (!user) {
+        const l = document.createElement('button'); l.textContent='Login'; l.className='btn'; l.onclick = ()=> show(views.login);
+        const r = document.createElement('button'); r.textContent='Register'; r.className='secondary btn'; r.onclick = ()=> show(views.register);
+        authArea.appendChild(l); authArea.appendChild(document.createTextNode(' ')); authArea.appendChild(r);
+        document.getElementById('welcome-text').textContent = '';
       } else {
-        doSetDeclined();
+        const span = document.createElement('span'); span.textContent = `Hi, ${user.firstName}`;
+        authArea.appendChild(span);
+        authArea.appendChild(document.createTextNode(' '));
+        const logout = document.createElement('button'); logout.textContent='Logout'; logout.className='btn'; logout.onclick = async ()=>{
+          await signOut(auth);
+        };
+        authArea.appendChild(logout);
+        // admin badge
+        if (isAdmin) {
+          const badge = document.createElement('span'); badge.textContent = ' Admin'; badge.style.marginLeft='8px'; badge.style.background='#ffefc2'; badge.style.padding='4px 6px'; badge.style.borderRadius='6px';
+          authArea.appendChild(badge);
+        }
+        document.getElementById('welcome-text').textContent = `Signed in as ${user.firstName} ${user.fatherName || ''}`;
       }
     }
 
-    function refreshMyOrders(){
-      const name = (myName.value || localStorage.getItem('mini_shop_name') || '').trim();
-      myOrdersList.innerHTML='';
-      if(!name){myOrdersList.innerHTML='<div class="muted">Enter your name to view orders</div>';return}
-      const q = db.ref('orders').orderByChild('buyerName').equalTo(name);
-      q.once('value', snap=>{
-        const val = snap.val() || {};
-        const items = Object.entries(val).sort((a,b)=> (b[1].createdAt||0)-(a[1].createdAt||0));
-        if(items.length===0){myOrdersList.innerHTML='<div class="muted">No orders found for "'+name+'"</div>';return}
-        items.forEach(([id,data])=>{
-          const box = document.createElement('div');box.className='ticket';
-          const top = document.createElement('div'); top.className='flex';
-          const title = document.createElement('div'); title.innerHTML='<strong>'+data.productTitle+'</strong>';
-          const badge = document.createElement('div'); badge.className='badge'; badge.style.marginLeft='auto'; badge.textContent=(data.status||'pending');
-          top.appendChild(title); top.appendChild(badge);
-          box.appendChild(top);
-          const info = document.createElement('div'); info.className='muted'; info.style.marginTop='6px';
-          info.innerHTML = 'Qty: '+(data.quantity||0)+' — Day: '+(data.day||'')+'<br/>' + new Date((data.createdAt||0)).toLocaleString();
-          if(data.restoredAt){ info.innerHTML += '<br/><em style="font-size:12px;color:#666">Admin restored stock on: '+new Date(data.restoredAt).toLocaleString()+'</em>'; }
-          box.appendChild(info);
+    // ---------- Registration ----------
+    document.getElementById('btn-to-login').onclick = ()=> show(views.login);
+    document.getElementById('btn-to-register').onclick = ()=> show(views.register);
 
-          // Add thumbnail (async)
-          (async ()=>{
-            try{
-              const prodSnap = await db.ref('products/'+data.productId).get();
-              const prod = prodSnap.exists() ? prodSnap.val() : null;
-              if(prod && prod.imageData){
-                const thumb = document.createElement('img');
-                thumb.src = prod.imageData;
-                thumb.className = 'thumb';
-                thumb.style.marginLeft = '10px';
-                thumb.addEventListener('click', ()=> openImageModal(prod.imageData));
-                top.insertBefore(thumb, badge);
-              }
-            }catch(e){
-              console.warn('Could not fetch product for my-orders thumbnail', e);
-            }
-          })();
+    document.getElementById('btn-register').onclick = async () => {
+      const first = document.getElementById('reg-first').value.trim();
+      const father = document.getElementById('reg-father').value.trim();
+      const pass = document.getElementById('reg-pass').value;
+      document.getElementById('register-error').textContent = '';
+      if (!first || !father || !pass) { document.getElementById('register-error').textContent = 'All fields required.'; return; }
+      try {
+        // IMPORTANT: login will later be only by first name
+        const email = `${first.toLowerCase()}@minishop.local`;
+        await createUserWithEmailAndPassword(auth, email, pass);
+        // save profile in users collection
+        const u = auth.currentUser;
+        await setDoc(doc(db, 'users', u.uid), { firstName: first, fatherName: father });
+        // after register, automatically refreshed state will trigger UI update
+        show(views.home);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('register-error').textContent = err.message || 'Could not create account.';
+      }
+    };
 
-          myOrdersList.appendChild(box);
+    // ---------- Login ----------
+    document.getElementById('btn-login').onclick = async () => {
+      document.getElementById('login-error').textContent = '';
+      const first = document.getElementById('login-first').value.trim();
+      const pass = document.getElementById('login-pass').value;
+      const keep = document.getElementById('login-keep').checked;
+      if (!first || !pass) { document.getElementById('login-error').textContent = 'Name and password required.'; return; }
+      try {
+        if (keep) await setPersistence(auth, browserLocalPersistence); else await setPersistence(auth, browserSessionPersistence);
+        const email = `${first.toLowerCase()}@minishop.local`;
+        await signInWithEmailAndPassword(auth, email, pass);
+        show(views.home);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('login-error').textContent = 'Invalid name or password.';
+      }
+    };
+
+    // ---------- admin: call Cloud Function to set custom claim ----------
+    const makeAdminFn = httpsCallable(functions, 'makeAdmin'); // function in Cloud Functions (server-side)
+    document.getElementById('btn-enter-admin').onclick = async () => {
+      const code = document.getElementById('admin-code').value.trim();
+      document.getElementById('add-error').textContent = '';
+      if (!code) { document.getElementById('add-error').textContent = 'Enter admin code.'; return; }
+      try {
+        // call cloud function; it checks the code server-side and sets custom claim
+        await makeAdminFn({ code });
+        // refresh token so client sees new claim
+        await auth.currentUser.getIdToken(true);
+        alert('Admin claim granted (if code was correct). Reloading admin UI.');
+        const r = await isCurrentUserAdmin();
+        toggleAddProductForm(r);
+        renderAuthArea(currentProfile, r);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('add-error').textContent = 'Incorrect admin code or error.';
+      }
+    };
+
+    // ---------- product listing & add ----------
+    const productsDiv = document.getElementById('products');
+
+    async function loadProducts() {
+      productsDiv.innerHTML = 'Loading...';
+      const snap = await getDocs(collection(db, 'products'));
+      const docs = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+      productsDiv.innerHTML = '';
+      if (docs.length === 0) productsDiv.innerHTML = '<div class="card">No products.</div>';
+      docs.forEach(p => {
+        const c = document.createElement('div'); c.className='card';
+        const img = document.createElement('img'); img.className='prod'; img.src = p.imageUrl || ''; c.appendChild(img);
+        const h = document.createElement('h4'); h.textContent = p.name; c.appendChild(h);
+        const d = document.createElement('p'); d.className='small'; d.textContent = p.description || ''; c.appendChild(d);
+        const pr = document.createElement('p'); pr.innerHTML = `<strong>Price:</strong> $${parseFloat(p.price).toFixed(2)}`; c.appendChild(pr);
+        const row = document.createElement('div'); row.className='row';
+        const more = document.createElement('button'); more.className='btn'; more.textContent='More'; more.onclick = ()=> showProduct(p.id); row.appendChild(more);
+        if (auth.currentUser) {
+          const ord = document.createElement('button'); ord.className='secondary btn'; ord.textContent='Order'; ord.onclick = ()=> placeOrder(p); row.appendChild(ord);
+        } else {
+          const loginToOrder = document.createElement('a'); loginToOrder.href='#'; loginToOrder.textContent='Login to order'; loginToOrder.onclick = (e)=>{ e.preventDefault(); show(views.login); }; row.appendChild(loginToOrder);
+        }
+        // delete if admin
+        isCurrentUserAdmin().then(isAdmin=>{
+          if (isAdmin) {
+            const del = document.createElement('button'); del.className='btn'; del.style.background='#b00020'; del.textContent='Delete'; del.onclick = ()=> deleteProduct(p.id, p.imagePath, p.imageUrl);
+            row.appendChild(del);
+          }
         });
+        c.appendChild(row);
+        productsDiv.appendChild(c);
       });
     }
 
-    // ---------- Realtime listeners ----------
-    db.ref('products').on('value', renderProductsList);
-    db.ref('orders').on('value', renderOrders);
-    db.ref('orders').on('value', ()=>{ if(myOrdersModal.style.display === 'flex') refreshMyOrders(); });
+    async function showProduct(productId) {
+      const d = await getDoc(doc(db,'products',productId));
+      if (!d.exists()) { alert('Product not found'); return; }
+      const p = { id:d.id, ...d.data() };
+      const view = document.getElementById('view-product');
+      view.innerHTML = '';
+      const c = document.createElement('div'); c.className='card';
+      const h = document.createElement('h3'); h.textContent = p.name; c.appendChild(h);
+      const img = document.createElement('img'); img.src = p.imageUrl || ''; img.className='prod'; c.appendChild(img);
+      const desc = document.createElement('p'); desc.textContent = p.description || ''; c.appendChild(desc);
+      const price = document.createElement('p'); price.innerHTML = `<strong>Price:</strong> $${parseFloat(p.price).toFixed(2)}`; c.appendChild(price);
+      const row = document.createElement('div'); row.className='row';
+      if (auth.currentUser) {
+        const ord = document.createElement('button'); ord.className='btn'; ord.textContent='Order'; ord.onclick = ()=> placeOrder(p); row.appendChild(ord);
+      } else {
+        const a = document.createElement('a'); a.href='#'; a.textContent='Login to order'; a.onclick = (e)=>{ e.preventDefault(); show(views.login); }; row.appendChild(a);
+      }
+      c.appendChild(row);
+      view.appendChild(c);
+      show(views.product);
+    }
 
-    // Accessibility: close modal on escape
-    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ [productModal,buyModal,ordersModal,myOrdersModal,tutorialModal,imageModal].forEach(m=>{ if(m) m.style.display='none'; }); } });
+    // Add product UI toggling
+    function toggleAddProductForm(isAdmin) {
+      if (isAdmin) {
+        document.getElementById('admin-code-box').classList.add('hidden');
+        document.getElementById('add-form').classList.remove('hidden');
+      } else {
+        document.getElementById('admin-code-box').classList.remove('hidden');
+        document.getElementById('add-form').classList.add('hidden');
+      }
+    }
 
+    async function isCurrentUserAdmin() {
+      if (!auth.currentUser) return false;
+      try {
+        const tok = await getIdTokenResult(auth.currentUser, /*forceRefresh*/ false);
+        return !!tok.claims.admin;
+      } catch (err) {
+        console.error(err);
+        return false;
+      }
+    }
+
+    // add product (client uploads image to storage then writes doc) — only allowed if user has admin claim (security rules)
+    document.getElementById('btn-add-product').onclick = async () => {
+      document.getElementById('add-error').textContent = '';
+      const name = document.getElementById('prod-name').value.trim();
+      const desc = document.getElementById('prod-desc').value.trim();
+      const price = parseFloat(document.getElementById('prod-price').value);
+      const file = document.getElementById('prod-photo').files[0];
+      if (!name || !price || !file) { document.getElementById('add-error').textContent = 'Name, price and photo required.'; return; }
+      // verify admin claim on client (rules will also enforce)
+      const ok = await isCurrentUserAdmin();
+      if (!ok) { document.getElementById('add-error').textContent = 'Admin required.'; return; }
+      try {
+        const stRef = sref(storage, `products/${Date.now()}-${file.name}`);
+        await uploadBytes(stRef, file);
+        const url = await getDownloadURL(stRef);
+        await addDoc(collection(db, 'products'), {
+          name, description: desc, price: price, imageUrl: url, imagePath: stRef.fullPath, createdAt: Date.now()
+        });
+        alert('Product added');
+        document.getElementById('prod-name').value=''; document.getElementById('prod-desc').value=''; document.getElementById('prod-price').value=''; document.getElementById('prod-photo').value='';
+        loadProducts();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('add-error').textContent = 'Could not add product.';
+      }
+    };
+
+    // delete product (admin)
+    async function deleteProduct(productId, imagePath, imageUrl) {
+      if (!confirm('Delete product?')) return;
+      const ok = await isCurrentUserAdmin();
+      if (!ok) { alert('Admin required.'); return; }
+      try {
+        // delete storage object if present
+        if (imagePath) {
+          const delRef = sref(storage, imagePath);
+          await deleteObject(delRef).catch(()=>{/* ignore not found */});
+        }
+        await deleteDoc(doc(db, 'products', productId));
+        alert('Deleted');
+        loadProducts();
+      } catch (err) {
+        console.error(err);
+        alert('Could not delete product');
+      }
+    }
+
+    // ---------- Orders ----------
+    async function placeOrder(productOrId) {
+      let p = productOrId;
+      if (typeof p === 'string') {
+        const d = await getDoc(doc(db, 'products', p));
+        if (!d.exists()) { alert('Product not found'); return; }
+        p = { id: d.id, ...d.data() };
+      }
+      if (!auth.currentUser) { show(views.login); return; }
+      try {
+        // snapshot product fields into the order document so order persists even if product is deleted
+        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        const userSnapshot = userDoc.exists() ? userDoc.data() : { firstName:'', fatherName:'' };
+        await addDoc(collection(db, 'orders'), {
+          userId: auth.currentUser.uid,
+          userFirstName: userSnapshot.firstName || '',
+          userFatherName: userSnapshot.fatherName || '',
+          productId: p.id,
+          productName: p.name,
+          productPrice: p.price,
+          productImage: p.imageUrl || '',
+          status: 'Pending',
+          createdAt: Date.now()
+        });
+        alert('Order placed');
+        show(views.myOrders); loadMyOrders();
+      } catch (err) {
+        console.error(err);
+        alert('Could not place order');
+      }
+    }
+
+    async function loadMyOrders() {
+      if (!auth.currentUser) { show(views.login); return; }
+      const q = query(collection(db, 'orders'), where('userId', '==', auth.currentUser.uid), orderBy('createdAt','desc'));
+      const snap = await getDocs(q);
+      const rows = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+      const out = document.getElementById('my-orders-list'); out.innerHTML = '';
+      if (rows.length===0) out.innerHTML = '<div class="card">You have no orders.</div>';
+      rows.forEach(o=>{
+        const c = document.createElement('div'); c.className='card';
+        const h = document.createElement('h4'); h.textContent = o.productName; c.appendChild(h);
+        const s = document.createElement('p'); s.innerHTML = `<strong>Status:</strong> ${o.status}`; c.appendChild(s);
+        const t = document.createElement('p'); t.className='small'; t.textContent = `Ordered at: ${new Date(o.createdAt).toLocaleString()}`; c.appendChild(t);
+        if (o.productImage) { const img = document.createElement('img'); img.src=o.productImage; img.className='prod'; img.style.height='120px'; c.appendChild(img); }
+        if (o.status !== 'Delivered') {
+          const cancel = document.createElement('button'); cancel.className='btn'; cancel.textContent='Cancel'; cancel.onclick = async ()=>{
+            if (!confirm('Cancel order?')) return;
+            await deleteDoc(doc(db, 'orders', o.id));
+            loadMyOrders();
+          };
+          c.appendChild(cancel);
+        }
+        out.appendChild(c);
+      });
+    }
+
+    // ---------- Admin: show all orders & manage ----------
+    async function loadAdminOrders() {
+      const ok = await isCurrentUserAdmin();
+      if (!ok) { document.getElementById('admin-orders-list').innerHTML = '<div class="card">Admin only. Enter admin code to manage.</div>'; return; }
+      const snap = await getDocs(collection(db, 'orders'));
+      const rows = snap.docs.map(d=>({ id:d.id, ...d.data() })).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+      const out = document.getElementById('admin-orders-list'); out.innerHTML = '';
+      if (rows.length===0) out.innerHTML = '<div class="card">No orders yet.</div>';
+      rows.forEach(o=>{
+        const c = document.createElement('div'); c.className='card';
+        const h = document.createElement('h4'); h.textContent = o.productName; c.appendChild(h);
+        const by = document.createElement('p'); by.className='small'; by.textContent = `Ordered by: ${o.userFirstName} ${o.userFatherName}`; c.appendChild(by);
+        const s = document.createElement('p'); s.innerHTML = `<strong>Status:</strong> ${o.status}`; c.appendChild(s);
+        const t = document.createElement('p'); t.className='small'; t.textContent = `At: ${new Date(o.createdAt).toLocaleString()}`; c.appendChild(t);
+        const row = document.createElement('div'); row.className='row';
+        ['Declined','Accepted','Delivered'].forEach(st=>{
+          const b = document.createElement('button'); b.className='btn'; b.textContent = st; b.onclick = async ()=>{
+            await updateDoc(doc(db, 'orders', o.id), { status: st });
+            loadAdminOrders();
+          }; row.appendChild(b);
+        });
+        c.appendChild(row);
+        out.appendChild(c);
+      });
+    }
+
+    // ---------- Auth state monitoring ----------
+    let currentProfile = null;
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        // fetch users collection doc
+        const ud = await getDoc(doc(db, 'users', user.uid));
+        currentProfile = ud.exists() ? ud.data() : { firstName:'', fatherName:'' };
+        const admin = await isCurrentUserAdmin();
+        renderAuthArea(currentProfile, admin);
+        toggleAddProductForm(admin);
+        loadProducts();
+      } else {
+        currentProfile = null;
+        renderAuthArea(null,false);
+        toggleAddProductForm(false);
+        loadProducts();
+      }
+    });
+
+    // ---------- initial UI ----------
+    show(views.home);
+    document.getElementById('btn-refresh').onclick = loadProducts;
+    loadProducts();
+
+    // ---------- End of module ----------
   </script>
 </body>
 </html>
