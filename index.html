@@ -1,529 +1,628 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>MiniShop — Full UI</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    :root{--primary:#0b5cff;--accent:#06b6d4;--danger:#c62828}
-    body{font-family:Inter,Arial,Helvetica,sans-serif;margin:0;background:#f3f6fb;color:#0f1724}
-    header{background:var(--primary);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px}
-    header .brand{font-weight:700}
-    nav a{color:#fff;text-decoration:none;margin-right:10px;opacity:.95}
-    .top-right{margin-left:auto;display:flex;gap:8px;align-items:center}
-    .container{max-width:1100px;margin:20px auto;padding:0 14px}
-    .row{display:flex;gap:10px;align-items:center}
-    .card{background:#fff;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(15,23,36,0.06)}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-    img.prod{width:100%;height:170px;object-fit:cover;border-radius:8px}
-    h2,h3{margin:8px 0}
-    label{display:block;margin-top:8px;font-size:13px;color:#334155}
-    input,textarea,select{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eef8;margin-top:6px;box-sizing:border-box}
-    button.btn{background:var(--primary);color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
-    button.btn.secondary{background:#f3f7ff;color:var(--primary);border:1px solid #dfe9ff}
-    button.btn.danger{background:var(--danger)}
-    .muted{color:#64748b;font-size:.95rem}
-    .small{font-size:.9rem;color:#64748b}
-    .actions{display:flex;gap:8px;margin-top:8px}
-    .modal-backdrop{position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(2,6,23,0.4);display:flex;align-items:center;justify-content:center;z-index:50}
-    .modal{width:90%;max-width:720px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 8px 30px rgba(2,6,23,0.25)}
-    footer{padding:14px;text-align:center;color:#64748b;margin-top:20px}
-    .badge{background:#fff;color:var(--primary);padding:6px 8px;border-radius:8px;font-weight:600}
-    .toolbar{display:flex;gap:8px}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Single File App</title>
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
+
+        /* --- LAYOUT & HEADER --- */
+        header {
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky; top: 0; z-index: 100;
+            padding: 0.75rem 1.5rem;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .brand { font-size: 1.25rem; font-weight: bold; color: var(--primary); }
+        nav { display: flex; gap: 10px; }
+        nav button {
+            background: transparent; border: none; cursor: pointer;
+            padding: 8px 12px; font-weight: 500; color: var(--secondary);
+            border-radius: 6px; transition: 0.2s;
+        }
+        nav button:hover, nav button.active { background-color: #eff6ff; color: var(--primary); }
+        .hidden { display: none !important; }
+        
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        h2 { margin-bottom: 1.5rem; color: var(--text); border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
+
+        /* --- FORMS --- */
+        .form-card {
+            background: var(--card-bg); max-width: 400px; margin: 2rem auto;
+            padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600; }
+        input, textarea, select {
+            width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1;
+            border-radius: 6px; font-size: 1rem; outline: none;
+        }
+        input:focus { border-color: var(--primary); ring: 2px var(--primary); }
+        .btn {
+            width: 100%; padding: 0.75rem; border: none; border-radius: 6px;
+            background-color: var(--primary); color: white; font-weight: 600;
+            cursor: pointer; transition: 0.2s;
+        }
+        .btn:hover { background-color: var(--primary-dark); }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-danger { background-color: var(--danger); }
+        .switch-link { text-align: center; margin-top: 1rem; font-size: 0.9rem; color: var(--secondary); cursor: pointer; text-decoration: underline; }
+
+        /* --- PRODUCT GRID --- */
+        .grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;
+        }
+        .card {
+            background: var(--card-bg); border-radius: 12px; overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; flex-direction: column;
+        }
+        .card-img { width: 100%; height: 200px; object-fit: cover; background: #eee; }
+        .card-body { padding: 1rem; flex-grow: 1; display: flex; flex-direction: column; }
+        .card-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .card-price { color: var(--success); font-weight: bold; font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .card-desc { color: var(--secondary); font-size: 0.9rem; flex-grow: 1; margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-actions { display: flex; gap: 0.5rem; margin-top: auto; }
+        .card-actions button { flex: 1; padding: 0.5rem; border-radius: 6px; cursor: pointer; border: none; font-weight: 600; }
+        .btn-more { background: #e2e8f0; color: var(--text); }
+        .btn-order { background: var(--primary); color: white; }
+        .btn-delete { background: var(--danger); color: white; max-width: 40px; }
+
+        /* --- ORDERS TABLE --- */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; font-weight: 600; color: var(--secondary); }
+        .status-badge {
+            padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;
+        }
+        .status-Pending { background: #fef3c7; color: #d97706; }
+        .status-Accepted { background: #dbeafe; color: #2563eb; }
+        .status-Declined { background: #fee2e2; color: #dc2626; }
+        .status-Delivered { background: #dcfce7; color: #16a34a; }
+        
+        .order-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .modal { background: white; width: 90%; max-width: 500px; padding: 1.5rem; border-radius: 12px; position: relative; }
+        .close-modal { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; }
+        .modal-img { width: 100%; max-height: 300px; object-fit: contain; margin-bottom: 1rem; border-radius: 8px; }
+
+        /* --- ADMIN UNLOCK --- */
+        .admin-unlock-container { margin-top: 1rem; display: flex; gap: 5px; justify-content: center; }
+        #adminCodeInput { width: 100px; padding: 5px; font-size: 0.8rem; }
+
+        /* --- LOADING SPINNER --- */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-  <header>
-    <div class="brand">MiniShop</div>
-    <nav>
-      <a href="#" id="nav-home">Home</a>
-      <a href="#" id="nav-add">Add Product</a>
-      <a href="#" id="nav-myorders">My Orders</a>
-      <a href="#" id="nav-adminorders">Orders (Admin)</a>
-    </nav>
-    <div class="top-right" id="auth-area"></div>
-  </header>
 
-  <main class="container">
-    <!-- HOME -->
-    <section id="view-home">
-      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div>
-          <h2 style="margin:0">Products</h2>
-          <div id="welcome" class="small"></div>
-        </div>
-        <div class="toolbar">
-          <button class="btn secondary" id="btn-refresh">Refresh</button>
-          <button class="btn" id="btn-open-login">Login / Register</button>
-        </div>
-      </div>
-      <div id="products" class="grid"></div>
-    </section>
+    <header id="mainHeader" class="hidden">
+        <div class="brand">MarketPlace</div>
+        <nav>
+            <button onclick="navTo('home')" id="nav-home">Home</button>
+            <button onclick="navTo('my-orders')" id="nav-my-orders">My Orders</button>
+            <button onclick="navTo('add-product')" id="nav-add" class="hidden">Add Product</button>
+            <button onclick="navTo('admin-orders')" id="nav-admin-orders" class="hidden">All Orders</button>
+            <button onclick="logout()" style="color: var(--danger);">Logout</button>
+        </nav>
+    </header>
 
-    <!-- ADD PRODUCT -->
-    <section id="view-add" class="card hidden" style="margin-top:14px">
-      <h3>Add Product (admin)</h3>
-      <div id="add-error" class="muted"></div>
-
-      <label>Admin code</label>
-      <input id="admin-code-input" placeholder="Enter admin code" />
-      <div style="margin-top:8px">
-        <button class="btn" id="btn-enter-admin">Unlock Admin</button>
-      </div>
-
-      <div id="add-form" class="hidden" style="margin-top:12px">
-        <label>Product name</label>
-        <input id="prod-name" placeholder="Name" />
-        <label>Description</label>
-        <textarea id="prod-desc" rows="3" placeholder="Brief description"></textarea>
-        <label>Price (USD)</label>
-        <input id="prod-price" type="number" step="0.01" placeholder="9.99" />
-        <label>Photo</label>
-        <input id="prod-photo" type="file" accept="image/*" />
-        <div style="margin-top:10px">
-          <button class="btn" id="btn-add-product">Add product</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- PRODUCT MODAL -->
-    <div id="product-modal" class="hidden"></div>
-
-    <!-- MY ORDERS -->
-    <section id="view-myorders" class="card hidden" style="margin-top:14px">
-      <h3>My Orders</h3>
-      <div id="my-orders-list"></div>
-    </section>
-
-    <!-- ADMIN ORDERS -->
-    <section id="view-adminorders" class="card hidden" style="margin-top:14px">
-      <h3>All Orders (Admin)</h3>
-      <div id="admin-orders-list"></div>
-    </section>
-  </main>
-
-  <footer>
-    <small>MiniShop — demo using Realtime Database & Storage (accounts stored in DB)</small>
-  </footer>
-
-  <script type="module">
-    // ---------- Firebase imports ----------
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import {
-      getDatabase, ref, push, set, onValue, get, child, remove, update
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    import {
-      getStorage, ref as sref, uploadBytes, getDownloadURL, deleteObject
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
-    // ---------- CONFIG ----------
-    const firebaseConfig = {
-      apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
-      authDomain: "minishop-67dbf.firebaseapp.com",
-      databaseURL: "https://minishop-67dbf-default-rtdb.firebaseio.com",
-      projectId: "minishop-67dbf",
-      storageBucket: "minishop-67dbf.appspot.com",
-      messagingSenderId: "7379826226",
-      appId: "1:7379826226:web:4d8f6f9cbc679cc600ae2b",
-      measurementId: "G-6N23NYNRDB"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const storage = getStorage(app);
-
-    // ---------- ADMIN CODE (JS-only constant) ----------
-    const ADMIN_CODE = "555"; // update here if needed
-
-    // ---------- State ----------
-    let currentUser = null; // { username, firstName, fatherName }
-    let adminUnlocked = false;
-
-    // ---------- DOM refs ----------
-    const authArea = document.getElementById('auth-area');
-    const productsEl = document.getElementById('products');
-    const addForm = document.getElementById('add-form');
-    const adminInput = document.getElementById('admin-code-input');
-    const addError = document.getElementById('add-error');
-    const productModal = document.getElementById('product-modal');
-
-    // ---------- Navigation wiring ----------
-    document.getElementById('nav-home').onclick = e => { e.preventDefault(); showHome(); };
-    document.getElementById('nav-add').onclick = e => { e.preventDefault(); showAdd(); };
-    document.getElementById('nav-myorders').onclick = e => { e.preventDefault(); showMyOrders(); };
-    document.getElementById('nav-adminorders').onclick = e => { e.preventDefault(); showAdminOrders(); };
-    document.getElementById('btn-open-login').onclick = e => { e.preventDefault(); openLoginModal(); };
-    document.getElementById('btn-refresh').onclick = () => loadProducts();
-
-    function hideAllViews() {
-      // main views are sections and modals; we use show/hide accordingly
-      document.getElementById('view-home').classList.remove('hidden');
-      document.getElementById('view-add').classList.add('hidden');
-      document.getElementById('view-myorders').classList.add('hidden');
-      document.getElementById('view-adminorders').classList.add('hidden');
-      productModal.innerHTML = ''; productModal.classList.add('hidden');
-    }
-    function showHome(){ hideAllViews(); document.getElementById('view-home').classList.remove('hidden'); loadProducts(); }
-    function showAdd(){ hideAllViews(); document.getElementById('view-add').classList.remove('hidden'); renderAuthArea(); }
-    function showMyOrders(){ hideAllViews(); document.getElementById('view-myorders').classList.remove('hidden'); loadMyOrders(); }
-    function showAdminOrders(){ hideAllViews(); document.getElementById('view-adminorders').classList.remove('hidden'); loadAdminOrders(); }
-
-    // ---------- AUTH (DB-only: no Firebase Auth) ----------
-    // Save users under /users/{usernameLower}
-    // User object: { firstName, fatherName, password }
-    function renderAuthArea() {
-      authArea.innerHTML = '';
-      if (!currentUser) {
-        const loginBtn = document.createElement('button'); loginBtn.textContent='Login'; loginBtn.className='btn secondary';
-        loginBtn.onclick = openLoginModal;
-        const registerBtn = document.createElement('button'); registerBtn.textContent = 'Register'; registerBtn.className='btn';
-        registerBtn.onclick = openRegisterModal;
-        authArea.appendChild(loginBtn); authArea.appendChild(registerBtn);
-        document.getElementById('welcome').textContent = '';
-      } else {
-        const nameSpan = document.createElement('div'); nameSpan.textContent = `${currentUser.firstName}`; nameSpan.className='badge';
-        const logoutBtn = document.createElement('button'); logoutBtn.textContent='Logout'; logoutBtn.className='btn';
-        logoutBtn.onclick = () => { logout(); };
-        authArea.appendChild(nameSpan); authArea.appendChild(logoutBtn);
-        document.getElementById('welcome').textContent = `Signed in as ${currentUser.firstName} ${currentUser.fatherName || ''}`;
-      }
-      // admin UI toggle:
-      if (adminUnlocked) {
-        addForm.classList.remove('hidden');
-        adminInput.classList.add('hidden');
-        document.getElementById('btn-enter-admin').classList.add('hidden');
-      } else {
-        addForm.classList.add('hidden');
-        adminInput.classList.remove('hidden');
-        document.getElementById('btn-enter-admin').classList.remove('hidden');
-      }
-    }
-
-    // Login / Register modals (lightweight)
-    function openLoginModal(){
-      const html = `
-        <div class="modal-backdrop" id="login-backdrop">
-          <div class="modal card">
-            <h3>Login</h3>
-            <label>First name</label><input id="modal-login-first" />
-            <label>Password</label><input id="modal-login-pass" type="password" />
-            <label><input type="checkbox" id="modal-login-keep" /> Keep me signed in</label>
-            <div style="margin-top:10px"><button class="btn" id="modal-login-btn">Login</button> <button class="btn secondary" id="modal-to-register">Create account</button></div>
-            <div id="modal-login-msg" class="muted" style="margin-top:8px"></div>
-          </div>
-        </div>`;
-      productModal.innerHTML = html; productModal.classList.remove('hidden');
-      document.getElementById('modal-login-btn').onclick = async () => {
-        const name = document.getElementById('modal-login-first').value.trim().toLowerCase();
-        const pass = document.getElementById('modal-login-pass').value;
-        const keep = document.getElementById('modal-login-keep').checked;
-        const msg = document.getElementById('modal-login-msg'); msg.textContent='';
-        if (!name || !pass) { msg.textContent='Enter name and password'; return; }
-        try {
-          const snap = await get(child(ref(db), `users/${name}`));
-          if (!snap.exists() || snap.val().password !== pass) { msg.textContent='Invalid name or password'; return; }
-          const data = snap.val();
-          currentUser = { username: name, firstName: data.firstName, fatherName: data.fatherName };
-          if (keep) localStorage.setItem('minishop_user', name); else localStorage.removeItem('minishop_user');
-          productModal.innerHTML=''; productModal.classList.add('hidden');
-          renderAuthArea();
-          showHome();
-        } catch(err){ console.error(err); msg.textContent='Login error'; }
-      };
-      document.getElementById('modal-to-register').onclick = () => {
-        productModal.innerHTML = `
-          <div class="modal-backdrop" id="reg-backdrop">
-            <div class="modal card">
-              <h3>Create account</h3>
-              <label>First name</label><input id="modal-reg-first" />
-              <label>Father name</label><input id="modal-reg-father" />
-              <label>Password</label><input id="modal-reg-pass" type="password" />
-              <div style="margin-top:10px"><button class="btn" id="modal-reg-btn">Create</button> <button class="btn secondary" id="modal-reg-back">Back to login</button></div>
-              <div id="modal-reg-msg" class="muted" style="margin-top:8px"></div>
+    <div id="authSection" class="container">
+        <div id="loginForm" class="form-card">
+            <h2 style="text-align: center; border: none;">Welcome Back</h2>
+            <div class="form-group">
+                <label>First Name</label>
+                <input type="text" id="loginName" placeholder="Enter first name">
             </div>
-          </div>`;
-        document.getElementById('modal-reg-btn').onclick = async () => {
-          const first = document.getElementById('modal-reg-first').value.trim();
-          const father = document.getElementById('modal-reg-father').value.trim();
-          const pass = document.getElementById('modal-reg-pass').value;
-          const msg = document.getElementById('modal-reg-msg'); msg.textContent = '';
-          if (!first || !father || !pass) { msg.textContent = 'All fields required'; return; }
-          const username = first.toLowerCase();
-          try {
-            const snap = await get(child(ref(db), `users/${username}`));
-            if (snap.exists()) { msg.textContent = 'User already exists'; return; }
-            await set(ref(db, `users/${username}`), { firstName: first, fatherName: father, password: pass });
-            currentUser = { username, firstName: first, fatherName: father };
-            localStorage.setItem('minishop_user', username);
-            productModal.innerHTML=''; productModal.classList.add('hidden');
-            renderAuthArea(); showHome(); loadProducts();
-          } catch(err){ console.error(err); msg.textContent='Could not create account'; }
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPass" placeholder="Enter password">
+            </div>
+            <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="keepSignedIn" style="width:auto;">
+                <label for="keepSignedIn" style="margin:0; font-weight:400;">Keep me signed in</label>
+            </div>
+            <button class="btn" onclick="handleLogin()">Login</button>
+            <div class="switch-link" onclick="toggleAuth('signup')">Create an account</div>
+            
+            <div class="admin-unlock-container">
+                <input type="password" id="adminCodeInput" placeholder="Admin Code" onkeyup="checkAdminCode()">
+            </div>
+        </div>
+
+        <div id="signupForm" class="form-card hidden">
+            <h2 style="text-align: center; border: none;">Create Account</h2>
+            <div class="form-group">
+                <label>First Name</label>
+                <input type="text" id="regName" placeholder="First Name">
+            </div>
+            <div class="form-group">
+                <label>Father Name</label>
+                <input type="text" id="regFather" placeholder="Father Name">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="regPass" placeholder="Password">
+            </div>
+            <button class="btn" onclick="handleSignup()">Sign Up</button>
+            <div class="switch-link" onclick="toggleAuth('login')">Already have an account? Login</div>
+        </div>
+    </div>
+
+    <div id="appContainer" class="container hidden">
+        
+        <div id="page-home">
+            <h2>Available Products</h2>
+            <div id="productsGrid" class="grid">
+                </div>
+        </div>
+
+        <div id="page-add-product" class="hidden">
+            <h2>Add New Product</h2>
+            <div class="form-card" style="margin: 0;">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="prodName">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="prodDesc" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Price ($)</label>
+                    <input type="number" id="prodPrice">
+                </div>
+                <div class="form-group">
+                    <label>Image</label>
+                    <input type="file" id="prodImage" accept="image/*">
+                </div>
+                <button class="btn" onclick="uploadAndAddProduct()" id="btnAddProd">Add Product</button>
+                <div id="uploadLoader" class="loader hidden"></div>
+            </div>
+        </div>
+
+        <div id="page-my-orders" class="hidden">
+            <h2>My Orders</h2>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Image</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myOrdersTable">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="page-admin-orders" class="hidden">
+            <h2>Manage Customer Orders</h2>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Product</th>
+                            <th>Image</th>
+                            <th>Status</th>
+                            <th>Update</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminOrdersTable">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="productModal" class="modal-overlay hidden">
+        <div class="modal">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <img id="modalImg" src="" class="modal-img">
+            <h3 id="modalTitle" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></h3>
+            <h4 id="modalPrice" style="color: var(--success); margin-bottom: 1rem;"></h4>
+            <p id="modalDesc" style="color: var(--secondary); line-height: 1.6;"></p>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- 1. CONFIGURATION ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, remove, update, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+        // REPLACE WITH YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
-        document.getElementById('modal-reg-back').onclick = openLoginModal;
-      };
-    }
 
-    // Try restore user from localStorage
-    (async function restoreSession(){
-      const saved = localStorage.getItem('minishop_user');
-      if (!saved) { renderAuthArea(); return; }
-      try {
-        const snap = await get(child(ref(db), `users/${saved}`));
-        if (snap.exists()) {
-          const d = snap.val();
-          currentUser = { username: saved, firstName: d.firstName, fatherName: d.fatherName };
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const storage = getStorage(app);
+
+        // --- 2. STATE MANAGEMENT ---
+        let currentUser = null;
+        let isAdmin = false;
+
+        // --- 3. AUTHENTICATION (NO FIREBASE AUTH) ---
+
+        // Check Local Storage on Load
+        window.onload = () => {
+            const savedUser = localStorage.getItem('siteUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                postLoginInit();
+            } else {
+                document.getElementById('authSection').classList.remove('hidden');
+            }
+            
+            // Listen for Products Global
+            fetchProducts(); 
+        };
+
+        window.toggleAuth = (view) => {
+            if (view === 'signup') {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('signupForm').classList.remove('hidden');
+            } else {
+                document.getElementById('signupForm').classList.add('hidden');
+                document.getElementById('loginForm').classList.remove('hidden');
+            }
+        };
+
+        window.handleSignup = () => {
+            const name = document.getElementById('regName').value.trim();
+            const father = document.getElementById('regFather').value.trim();
+            const pass = document.getElementById('regPass').value.trim();
+
+            if (!name || !father || !pass) return alert("Please fill all fields");
+
+            const userId = name.toLowerCase();
+            const userRef = ref(db, 'users/' + userId);
+
+            // Check if exists
+            get(userRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    alert("User already exists with this name.");
+                } else {
+                    set(userRef, {
+                        firstName: name,
+                        fatherName: father,
+                        password: pass
+                    }).then(() => {
+                        alert("Account created! Please login.");
+                        toggleAuth('login');
+                    });
+                }
+            });
+        };
+
+        window.handleLogin = () => {
+            const name = document.getElementById('loginName').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+            const keep = document.getElementById('keepSignedIn').checked;
+
+            if (!name || !pass) return alert("Fill all fields");
+
+            const dbRef = ref(db);
+            get(child(dbRef, `users/${name.toLowerCase()}`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    if (data.password === pass) {
+                        currentUser = data;
+                        if (keep) localStorage.setItem('siteUser', JSON.stringify(data));
+                        postLoginInit();
+                    } else {
+                        alert("Incorrect password");
+                    }
+                } else {
+                    alert("User not found");
+                }
+            }).catch((error) => {
+                console.error(error);
+                alert("Login Error");
+            });
+        };
+
+        window.logout = () => {
+            localStorage.removeItem('siteUser');
+            currentUser = null;
+            isAdmin = false;
+            location.reload();
+        };
+
+        // Post Login Setup
+        function postLoginInit() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            document.getElementById('mainHeader').classList.remove('hidden');
+            
+            // Check Admin Status (Session based only for this demo)
+            if (isAdmin) enableAdminUI();
+            
+            // Load Orders
+            fetchMyOrders();
+            if(isAdmin) fetchAllOrders();
         }
-      } catch(e){ console.error('restore', e); }
-      renderAuthArea();
-    })();
 
-    function openRegisterModal(){ openLoginModal(); /* user can toggle inside modal */ }
+        // --- 4. ADMIN SYSTEM ---
+        window.checkAdminCode = () => {
+            const code = document.getElementById('adminCodeInput').value;
+            if (code === '555') {
+                isAdmin = true;
+                if (currentUser) enableAdminUI();
+            }
+        };
 
-    // Logout
-    function logout() {
-      currentUser = null;
-      adminUnlocked = false;
-      localStorage.removeItem('minishop_user');
-      renderAuthArea();
-      showHome();
-    }
-
-    // ---------- Admin unlock (client-side) ----------
-    document.getElementById('btn-enter-admin').onclick = () => {
-      const code = adminInput.value.trim();
-      addError.textContent = '';
-      if (code === ADMIN_CODE) {
-        adminUnlocked = true; addError.textContent = 'Admin unlocked (client-side)';
-        renderAuthArea();
-      } else {
-        addError.textContent = 'Incorrect admin code';
-      }
-    };
-
-    // ---------- Storage helper ----------
-    async function uploadFileAndGetURL(file) {
-      const path = `products/${Date.now()}-${file.name}`;
-      const refS = sref(storage, path);
-      await uploadBytes(refS, file);
-      const url = await getDownloadURL(refS);
-      return { url, path };
-    }
-
-    // ---------- Add product ----------
-    document.getElementById('btn-add-product').onclick = async () => {
-      if (!adminUnlocked) return alert('Admin required');
-      const name = document.getElementById('prod-name').value.trim();
-      const desc = document.getElementById('prod-desc').value.trim();
-      const price = parseFloat(document.getElementById('prod-price').value);
-      const fileEl = document.getElementById('prod-photo');
-      if (!name || isNaN(price) || !fileEl.files[0]) return alert('Name, price and photo required');
-      try {
-        const file = fileEl.files[0];
-        const { url, path } = await uploadFileAndGetURL(file);
-        const pRef = push(ref(db, 'products'));
-        await set(pRef, { name, description: desc, price, imageUrl: url, imagePath: path, createdAt: Date.now() });
-        // clear
-        document.getElementById('prod-name').value=''; document.getElementById('prod-desc').value=''; document.getElementById('prod-price').value=''; fileEl.value='';
-        loadProducts();
-        alert('Product added');
-      } catch (e) {
-        console.error('add product', e);
-        alert('Could not add product');
-      }
-    };
-
-    // ---------- Products listing (live) ----------
-    function loadProducts() {
-      const productsRef = ref(db, 'products');
-      onValue(productsRef, snapshot => {
-        productsEl.innerHTML = '';
-        if (!snapshot.exists()) { productsEl.innerHTML = '<div class="card">No products yet.</div>'; return; }
-        const items = [];
-        snapshot.forEach(childSnap => {
-          const p = childSnap.val(); p._id = childSnap.key; items.push(p);
-        });
-        items.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
-        items.forEach(p => {
-          const card = document.createElement('div'); card.className='card';
-          if (p.imageUrl) { const img = document.createElement('img'); img.className='prod'; img.src = p.imageUrl; card.appendChild(img); }
-          const title = document.createElement('h4'); title.textContent = p.name; card.appendChild(title);
-          const desc = document.createElement('p'); desc.className='small'; desc.textContent = (p.description && p.description.length>180) ? p.description.slice(0,180)+'...' : p.description || ''; card.appendChild(desc);
-          const price = document.createElement('p'); price.innerHTML = `<strong>Price:</strong> $${parseFloat(p.price||0).toFixed(2)}`; card.appendChild(price);
-          const actions = document.createElement('div'); actions.className='actions';
-          const moreBtn = document.createElement('button'); moreBtn.className='btn secondary'; moreBtn.textContent='More'; moreBtn.onclick = () => openProductModal(p._id); actions.appendChild(moreBtn);
-          if (currentUser) {
-            const orderBtn = document.createElement('button'); orderBtn.className='btn'; orderBtn.textContent='Order'; orderBtn.onclick = () => placeOrder(p._id); actions.appendChild(orderBtn);
-          } else {
-            const loginBtn = document.createElement('button'); loginBtn.className='btn secondary'; loginBtn.textContent='Login to order'; loginBtn.onclick = openLoginModal; actions.appendChild(loginBtn);
-          }
-          if (adminUnlocked) {
-            const delBtn = document.createElement('button'); delBtn.className='btn danger'; delBtn.textContent='Delete'; delBtn.onclick = () => deleteProduct(p._id, p.imagePath); actions.appendChild(delBtn);
-          }
-          card.appendChild(actions);
-          productsEl.appendChild(card);
-        });
-      }, { onlyOnce: false });
-    }
-
-    // helper small wrapper for get(child(...))
-    function dbGet(path) { return get(child(ref(db), path)); }
-
-    // product modal
-    function openProductModal(id) {
-      (async ()=>{
-        try {
-          const snap = await dbGet(`products/${id}`);
-          if (!snap.exists()) return alert('Product not found');
-          const p = snap.val(); p._id = id;
-          productModal.innerHTML = `
-            <div class="modal-backdrop">
-              <div class="modal">
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                  <h3 style="margin:0">${p.name}</h3>
-                  <button id="close-modal" class="btn secondary">Close</button>
-                </div>
-                ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%;height:320px;object-fit:cover;border-radius:8px;margin-top:10px">` : ''}
-                <p class="small" style="margin-top:10px">${p.description || ''}</p>
-                <p><strong>Price:</strong> $${parseFloat(p.price||0).toFixed(2)}</p>
-                <div style="margin-top:12px">
-                  ${currentUser ? `<button id="modal-order" class="btn">Order</button>` : `<button id="modal-login" class="btn secondary">Login to order</button>`}
-                  ${adminUnlocked ? `<button id="modal-delete" class="btn danger">Delete</button>` : ''}
-                </div>
-              </div>
-            </div>
-          `;
-          productModal.classList.remove('hidden');
-          document.getElementById('close-modal').onclick = ()=> { productModal.innerHTML=''; productModal.classList.add('hidden'); };
-          if (currentUser) {
-            document.getElementById('modal-order').onclick = async () => { await placeOrder(p._id); productModal.innerHTML=''; productModal.classList.add('hidden'); };
-          } else {
-            document.getElementById('modal-login').onclick = openLoginModal;
-          }
-          if (adminUnlocked) {
-            document.getElementById('modal-delete').onclick = async () => { if (confirm('Delete product?')) { await deleteProduct(p._id, p.imagePath); productModal.innerHTML=''; productModal.classList.add('hidden'); } };
-          }
-        } catch (e) { console.error('openProductModal', e); alert('Could not open product'); }
-      })();
-    }
-
-    // delete product
-    async function deleteProduct(productId, imagePath) {
-      if (!adminUnlocked) return alert('Admin required');
-      try {
-        if (imagePath) {
-          try { await deleteObject(sref(storage, imagePath)); } catch(_) {}
+        function enableAdminUI() {
+            document.getElementById('nav-add').classList.remove('hidden');
+            document.getElementById('nav-admin-orders').classList.remove('hidden');
+            // Re-render products to show delete buttons
+            fetchProducts();
+            fetchAllOrders();
         }
-        await remove(ref(db, `products/${productId}`));
-        alert('Product removed');
-      } catch (e) {
-        console.error('deleteProduct', e);
-        alert('Could not delete product');
-      }
-    }
 
-    // ---------- Orders ----------
-    async function placeOrder(productId) {
-      if (!currentUser) { openLoginModal(); return; }
-      try {
-        const pSnap = await dbGet(`products/${productId}`);
-        if (!pSnap.exists()) { alert('Product not available'); return; }
-        const p = pSnap.val();
-        const oRef = push(ref(db, 'orders'));
-        await set(oRef, {
-          userName: currentUser.username,
-          userFirstName: currentUser.firstName,
-          userFatherName: currentUser.fatherName,
-          productId,
-          productName: p.name || '',
-          productPrice: p.price || 0,
-          productImage: p.imageUrl || '',
-          status: 'Pending',
-          createdAt: Date.now()
-        });
-        alert('Order placed');
-        showMyOrders();
-      } catch(e) { console.error('placeOrder',e); alert('Could not place order'); }
-    }
+        // --- 5. NAVIGATION ---
+        window.navTo = (pageId) => {
+            // Hide all pages
+            ['home', 'add-product', 'my-orders', 'admin-orders'].forEach(id => {
+                document.getElementById('page-' + id).classList.add('hidden');
+            });
+            // Show target
+            document.getElementById('page-' + pageId).classList.remove('hidden');
+            
+            // Active state
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById('nav-' + pageId).classList.add('active');
+        };
 
-    function loadMyOrders() {
-      if (!currentUser) { openLoginModal(); return; }
-      onValue(ref(db, 'orders'), snapshot => {
-        const out = document.getElementById('my-orders-list');
-        out.innerHTML = '';
-        if (!snapshot.exists()) { out.innerHTML = '<div class="card">No orders yet.</div>'; return; }
-        const arr = [];
-        snapshot.forEach(childSnap => { const o = childSnap.val(); o._id = childSnap.key; if (o.userName === currentUser.username) arr.push(o); });
-        arr.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
-        arr.forEach(o => {
-          const c = document.createElement('div'); c.className='card';
-          const title = document.createElement('h4'); title.textContent = o.productName; c.appendChild(title);
-          const s = document.createElement('p'); s.innerHTML = `<strong>Status:</strong> ${o.status}`; c.appendChild(s);
-          const t = document.createElement('p'); t.className='small'; t.textContent = `Ordered: ${new Date(o.createdAt).toLocaleString()}`; c.appendChild(t);
-          if (o.productImage) { const img = document.createElement('img'); img.className='prod'; img.src = o.productImage; img.style.height='120px'; c.appendChild(img); }
-          if (o.status !== 'Delivered') {
-            const cancel = document.createElement('button'); cancel.className='btn danger'; cancel.textContent='Cancel'; cancel.onclick = async () => {
-              if (!confirm('Cancel?')) return;
-              try { await remove(ref(db, `orders/${o._id}`)); loadMyOrders(); } catch(e){ console.error(e); alert('Could not cancel'); }
-            };
-            c.appendChild(cancel);
-          }
-          out.appendChild(c);
-        });
-      }, { onlyOnce: false });
-    }
+        // --- 6. PRODUCTS SYSTEM ---
+        
+        // Add Product
+        window.uploadAndAddProduct = async () => {
+            const name = document.getElementById('prodName').value;
+            const desc = document.getElementById('prodDesc').value;
+            const price = document.getElementById('prodPrice').value;
+            const file = document.getElementById('prodImage').files[0];
 
-    async function loadAdminOrders() {
-      if (!adminUnlocked) {
-        document.getElementById('admin-orders-list').innerHTML = '<div class="card">Admin only — unlock admin code on Add Product.</div>';
-        return;
-      }
-      onValue(ref(db, 'orders'), snapshot => {
-        const out = document.getElementById('admin-orders-list');
-        out.innerHTML = '';
-        if (!snapshot.exists()) { out.innerHTML = '<div class="card">No orders yet.</div>'; return; }
-        const arr = [];
-        snapshot.forEach(childSnap => { const o = childSnap.val(); o._id = childSnap.key; arr.push(o); });
-        arr.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
-        arr.forEach(o => {
-          const c = document.createElement('div'); c.className='card';
-          const title = document.createElement('h4'); title.textContent = o.productName; c.appendChild(title);
-          const by = document.createElement('p'); by.className='small'; by.textContent = `Ordered by: ${o.userFirstName} ${o.userFatherName} (${o.userName})`; c.appendChild(by);
-          const s = document.createElement('p'); s.innerHTML = `<strong>Status:</strong> ${o.status}`; c.appendChild(s);
-          const t = document.createElement('p'); t.className='small'; t.textContent = `At: ${new Date(o.createdAt).toLocaleString()}`; c.appendChild(t);
-          const row = document.createElement('div'); row.className='actions';
-          ['Declined','Accepted','Delivered'].forEach(st => {
-            const b = document.createElement('button'); b.className='btn'; b.textContent = st;
-            b.onclick = async () => {
-              try { await update(ref(db, `orders/${o._id}`), { status: st }); loadAdminOrders(); } catch(e){ console.error(e); alert('Could not update'); }
-            };
-            row.appendChild(b);
-          });
-          c.appendChild(row);
-          out.appendChild(c);
-        });
-      }, { onlyOnce: false });
-    }
+            if (!name || !price || !file) return alert("Fill required fields");
 
-    // ---------- helpers & start ----------
-    // small wrapper for get(child(...))
-    function child(node, path) { return /* here only used in dbGet wrapper below */ path; }
-    // we need a helper dbGet to use get(child(ref(db), path))
-    import { get as firebaseGet } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    async function dbGet(path) {
-      return firebaseGet(child(ref(db), path));
-    }
+            const btn = document.getElementById('btnAddProd');
+            const loader = document.getElementById('uploadLoader');
+            
+            btn.classList.add('hidden');
+            loader.classList.remove('hidden');
 
-    // expose for inline generated HTML use
-    window.openProductModal = openProductModal;
-    window.placeOrder = placeOrder;
-    window.loadProducts = loadProducts;
-    window.loadMyOrders = loadMyOrders;
-    window.loadAdminOrders = loadAdminOrders;
+            try {
+                // Upload Image
+                const storageRef = sRef(storage, 'products/' + Date.now() + '-' + file.name);
+                const snapshot = await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(snapshot.ref);
 
-    // Render auth UI and start product load
-    renderAuthArea();
-    loadProducts();
+                // Save to DB
+                await push(ref(db, 'products'), {
+                    name: name,
+                    description: desc,
+                    price: price,
+                    imageUrl: url
+                });
 
-  </script>
+                alert("Product Added!");
+                // Reset Form
+                document.getElementById('prodName').value = '';
+                document.getElementById('prodDesc').value = '';
+                document.getElementById('prodPrice').value = '';
+                document.getElementById('prodImage').value = '';
+                navTo('home');
+
+            } catch (err) {
+                console.error(err);
+                alert("Error adding product");
+            } finally {
+                btn.classList.remove('hidden');
+                loader.classList.add('hidden');
+            }
+        };
+
+        // Read Products
+        function fetchProducts() {
+            const productsRef = ref(db, 'products');
+            onValue(productsRef, (snapshot) => {
+                const grid = document.getElementById('productsGrid');
+                grid.innerHTML = '';
+                const data = snapshot.val();
+
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        const p = data[key];
+                        const div = document.createElement('div');
+                        div.className = 'card';
+                        
+                        const deleteBtn = isAdmin ? 
+                            `<button class="btn-delete" onclick="deleteProduct('${key}')">X</button>` : '';
+
+                        div.innerHTML = `
+                            <img src="${p.imageUrl}" class="card-img" alt="${p.name}">
+                            <div class="card-body">
+                                <div class="card-title">${p.name}</div>
+                                <div class="card-price">$${p.price}</div>
+                                <div class="card-desc">${p.description}</div>
+                                <div class="card-actions">
+                                    <button class="btn-more" onclick="showModal('${key}')">More</button>
+                                    ${currentUser ? `<button class="btn-order" onclick="placeOrder('${key}')">Order</button>` : ''}
+                                    ${deleteBtn}
+                                </div>
+                            </div>
+                        `;
+                        // Store full data in element for Modal usage
+                        div.dataset.json = JSON.stringify(p);
+                        grid.appendChild(div);
+                    });
+                } else {
+                    grid.innerHTML = '<p>No products available.</p>';
+                }
+            });
+        }
+
+        // Delete Product
+        window.deleteProduct = (id) => {
+            if(confirm("Are you sure you want to delete this product?")) {
+                remove(ref(db, 'products/' + id));
+            }
+        };
+
+        // Modal Logic
+        window.showModal = (key) => {
+            // Find data locally (optimization) to avoid extra fetch
+            // But we need the data. Let's cheat and grab it from the database path since we have the key,
+            // or better, pass the data object? Due to HTML limitations in onclick, let's fetch specific.
+            get(ref(db, 'products/'+key)).then(snap => {
+                const p = snap.val();
+                document.getElementById('modalImg').src = p.imageUrl;
+                document.getElementById('modalTitle').innerText = p.name;
+                document.getElementById('modalPrice').innerText = '$' + p.price;
+                document.getElementById('modalDesc').innerText = p.description;
+                document.getElementById('productModal').classList.remove('hidden');
+            });
+        };
+
+        window.closeModal = () => {
+            document.getElementById('productModal').classList.add('hidden');
+        };
+
+        // --- 7. ORDERS SYSTEM ---
+
+        // Place Order
+        window.placeOrder = (prodKey) => {
+            if (!currentUser) return alert("Please login first");
+            
+            get(ref(db, 'products/'+prodKey)).then(snap => {
+                const p = snap.val();
+                push(ref(db, 'orders'), {
+                    user: currentUser.firstName,
+                    productName: p.name,
+                    price: p.price,
+                    image: p.imageUrl,
+                    status: 'Pending',
+                    timestamp: Date.now()
+                }).then(() => {
+                    alert("Order placed successfully!");
+                    navTo('my-orders');
+                });
+            });
+        };
+
+        // My Orders
+        function fetchMyOrders() {
+            if(!currentUser) return;
+            onValue(ref(db, 'orders'), (snapshot) => {
+                const tbody = document.getElementById('myOrdersTable');
+                tbody.innerHTML = '';
+                const data = snapshot.val();
+                
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        const order = data[key];
+                        if (order.user === currentUser.firstName) {
+                            const tr = document.createElement('tr');
+                            
+                            let action = '';
+                            if (order.status !== 'Delivered' && order.status !== 'Declined') {
+                                action = `<button style="color:red; background:none; border:none; cursor:pointer;" onclick="cancelOrder('${key}')">Cancel</button>`;
+                            }
+
+                            tr.innerHTML = `
+                                <td>${order.productName}</td>
+                                <td><img src="${order.image}" class="order-img"></td>
+                                <td>$${order.price}</td>
+                                <td><span class="status-badge status-${order.status}">${order.status}</span></td>
+                                <td>${action}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        }
+                    });
+                }
+            });
+        }
+
+        window.cancelOrder = (key) => {
+            if(confirm("Cancel this order?")) {
+                remove(ref(db, 'orders/' + key));
+            }
+        };
+
+        // Admin Orders
+        function fetchAllOrders() {
+            if(!isAdmin) return;
+            onValue(ref(db, 'orders'), (snapshot) => {
+                const tbody = document.getElementById('adminOrdersTable');
+                tbody.innerHTML = '';
+                const data = snapshot.val();
+
+                if(data) {
+                    Object.keys(data).forEach(key => {
+                        const order = data[key];
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${order.user}</td>
+                            <td>${order.productName}</td>
+                            <td><img src="${order.image}" class="order-img"></td>
+                            <td><span class="status-badge status-${order.status}">${order.status}</span></td>
+                            <td>
+                                <select onchange="updateStatus('${key}', this.value)" style="padding:4px;">
+                                    <option value="" disabled selected>Change</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Accepted">Accepted</option>
+                                    <option value="Declined">Declined</option>
+                                    <option value="Delivered">Delivered</option>
+                                </select>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            });
+        }
+
+        window.updateStatus = (key, newStatus) => {
+            update(ref(db, 'orders/' + key), { status: newStatus });
+        };
+
+    </script>
 </body>
 </html>
