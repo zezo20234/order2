@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MiniShop">
     <meta name="theme-color" content="#2563eb">
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -21,13 +20,14 @@
             --success: #16a34a;
             --bg: #f3f4f6;
             --card: #ffffff;
+            --text: #1f2937;
         }
 
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg); overflow-x: hidden; }
+        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
         button { cursor: pointer; padding: 12px; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; font-size: 14px; }
-        button:active { transform: scale(0.98); }
-        input, textarea { padding: 12px; border: 1px solid #ccc; border-radius: 8px; width: 100%; margin-bottom: 12px; font-size: 16px; }
+        button:active { transform: scale(0.96); }
+        input, textarea { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; margin-bottom: 12px; font-size: 16px; outline: none; }
         
         .hidden { display: none !important; }
         .container { width: 100%; padding: 15px; }
@@ -49,54 +49,100 @@
 
         /* Product Grid */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-        @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } }
-
         .product-card { background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; }
         .product-img { width: 100%; height: 160px; object-fit: cover; background: #eee; }
         .p-details { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
         .p-title { font-size: 1rem; font-weight: bold; margin-bottom: 4px; }
-        .p-price { color: var(--success); font-weight: 800; font-size: 1.1rem; margin-bottom: 4px; }
-        .p-qty { font-size: 0.8rem; color: #666; margin-bottom: 8px; }
-        .p-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: auto; }
-        .p-actions button { padding: 8px; font-size: 11px; }
-        .btn-full { grid-column: span 2; margin-bottom: 5px; }
+        .p-price { color: var(--success); font-weight: 800; font-size: 1.1rem; }
+        .p-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
+        .btn-full { grid-column: span 2; }
 
-        /* Modals */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-end; z-index: 1000; }
-        .modal-content { background: var(--card); padding: 20px; border-radius: 20px 20px 0 0; width: 100%; max-height: 95vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .close-modal { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-
-        /* Onboarding Styles */
-        .install-guide { text-align: center; padding: 10px; }
-        .guide-box { background: #f9fafb; border: 2px dashed var(--primary); border-radius: 12px; padding: 15px; margin: 15px 0; text-align: left; }
-        .step { margin-bottom: 10px; display: flex; align-items: flex-start; gap: 10px; }
-        .step-num { background: var(--primary); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
-        
-        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: white; font-weight: bold; }
+        /* Order Item Styling */
+        .order-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .order-id-label { background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 5px; font-size: 12px; font-weight: 900; margin-bottom: 8px; display: inline-block; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: white; font-weight: bold; text-transform: uppercase; }
         .st-pending { background: #f59e0b; }
         .st-accepted { background: #3b82f6; }
         .st-declined { background: #ef4444; }
         .st-delivered { background: #10b981; }
+
+        /* Modals */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-end; z-index: 1000; }
+        .modal-content { background: var(--card); padding: 20px; border-radius: 20px 20px 0 0; width: 100%; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .close-modal { float: right; font-size: 28px; font-weight: bold; cursor: pointer; color: #9ca3af; }
+
+        /* RECEIPT PRINTING STYLES */
+        #print-section { display: none; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #print-section, #print-section * { visibility: visible; }
+            #print-section { 
+                display: block; 
+                position: absolute; 
+                left: 0; top: 0; width: 100%; 
+                padding: 20px;
+                font-family: 'Courier New', Courier, monospace;
+            }
+            .receipt-container {
+                border: 2px dashed #000;
+                padding: 20px;
+                max-width: 300px;
+                margin: auto;
+                text-align: center;
+                position: relative;
+            }
+            .cut-line {
+                width: 100%;
+                border-top: 1px dashed #000;
+                margin-top: 30px;
+                position: relative;
+            }
+            .cut-line::after {
+                content: '✂---';
+                position: absolute;
+                top: -10px;
+                left: 10px;
+                background: white;
+                padding: 0 5px;
+            }
+        }
     </style>
 </head>
 <body>
 
+    <div id="print-section">
+        <div class="receipt-container">
+            <h2 style="margin:0">MINISHOP</h2>
+            <p style="font-size:12px">Official Receipt</p>
+            <hr>
+            <h1 id="pr-number" style="margin:10px 0">#0</h1>
+            <div style="text-align: left; font-size: 14px;">
+                <p><strong>Item:</strong> <span id="pr-item"></span></p>
+                <p><strong>Price:</strong> <span id="pr-price"></span> SAR</p>
+                <p><strong>Customer:</strong> <span id="pr-user"></span></p>
+                <p><strong>Class:</strong> <span id="pr-class"></span></p>
+                <p><strong>Date:</strong> <span id="pr-date"></span></p>
+            </div>
+            <hr>
+            <p>Thank you for your purchase!</p>
+            <div class="cut-line"></div>
+        </div>
+    </div>
+
     <div id="auth-screen">
         <div id="login-form" class="auth-box">
-            <h2>MiniShop Login</h2>
+            <h2 style="color: var(--primary)">Welcome Back</h2>
             <input type="text" id="login-fname" placeholder="First Name">
             <input type="text" id="login-dadname" placeholder="Father's Name">
             <input type="password" id="login-pass" placeholder="Password">
-            <div style="text-align: left; margin-bottom: 15px; font-size: 14px;">
-                <input type="checkbox" id="keep-signed-in" style="width: auto; margin:0"> <label for="keep-signed-in">Keep me signed in</label>
-            </div>
             <button class="btn-primary" onclick="handleLogin()" style="width: 100%">Log In</button>
             <span class="toggle-link" onclick="toggleAuth('signup')">Create Account</span>
         </div>
 
         <div id="signup-form" class="auth-box hidden">
-            <h2>Join MiniShop</h2>
+            <h2 style="color: var(--success)">Join MiniShop</h2>
             <input type="text" id="signup-fname" placeholder="First Name">
             <input type="text" id="signup-dadname" placeholder="Father's Name">
             <input type="text" id="signup-class" placeholder="Class (e.g. 7c)">
@@ -109,11 +155,11 @@
     <div id="app-screen" class="hidden">
         <header>
             <div class="header-top">
-                <span style="font-weight: 900; font-size: 1.4rem;">MINISHOP</span>
+                <span style="font-weight: 900; font-size: 1.4rem; letter-spacing: -1px;">MINISHOP</span>
                 <button class="btn-danger" onclick="logout()" style="padding: 5px 12px; font-size: 12px;">Logout</button>
             </div>
             <div class="nav-buttons">
-                <button class="btn-success" onclick="openAddProduct()">+ Add Product</button>
+                <button class="btn-success" onclick="openAddProduct()">+ New Item</button>
                 <button class="btn-secondary" onclick="openMyOrders()">My Orders</button>
                 <button class="btn-secondary" style="background:#4b5563" onclick="openAdminOrders()">Admin View</button>
             </div>
@@ -124,58 +170,36 @@
         </div>
     </div>
 
-    <div id="modal-onboarding" class="modal hidden">
-        <div class="modal-content" style="border-radius: 20px 20px 20px 20px; align-self: center; margin-bottom: 0; width: 90%; max-width: 450px;">
-            <div class="install-guide">
-                <h2 style="color: var(--primary); margin-top: 0;">Install as an App! 📱</h2>
-                <p>Install MiniShop to your home screen for a faster and better experience.</p>
-                
-                <div class="guide-box">
-                    <h4 style="margin: 0 0 10px 0;">iPhone (Safari)</h4>
-                    <div class="step"><div class="step-num">1</div> Tap the <b>'Share'</b> button (square with arrow)</div>
-                    <div class="step"><div class="step-num">2</div> Scroll down and tap <b>'Add to Home Screen'</b></div>
-                </div>
-
-                <div class="guide-box">
-                    <h4 style="margin: 0 0 10px 0;">Android (Chrome)</h4>
-                    <div class="step"><div class="step-num">1</div> Tap the <b>'Three Dots'</b> (⋮) in the top right</div>
-                    <div class="step"><div class="step-num">2</div> Tap <b>'Install App'</b> or <b>'Add to Home Screen'</b></div>
-                </div>
-
-                <button class="btn-primary" onclick="closeOnboarding()" style="width: 100%; margin-top: 10px;">Got it, thanks!</button>
-            </div>
-        </div>
-    </div>
-
     <div id="modal-add-product" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-add-product')">&times;</span>
             <h3>Post New Item</h3>
             <input type="text" id="p-name" placeholder="Item Name">
-            <textarea id="p-desc" placeholder="Details" rows="3"></textarea>
+            <textarea id="p-desc" placeholder="Details (Size, Color, etc.)" rows="3"></textarea>
             <input type="number" id="p-price" placeholder="Price (SAR)">
             <input type="number" id="p-qty" placeholder="Initial Stock" value="1">
+            <label style="font-size: 12px; color: #666;">Upload Image:</label>
             <input type="file" id="p-file" accept="image/*">
-            <button class="btn-success" onclick="submitProduct()" style="width: 100%; margin-top: 10px;">Upload</button>
+            <button class="btn-success" onclick="submitProduct()" style="width: 100%; margin-top: 10px;">Upload to Shop</button>
         </div>
     </div>
 
     <div id="modal-detail" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-detail')">&times;</span>
-            <img id="d-img" src="" style="width:100%; border-radius: 12px; margin-bottom: 15px;">
-            <h2 id="d-name"></h2>
-            <h3 id="d-price" style="color: var(--success);"></h3>
-            <p id="d-qty-info" style="font-weight: bold;"></p>
-            <p id="d-desc"></p>
-            <button class="btn-primary" id="detail-order-btn" style="width: 100%">Order Now</button>
+            <img id="d-img" src="" style="width:100%; border-radius: 12px; margin-bottom: 15px; height: 250px; object-fit: cover;">
+            <h2 id="d-name" style="margin: 0 0 5px 0;"></h2>
+            <h3 id="d-price" style="color: var(--success); margin: 0 0 10px 0;"></h3>
+            <p id="d-qty-info" style="font-weight: bold; font-size: 14px;"></p>
+            <p id="d-desc" style="color: #4b5563; line-height: 1.5;"></p>
+            <button class="btn-primary" id="detail-order-btn" style="width: 100%; height: 50px; font-size: 18px;">Order Now</button>
         </div>
     </div>
 
     <div id="modal-admin-orders" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-admin-orders')">&times;</span>
-            <h3>Customer Orders</h3>
+            <h3 style="margin-top:0">All Customer Orders</h3>
             <div id="admin-orders-list"></div>
         </div>
     </div>
@@ -183,12 +207,13 @@
     <div id="modal-my-orders" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-my-orders')">&times;</span>
-            <h3>My History</h3>
+            <h3 style="margin-top:0">My Order History</h3>
             <div id="my-orders-list"></div>
         </div>
     </div>
 
     <script>
+        // FIREBASE SETUP
         const firebaseConfig = {
             apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
             authDomain: "minishop-67dbf.firebaseapp.com",
@@ -210,6 +235,7 @@
             if (savedUser) { currentUser = JSON.parse(savedUser); showApp(); }
         };
 
+        // AUTH FUNCTIONS
         function toggleAuth(view) {
             document.getElementById('login-form').classList.toggle('hidden', view === 'signup');
             document.getElementById('signup-form').classList.toggle('hidden', view === 'login');
@@ -222,21 +248,23 @@
             const pass = document.getElementById('signup-pass').value.trim();
             if (!fname || !dadname || !uClass || !pass) return alert("Fill all fields");
             const uid = 'u' + Date.now();
-            db.ref('users/' + uid).set({ fname, dadname, uClass, pass, uid }).then(() => { alert("Created!"); toggleAuth('login'); });
+            db.ref('users/' + uid).set({ fname, dadname, uClass, pass, uid }).then(() => { 
+                alert("Account Created!"); 
+                toggleAuth('login'); 
+            });
         }
 
         function handleLogin() {
             const fname = document.getElementById('login-fname').value.trim();
             const dadname = document.getElementById('login-dadname').value.trim();
             const pass = document.getElementById('login-pass').value.trim();
-            const keep = document.getElementById('keep-signed-in').checked;
             db.ref('users').once('value', snap => {
                 let found = false;
                 snap.forEach(c => {
                     const u = c.val();
                     if (u.fname.toLowerCase() === fname.toLowerCase() && u.dadname.toLowerCase() === dadname.toLowerCase() && u.pass === pass) {
                         found = true; currentUser = u;
-                        if (keep) localStorage.setItem('miniShopUser', JSON.stringify(u));
+                        localStorage.setItem('miniShopUser', JSON.stringify(u));
                         showApp();
                     }
                 });
@@ -248,25 +276,13 @@
             document.getElementById('auth-screen').classList.add('hidden'); 
             document.getElementById('app-screen').classList.remove('hidden'); 
             loadProducts(); 
-            checkOnboarding();
-        }
-
-        // Onboarding Logic
-        function checkOnboarding() {
-            const hasSeen = localStorage.getItem('onboardingShown');
-            if (!hasSeen) {
-                document.getElementById('modal-onboarding').classList.remove('hidden');
-            }
-        }
-        function closeOnboarding() {
-            localStorage.setItem('onboardingShown', 'true');
-            document.getElementById('modal-onboarding').classList.add('hidden');
         }
 
         function logout() { localStorage.removeItem('miniShopUser'); location.reload(); }
 
-        // Product Logic
+        // PRODUCT MANAGEMENT
         function openAddProduct() { if (prompt("Admin Code:") === ADMIN_CODE) document.getElementById('modal-add-product').classList.remove('hidden'); }
+        
         function submitProduct() {
             const name = document.getElementById('p-name').value;
             const desc = document.getElementById('p-desc').value;
@@ -274,6 +290,7 @@
             const qty = parseInt(document.getElementById('p-qty').value) || 0;
             const file = document.getElementById('p-file').files[0];
             if (!name || !price || !file) return alert("Missing info");
+            
             const reader = new FileReader();
             reader.onload = (e) => {
                 const pid = 'p' + Date.now();
@@ -295,9 +312,12 @@
                         <div class="p-details">
                             <div class="p-title">${p.name}</div>
                             <div class="p-price">${p.price} SAR</div>
-                            <div class="p-qty">${isOut ? '<span style="color:red">Out of Stock</span>' : 'Stock: '+p.qty}</div>
-                            <button class="btn-primary btn-full" ${isOut ? 'disabled' : ''} onclick="orderProduct('${p.pid}', '${p.name}', '${p.price}')">Order</button>
-                            <div class="p-actions"><button class="btn-secondary" onclick="showDetail('${p.pid}')">More</button><button class="btn-danger" onclick="deleteProduct('${p.pid}')">Delete</button></div>
+                            <div style="font-size:12px; color:#666; margin-top:5px;">${isOut ? '<span style="color:red">Out of Stock</span>' : 'Stock: '+p.qty}</div>
+                            <div class="p-actions">
+                                <button class="btn-primary btn-full" ${isOut ? 'disabled' : ''} onclick="orderProduct('${p.pid}', '${p.name}', '${p.price}')">Order</button>
+                                <button class="btn-secondary" onclick="showDetail('${p.pid}')">More</button>
+                                <button class="btn-danger" onclick="deleteProduct('${p.pid}')">Delete</button>
+                            </div>
                         </div>`;
                     grid.appendChild(card);
                 });
@@ -310,19 +330,66 @@
                 document.getElementById('d-img').src = p.img;
                 document.getElementById('d-name').innerText = p.name;
                 document.getElementById('d-price').innerText = p.price + " SAR";
-                document.getElementById('d-qty-info').innerHTML = p.qty <= 0 ? 'Out of Stock' : 'Stock: ' + p.qty;
+                document.getElementById('d-qty-info').innerHTML = p.qty <= 0 ? 'Status: Out of Stock' : 'Stock Available: ' + p.qty;
                 document.getElementById('d-desc').innerText = p.desc;
+                document.getElementById('detail-order-btn').onclick = () => orderProduct(p.pid, p.name, p.price);
                 document.getElementById('modal-detail').classList.remove('hidden');
             });
         }
 
+        // ORDER LOGIC WITH SEQUENTIAL NUMBERING
         function orderProduct(pid, name, price) {
-            if(!confirm(`Order ${name}?`)) return;
+            if(!confirm(`Confirm order for ${name}?`)) return;
+
             const pRef = db.ref('products/' + pid);
-            pRef.transaction(p => { if(p && p.qty > 0) { p.qty--; return p; } return p; }, (err, committed) => {
-                if(committed) db.ref('orders/o'+Date.now()).set({pid, name, price, uid: currentUser.uid, uName: currentUser.fname, uDad: currentUser.dadname, uClass: currentUser.uClass, status: 'Pending'});
-                else alert("Sold out!");
+            pRef.transaction(p => {
+                if (p && p.qty > 0) {
+                    p.qty--;
+                    return p;
+                }
+                return p;
+            }, (err, committed) => {
+                if (!committed) return alert("Sorry, item sold out!");
+
+                // Get Sequential ID using Database Transaction
+                const counterRef = db.ref('metadata/orderCount');
+                counterRef.transaction(currentValue => {
+                    return (currentValue || 0) + 1;
+                }, (error, committed, snapshot) => {
+                    if (committed) {
+                        const orderNum = snapshot.val();
+                        const orderId = 'o' + Date.now();
+                        const timestamp = new Date().toLocaleString();
+
+                        db.ref('orders/' + orderId).set({
+                            orderNum,
+                            pid, name, price,
+                            uid: currentUser.uid,
+                            uName: currentUser.fname + " " + currentUser.dadname,
+                            uClass: currentUser.uClass,
+                            status: 'Pending',
+                            date: timestamp
+                        }).then(() => {
+                            alert("Order Successful! Your Order ID is #" + orderNum);
+                            closeModal('modal-detail');
+                        });
+                    }
+                });
             });
+        }
+
+        // PRINT RECEIPT FUNCTION
+        function printReceipt(orderData) {
+            document.getElementById('pr-number').innerText = "#" + orderData.orderNum;
+            document.getElementById('pr-item').innerText = orderData.name;
+            document.getElementById('pr-price').innerText = orderData.price;
+            document.getElementById('pr-user').innerText = orderData.uName;
+            document.getElementById('pr-class').innerText = orderData.uClass;
+            document.getElementById('pr-date').innerText = orderData.date;
+            
+            setTimeout(() => {
+                window.print();
+            }, 500);
         }
 
         function updStat(oid, pid, newStatus) {
@@ -330,24 +397,31 @@
             oRef.once('value', snap => {
                 const o = snap.val();
                 if (newStatus === 'Declined' && o.status !== 'Declined') db.ref('products/'+pid+'/qty').transaction(q => (q||0)+1);
-                else if (o.status === 'Declined' && newStatus !== 'Declined') db.ref('products/'+pid+'/qty').transaction(q => q > 0 ? q-1 : 0);
                 oRef.update({status: newStatus});
             });
         }
 
         function openAdminOrders() {
-            if (prompt("Code:") !== ADMIN_CODE) return;
+            if (prompt("Admin Code:") !== ADMIN_CODE) return;
             document.getElementById('modal-admin-orders').classList.remove('hidden');
             db.ref('orders').on('value', snap => {
                 const list = document.getElementById('admin-orders-list'); list.innerHTML = '';
                 snap.forEach(c => {
                     const o = c.val();
-                    const d = document.createElement('div'); d.className = 'order-item';
-                    d.innerHTML = `<b>${o.name}</b> (${o.price} SAR)<br>User: ${o.uName} ${o.uDad} | Class: ${o.uClass}<br>Status: <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span>
-                        <div style="margin-top:10px; display:flex; gap:5px;">
-                            <button class="btn-primary" onclick="updStat('${c.key}','${o.pid}','Accepted')">Accept</button>
-                            <button class="btn-danger" onclick="updStat('${c.key}','${o.pid}','Declined')">Decline</button>
-                            <button class="btn-success" onclick="updStat('${c.key}','${o.pid}','Delivered')">Done</button>
+                    const d = document.createElement('div'); d.className = 'order-card';
+                    d.innerHTML = `
+                        <div class="order-id-label">ORDER #${o.orderNum}</div>
+                        <div style="float:right"><span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span></div>
+                        <div style="font-weight:bold; margin-bottom:5px;">${o.name}</div>
+                        <div style="font-size:13px; color:#555;">
+                            <b>User:</b> ${o.uName} | <b>Class:</b> ${o.uClass}<br>
+                            <b>Date:</b> ${o.date}
+                        </div>
+                        <div style="margin-top:10px; display:flex; gap:5px; flex-wrap:wrap;">
+                            <button class="btn-primary" style="padding:5px 10px; font-size:11px" onclick="updStat('${c.key}','${o.pid}','Accepted')">Accept</button>
+                            <button class="btn-success" style="padding:5px 10px; font-size:11px" onclick="updStat('${c.key}','${o.pid}','Delivered')">Done</button>
+                            <button class="btn-danger" style="padding:5px 10px; font-size:11px" onclick="updStat('${c.key}','${o.pid}','Declined')">Decline</button>
+                            <button class="btn-secondary" style="background:#000; padding:5px 10px; font-size:11px" onclick='printReceipt(${JSON.stringify(o)})'>Print 🖨️</button>
                         </div>`;
                     list.appendChild(d);
                 });
@@ -361,8 +435,14 @@
                 snap.forEach(c => {
                     const o = c.val();
                     if(o.uid === currentUser.uid) {
-                        const d = document.createElement('div'); d.className = 'order-item';
-                        d.innerHTML = `<b>${o.name}</b> - <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span>`;
+                        const d = document.createElement('div'); d.className = 'order-card';
+                        d.innerHTML = `
+                            <div class="order-id-label">ORDER #${o.orderNum}</div>
+                            <div style="float:right"><span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span></div>
+                            <div style="font-weight:bold">${o.name}</div>
+                            <div style="font-size:12px; color:#666;">Date: ${o.date}</div>
+                            <button class="btn-secondary" style="background:#000; padding:5px 10px; font-size:11px; margin-top:10px;" onclick='printReceipt(${JSON.stringify(o)})'>View Receipt 🖨️</button>
+                        `;
                         list.appendChild(d);
                     }
                 });
