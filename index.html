@@ -164,7 +164,6 @@
                 <button class="btn-secondary" style="background:#4b5563" onclick="openAdminOrders()">Admin View</button>
             </div>
         </header>
-
         <div class="container">
             <div id="product-grid" class="grid"></div>
         </div>
@@ -175,12 +174,11 @@
             <span class="close-modal" onclick="closeModal('modal-add-product')">&times;</span>
             <h3>Post New Item</h3>
             <input type="text" id="p-name" placeholder="Item Name">
-            <textarea id="p-desc" placeholder="Details (Size, Color, etc.)" rows="3"></textarea>
+            <textarea id="p-desc" placeholder="Details" rows="3"></textarea>
             <input type="number" id="p-price" placeholder="Price (SAR)">
             <input type="number" id="p-qty" placeholder="Initial Stock" value="1">
-            <label style="font-size: 12px; color: #666;">Upload Image:</label>
             <input type="file" id="p-file" accept="image/*">
-            <button class="btn-success" onclick="submitProduct()" style="width: 100%; margin-top: 10px;">Upload to Shop</button>
+            <button class="btn-success" onclick="submitProduct()" style="width: 100%; margin-top: 10px;">Upload</button>
         </div>
     </div>
 
@@ -188,18 +186,18 @@
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-detail')">&times;</span>
             <img id="d-img" src="" style="width:100%; border-radius: 12px; margin-bottom: 15px; height: 250px; object-fit: cover;">
-            <h2 id="d-name" style="margin: 0 0 5px 0;"></h2>
-            <h3 id="d-price" style="color: var(--success); margin: 0 0 10px 0;"></h3>
-            <p id="d-qty-info" style="font-weight: bold; font-size: 14px;"></p>
-            <p id="d-desc" style="color: #4b5563; line-height: 1.5;"></p>
-            <button class="btn-primary" id="detail-order-btn" style="width: 100%; height: 50px; font-size: 18px;">Order Now</button>
+            <h2 id="d-name"></h2>
+            <h3 id="d-price" style="color: var(--success);"></h3>
+            <p id="d-qty-info"></p>
+            <p id="d-desc"></p>
+            <button class="btn-primary" id="detail-order-btn" style="width: 100%; height: 50px;">Order Now</button>
         </div>
     </div>
 
     <div id="modal-admin-orders" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-admin-orders')">&times;</span>
-            <h3 style="margin-top:0">All Customer Orders</h3>
+            <h3>Customer Orders</h3>
             <div id="admin-orders-list"></div>
         </div>
     </div>
@@ -207,13 +205,12 @@
     <div id="modal-my-orders" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-my-orders')">&times;</span>
-            <h3 style="margin-top:0">My Order History</h3>
+            <h3>My History</h3>
             <div id="my-orders-list"></div>
         </div>
     </div>
 
     <script>
-        // FIREBASE SETUP
         const firebaseConfig = {
             apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
             authDomain: "minishop-67dbf.firebaseapp.com",
@@ -235,22 +232,39 @@
             if (savedUser) { currentUser = JSON.parse(savedUser); showApp(); }
         };
 
-        // AUTH FUNCTIONS
         function toggleAuth(view) {
             document.getElementById('login-form').classList.toggle('hidden', view === 'signup');
             document.getElementById('signup-form').classList.toggle('hidden', view === 'login');
         }
 
+        // UPDATED SIGNUP WITH DUPLICATE CHECK
         function handleSignup() {
             const fname = document.getElementById('signup-fname').value.trim();
             const dadname = document.getElementById('signup-dadname').value.trim();
             const uClass = document.getElementById('signup-class').value.trim();
             const pass = document.getElementById('signup-pass').value.trim();
             if (!fname || !dadname || !uClass || !pass) return alert("Fill all fields");
-            const uid = 'u' + Date.now();
-            db.ref('users/' + uid).set({ fname, dadname, uClass, pass, uid }).then(() => { 
-                alert("Account Created!"); 
-                toggleAuth('login'); 
+
+            // 1. Check if name combination already exists
+            db.ref('users').once('value', snap => {
+                let exists = false;
+                snap.forEach(child => {
+                    const u = child.val();
+                    if (u.fname.toLowerCase() === fname.toLowerCase() && u.dadname.toLowerCase() === dadname.toLowerCase()) {
+                        exists = true;
+                    }
+                });
+
+                if (exists) {
+                    alert("Account already exists with this name and father's name!");
+                } else {
+                    // 2. Create account if it doesn't exist
+                    const uid = 'u' + Date.now();
+                    db.ref('users/' + uid).set({ fname, dadname, uClass, pass, uid }).then(() => { 
+                        alert("Account Created!"); 
+                        toggleAuth('login'); 
+                    });
+                }
             });
         }
 
@@ -280,9 +294,8 @@
 
         function logout() { localStorage.removeItem('miniShopUser'); location.reload(); }
 
-        // PRODUCT MANAGEMENT
+        // PRODUCT LOGIC
         function openAddProduct() { if (prompt("Admin Code:") === ADMIN_CODE) document.getElementById('modal-add-product').classList.remove('hidden'); }
-        
         function submitProduct() {
             const name = document.getElementById('p-name').value;
             const desc = document.getElementById('p-desc').value;
@@ -290,7 +303,6 @@
             const qty = parseInt(document.getElementById('p-qty').value) || 0;
             const file = document.getElementById('p-file').files[0];
             if (!name || !price || !file) return alert("Missing info");
-            
             const reader = new FileReader();
             reader.onload = (e) => {
                 const pid = 'p' + Date.now();
@@ -330,47 +342,37 @@
                 document.getElementById('d-img').src = p.img;
                 document.getElementById('d-name').innerText = p.name;
                 document.getElementById('d-price').innerText = p.price + " SAR";
-                document.getElementById('d-qty-info').innerHTML = p.qty <= 0 ? 'Status: Out of Stock' : 'Stock Available: ' + p.qty;
+                document.getElementById('d-qty-info').innerHTML = p.qty <= 0 ? 'Out of Stock' : 'Stock: ' + p.qty;
                 document.getElementById('d-desc').innerText = p.desc;
                 document.getElementById('detail-order-btn').onclick = () => orderProduct(p.pid, p.name, p.price);
                 document.getElementById('modal-detail').classList.remove('hidden');
             });
         }
 
-        // ORDER LOGIC WITH SEQUENTIAL NUMBERING
+        // ORDER LOGIC WITH SEQUENTIAL #1, #2...
         function orderProduct(pid, name, price) {
             if(!confirm(`Confirm order for ${name}?`)) return;
-
             const pRef = db.ref('products/' + pid);
-            pRef.transaction(p => {
-                if (p && p.qty > 0) {
-                    p.qty--;
-                    return p;
-                }
-                return p;
+            pRef.transaction(p => { 
+                if (p && p.qty > 0) { p.qty--; return p; } return p; 
             }, (err, committed) => {
-                if (!committed) return alert("Sorry, item sold out!");
-
-                // Get Sequential ID using Database Transaction
+                if (!committed) return alert("Sold out!");
+                
+                // Get sequential count
                 const counterRef = db.ref('metadata/orderCount');
-                counterRef.transaction(currentValue => {
-                    return (currentValue || 0) + 1;
-                }, (error, committed, snapshot) => {
+                counterRef.transaction(current => (current || 0) + 1, (error, committed, snapshot) => {
                     if (committed) {
                         const orderNum = snapshot.val();
                         const orderId = 'o' + Date.now();
-                        const timestamp = new Date().toLocaleString();
-
                         db.ref('orders/' + orderId).set({
-                            orderNum,
-                            pid, name, price,
+                            orderNum, pid, name, price,
                             uid: currentUser.uid,
                             uName: currentUser.fname + " " + currentUser.dadname,
                             uClass: currentUser.uClass,
                             status: 'Pending',
-                            date: timestamp
+                            date: new Date().toLocaleString()
                         }).then(() => {
-                            alert("Order Successful! Your Order ID is #" + orderNum);
+                            alert("Ordered! Your ID is #" + orderNum);
                             closeModal('modal-detail');
                         });
                     }
@@ -378,18 +380,15 @@
             });
         }
 
-        // PRINT RECEIPT FUNCTION
-        function printReceipt(orderData) {
-            document.getElementById('pr-number').innerText = "#" + orderData.orderNum;
-            document.getElementById('pr-item').innerText = orderData.name;
-            document.getElementById('pr-price').innerText = orderData.price;
-            document.getElementById('pr-user').innerText = orderData.uName;
-            document.getElementById('pr-class').innerText = orderData.uClass;
-            document.getElementById('pr-date').innerText = orderData.date;
-            
-            setTimeout(() => {
-                window.print();
-            }, 500);
+        // PRINT LOGIC
+        function printReceipt(o) {
+            document.getElementById('pr-number').innerText = "#" + o.orderNum;
+            document.getElementById('pr-item').innerText = o.name;
+            document.getElementById('pr-price').innerText = o.price;
+            document.getElementById('pr-user').innerText = o.uName;
+            document.getElementById('pr-class').innerText = o.uClass;
+            document.getElementById('pr-date').innerText = o.date;
+            setTimeout(() => { window.print(); }, 500);
         }
 
         function updStat(oid, pid, newStatus) {
@@ -412,15 +411,11 @@
                     d.innerHTML = `
                         <div class="order-id-label">ORDER #${o.orderNum}</div>
                         <div style="float:right"><span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span></div>
-                        <div style="font-weight:bold; margin-bottom:5px;">${o.name}</div>
-                        <div style="font-size:13px; color:#555;">
-                            <b>User:</b> ${o.uName} | <b>Class:</b> ${o.uClass}<br>
-                            <b>Date:</b> ${o.date}
-                        </div>
-                        <div style="margin-top:10px; display:flex; gap:5px; flex-wrap:wrap;">
+                        <div style="font-weight:bold">${o.name}</div>
+                        <div style="font-size:12px; color:#555;">${o.uName} | ${o.uClass}</div>
+                        <div style="margin-top:10px; display:flex; gap:5px;">
                             <button class="btn-primary" style="padding:5px 10px; font-size:11px" onclick="updStat('${c.key}','${o.pid}','Accepted')">Accept</button>
                             <button class="btn-success" style="padding:5px 10px; font-size:11px" onclick="updStat('${c.key}','${o.pid}','Delivered')">Done</button>
-                            <button class="btn-danger" style="padding:5px 10px; font-size:11px" onclick="updStat('${c.key}','${o.pid}','Declined')">Decline</button>
                             <button class="btn-secondary" style="background:#000; padding:5px 10px; font-size:11px" onclick='printReceipt(${JSON.stringify(o)})'>Print 🖨️</button>
                         </div>`;
                     list.appendChild(d);
@@ -440,8 +435,7 @@
                             <div class="order-id-label">ORDER #${o.orderNum}</div>
                             <div style="float:right"><span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span></div>
                             <div style="font-weight:bold">${o.name}</div>
-                            <div style="font-size:12px; color:#666;">Date: ${o.date}</div>
-                            <button class="btn-secondary" style="background:#000; padding:5px 10px; font-size:11px; margin-top:10px;" onclick='printReceipt(${JSON.stringify(o)})'>View Receipt 🖨️</button>
+                            <button class="btn-secondary" style="background:#000; padding:5px 10px; font-size:11px; margin-top:10px;" onclick='printReceipt(${JSON.stringify(o)})'>Print Receipt 🖨️</button>
                         `;
                         list.appendChild(d);
                     }
