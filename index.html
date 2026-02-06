@@ -8,6 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MiniShop">
     <meta name="theme-color" content="#2563eb">
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -62,12 +63,16 @@
 
         /* Modals */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-end; z-index: 1000; }
-        .modal-content { background: var(--card); padding: 20px; border-radius: 20px 20px 0 0; width: 100%; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+        .modal-content { background: var(--card); padding: 20px; border-radius: 20px 20px 0 0; width: 100%; max-height: 95vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .close-modal { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+
+        /* Onboarding Styles */
+        .install-guide { text-align: center; padding: 10px; }
+        .guide-box { background: #f9fafb; border: 2px dashed var(--primary); border-radius: 12px; padding: 15px; margin: 15px 0; text-align: left; }
+        .step { margin-bottom: 10px; display: flex; align-items: flex-start; gap: 10px; }
+        .step-num { background: var(--primary); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
         
-        /* Order Items */
-        .order-item { border-bottom: 1px solid #eee; padding: 15px 0; }
         .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: white; font-weight: bold; }
         .st-pending { background: #f59e0b; }
         .st-accepted { background: #3b82f6; }
@@ -119,6 +124,29 @@
         </div>
     </div>
 
+    <div id="modal-onboarding" class="modal hidden">
+        <div class="modal-content" style="border-radius: 20px 20px 20px 20px; align-self: center; margin-bottom: 0; width: 90%; max-width: 450px;">
+            <div class="install-guide">
+                <h2 style="color: var(--primary); margin-top: 0;">Install as an App! 📱</h2>
+                <p>Install MiniShop to your home screen for a faster and better experience.</p>
+                
+                <div class="guide-box">
+                    <h4 style="margin: 0 0 10px 0;">iPhone (Safari)</h4>
+                    <div class="step"><div class="step-num">1</div> Tap the <b>'Share'</b> button (square with arrow)</div>
+                    <div class="step"><div class="step-num">2</div> Scroll down and tap <b>'Add to Home Screen'</b></div>
+                </div>
+
+                <div class="guide-box">
+                    <h4 style="margin: 0 0 10px 0;">Android (Chrome)</h4>
+                    <div class="step"><div class="step-num">1</div> Tap the <b>'Three Dots'</b> (⋮) in the top right</div>
+                    <div class="step"><div class="step-num">2</div> Tap <b>'Install App'</b> or <b>'Add to Home Screen'</b></div>
+                </div>
+
+                <button class="btn-primary" onclick="closeOnboarding()" style="width: 100%; margin-top: 10px;">Got it, thanks!</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-add-product" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-add-product')">&times;</span>
@@ -126,10 +154,9 @@
             <input type="text" id="p-name" placeholder="Item Name">
             <textarea id="p-desc" placeholder="Details" rows="3"></textarea>
             <input type="number" id="p-price" placeholder="Price (SAR)">
-            <input type="number" id="p-qty" placeholder="Initial Stock Quantity" value="1">
-            <label style="font-size: 12px; color: #666;">Product Photo:</label>
+            <input type="number" id="p-qty" placeholder="Initial Stock" value="1">
             <input type="file" id="p-file" accept="image/*">
-            <button class="btn-success" onclick="submitProduct()" style="width: 100%; margin-top: 10px;">Upload to Shop</button>
+            <button class="btn-success" onclick="submitProduct()" style="width: 100%; margin-top: 10px;">Upload</button>
         </div>
     </div>
 
@@ -137,10 +164,10 @@
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-detail')">&times;</span>
             <img id="d-img" src="" style="width:100%; border-radius: 12px; margin-bottom: 15px;">
-            <h2 id="d-name" style="margin:0"></h2>
-            <h3 id="d-price" style="color: var(--success); margin: 10px 0;"></h3>
+            <h2 id="d-name"></h2>
+            <h3 id="d-price" style="color: var(--success);"></h3>
             <p id="d-qty-info" style="font-weight: bold;"></p>
-            <p id="d-desc" style="color: #444; line-height: 1.5;"></p>
+            <p id="d-desc"></p>
             <button class="btn-primary" id="detail-order-btn" style="width: 100%">Order Now</button>
         </div>
     </div>
@@ -162,7 +189,6 @@
     </div>
 
     <script>
-        // === CONFIG ===
         const firebaseConfig = {
             apiKey: "AIzaSyCOrJhv-bit0awn3mJacHbjEFnolzv0Ntw",
             authDomain: "minishop-67dbf.firebaseapp.com",
@@ -218,25 +244,36 @@
             });
         }
 
-        function logout() { localStorage.removeItem('miniShopUser'); location.reload(); }
         function showApp() { 
             document.getElementById('auth-screen').classList.add('hidden'); 
             document.getElementById('app-screen').classList.remove('hidden'); 
             loadProducts(); 
+            checkOnboarding();
         }
 
-        // === PRODUCTS ===
-        function openAddProduct() {
-            if (prompt("Admin Code:") === ADMIN_CODE) document.getElementById('modal-add-product').classList.remove('hidden');
+        // Onboarding Logic
+        function checkOnboarding() {
+            const hasSeen = localStorage.getItem('onboardingShown');
+            if (!hasSeen) {
+                document.getElementById('modal-onboarding').classList.remove('hidden');
+            }
+        }
+        function closeOnboarding() {
+            localStorage.setItem('onboardingShown', 'true');
+            document.getElementById('modal-onboarding').classList.add('hidden');
         }
 
+        function logout() { localStorage.removeItem('miniShopUser'); location.reload(); }
+
+        // Product Logic
+        function openAddProduct() { if (prompt("Admin Code:") === ADMIN_CODE) document.getElementById('modal-add-product').classList.remove('hidden'); }
         function submitProduct() {
             const name = document.getElementById('p-name').value;
             const desc = document.getElementById('p-desc').value;
             const price = document.getElementById('p-price').value;
             const qty = parseInt(document.getElementById('p-qty').value) || 0;
             const file = document.getElementById('p-file').files[0];
-            if (!name || !price || !file) return alert("Info missing");
+            if (!name || !price || !file) return alert("Missing info");
             const reader = new FileReader();
             reader.onload = (e) => {
                 const pid = 'p' + Date.now();
@@ -247,8 +284,7 @@
 
         function loadProducts() {
             db.ref('products').on('value', snap => {
-                const grid = document.getElementById('product-grid');
-                grid.innerHTML = '';
+                const grid = document.getElementById('product-grid'); grid.innerHTML = '';
                 snap.forEach(c => {
                     const p = c.val();
                     const isOut = p.qty <= 0;
@@ -260,15 +296,9 @@
                             <div class="p-title">${p.name}</div>
                             <div class="p-price">${p.price} SAR</div>
                             <div class="p-qty">${isOut ? '<span style="color:red">Out of Stock</span>' : 'Stock: '+p.qty}</div>
-                            <button class="btn-primary btn-full" ${isOut ? 'disabled' : ''} onclick="orderProduct('${p.pid}', '${p.name}', '${p.price}')">
-                                ${isOut ? 'Sold Out' : 'Order Now'}
-                            </button>
-                            <div class="p-actions">
-                                <button class="btn-secondary" onclick="showDetail('${p.pid}')">More</button>
-                                <button class="btn-danger" onclick="deleteProduct('${p.pid}')">Delete</button>
-                            </div>
-                        </div>
-                    `;
+                            <button class="btn-primary btn-full" ${isOut ? 'disabled' : ''} onclick="orderProduct('${p.pid}', '${p.name}', '${p.price}')">Order</button>
+                            <div class="p-actions"><button class="btn-secondary" onclick="showDetail('${p.pid}')">More</button><button class="btn-danger" onclick="deleteProduct('${p.pid}')">Delete</button></div>
+                        </div>`;
                     grid.appendChild(card);
                 });
             });
@@ -280,81 +310,46 @@
                 document.getElementById('d-img').src = p.img;
                 document.getElementById('d-name').innerText = p.name;
                 document.getElementById('d-price').innerText = p.price + " SAR";
-                document.getElementById('d-qty-info').innerHTML = p.qty <= 0 ? '<span style="color:red">Out of Stock</span>' : 'Items available: ' + p.qty;
+                document.getElementById('d-qty-info').innerHTML = p.qty <= 0 ? 'Out of Stock' : 'Stock: ' + p.qty;
                 document.getElementById('d-desc').innerText = p.desc;
-                const btn = document.getElementById('detail-order-btn');
-                btn.disabled = p.qty <= 0;
-                btn.onclick = () => orderProduct(p.pid, p.name, p.price);
                 document.getElementById('modal-detail').classList.remove('hidden');
             });
         }
 
-        // === ORDERING & SMART STOCK ===
         function orderProduct(pid, name, price) {
-            if(!confirm(`Order ${name} for ${price} SAR?`)) return;
-            const productRef = db.ref('products/' + pid);
-            productRef.transaction((p) => {
-                if (p && p.qty > 0) { p.qty--; return p; }
-                return p;
-            }, (error, committed) => {
-                if (committed) {
-                    const oid = 'o' + Date.now();
-                    db.ref('orders/' + oid).set({ oid, pid, name, price, uid: currentUser.uid, uName: currentUser.fname, uDad: currentUser.dadname, uClass: currentUser.uClass, status: 'Pending' });
-                } else alert("Item sold out!");
+            if(!confirm(`Order ${name}?`)) return;
+            const pRef = db.ref('products/' + pid);
+            pRef.transaction(p => { if(p && p.qty > 0) { p.qty--; return p; } return p; }, (err, committed) => {
+                if(committed) db.ref('orders/o'+Date.now()).set({pid, name, price, uid: currentUser.uid, uName: currentUser.fname, uDad: currentUser.dadname, uClass: currentUser.uClass, status: 'Pending'});
+                else alert("Sold out!");
             });
         }
 
         function updStat(oid, pid, newStatus) {
-            const orderRef = db.ref('orders/' + oid);
-            orderRef.once('value', snap => {
-                const order = snap.val();
-                const oldStatus = order.status;
-
-                // Handle Stock fixing logic
-                if (newStatus === 'Declined' && oldStatus !== 'Declined') {
-                    db.ref('products/' + pid + '/qty').transaction(q => (q || 0) + 1);
-                } 
-                else if (oldStatus === 'Declined' && (newStatus === 'Accepted' || newStatus === 'Delivered')) {
-                    db.ref('products/' + pid + '/qty').transaction(q => {
-                        if (q > 0) return q - 1;
-                        alert("Stock ran out in the meantime!");
-                        return q;
-                    });
-                }
-                orderRef.update({ status: newStatus });
-            });
-        }
-
-        function cancelOrder(oid, pid) {
-            if(!confirm("Cancel this order?")) return;
-            db.ref('orders/' + oid).once('value', snap => {
-                const order = snap.val();
-                if(order.status !== 'Declined') db.ref('products/' + pid + '/qty').transaction(q => (q || 0) + 1);
-                db.ref('orders/' + oid).remove();
+            const oRef = db.ref('orders/' + oid);
+            oRef.once('value', snap => {
+                const o = snap.val();
+                if (newStatus === 'Declined' && o.status !== 'Declined') db.ref('products/'+pid+'/qty').transaction(q => (q||0)+1);
+                else if (o.status === 'Declined' && newStatus !== 'Declined') db.ref('products/'+pid+'/qty').transaction(q => q > 0 ? q-1 : 0);
+                oRef.update({status: newStatus});
             });
         }
 
         function openAdminOrders() {
-            if (prompt("Admin Code:") !== ADMIN_CODE) return;
+            if (prompt("Code:") !== ADMIN_CODE) return;
             document.getElementById('modal-admin-orders').classList.remove('hidden');
             db.ref('orders').on('value', snap => {
-                const list = document.getElementById('admin-orders-list');
-                list.innerHTML = '';
+                const list = document.getElementById('admin-orders-list'); list.innerHTML = '';
                 snap.forEach(c => {
                     const o = c.val();
-                    const div = document.createElement('div');
-                    div.className = 'order-item';
-                    div.innerHTML = `
-                        <b>${o.name}</b> (${o.price} SAR)<br>
-                        Student: ${o.uName} ${o.uDad} | Class: ${o.uClass}<br>
-                        Status: <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span>
+                    const d = document.createElement('div'); d.className = 'order-item';
+                    d.innerHTML = `<b>${o.name}</b> (${o.price} SAR)<br>User: ${o.uName} ${o.uDad} | Class: ${o.uClass}<br>Status: <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span>
                         <div style="margin-top:10px; display:flex; gap:5px;">
-                            <button class="btn-primary" onclick="updStat('${o.oid}','${o.pid}','Accepted')">Accept</button>
-                            <button class="btn-danger" onclick="updStat('${o.oid}','${o.pid}','Declined')">Decline</button>
-                            <button class="btn-success" onclick="updStat('${o.oid}','${o.pid}','Delivered')">Done</button>
-                        </div>
-                    `;
-                    list.appendChild(div);
+                            <button class="btn-primary" onclick="updStat('${c.key}','${o.pid}','Accepted')">Accept</button>
+                            <button class="btn-danger" onclick="updStat('${c.key}','${o.pid}','Declined')">Decline</button>
+                            <button class="btn-success" onclick="updStat('${c.key}','${o.pid}','Delivered')">Done</button>
+                        </div>`;
+                    list.appendChild(d);
                 });
             });
         }
@@ -362,22 +357,19 @@
         function openMyOrders() {
             document.getElementById('modal-my-orders').classList.remove('hidden');
             db.ref('orders').on('value', snap => {
-                const list = document.getElementById('my-orders-list');
-                list.innerHTML = '';
+                const list = document.getElementById('my-orders-list'); list.innerHTML = '';
                 snap.forEach(c => {
                     const o = c.val();
                     if(o.uid === currentUser.uid) {
-                        const div = document.createElement('div');
-                        div.className = 'order-item';
-                        div.innerHTML = `<b>${o.name}</b> (${o.price} SAR)<br> Status: <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span><br>
-                        ${o.status === 'Pending' ? `<button class="btn-danger" style="margin-top:8px" onclick="cancelOrder('${o.oid}','${o.pid}')">Cancel</button>` : ''}`;
-                        list.appendChild(div);
+                        const d = document.createElement('div'); d.className = 'order-item';
+                        d.innerHTML = `<b>${o.name}</b> - <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span>`;
+                        list.appendChild(d);
                     }
                 });
             });
         }
 
-        function deleteProduct(pid) { if (prompt("Admin Code:") === ADMIN_CODE) db.ref('products/' + pid).remove(); }
+        function deleteProduct(pid) { if(prompt("Admin Code:") === ADMIN_CODE) db.ref('products/' + pid).remove(); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
