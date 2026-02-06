@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MiniShop">
     <meta name="theme-color" content="#2563eb">
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -25,7 +24,7 @@
 
         * { box-sizing: border-box; }
         body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg); overflow-x: hidden; }
-        button { cursor: pointer; padding: 12px; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; font-size: 14px; }
+        button { cursor: pointer; padding: 10px; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; font-size: 13px; }
         button:active { transform: scale(0.98); }
         input, textarea { padding: 12px; border: 1px solid #ccc; border-radius: 8px; width: 100%; margin-bottom: 12px; font-size: 16px; }
         
@@ -36,6 +35,7 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-secondary { background: #6b7280; color: white; }
+        .btn-print { background: #000; color: white; }
 
         /* Auth Screen */
         #auth-screen { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
@@ -47,10 +47,8 @@
         .header-top { display: flex; justify-content: space-between; align-items: center; }
         .nav-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-        /* Product Grid */
+        /* Grid */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-        @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } }
-
         .product-card { background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; }
         .product-img { width: 100%; height: 160px; object-fit: cover; background: #eee; }
         .p-details { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
@@ -58,7 +56,6 @@
         .p-price { color: var(--success); font-weight: 800; font-size: 1.1rem; margin-bottom: 4px; }
         .p-qty { font-size: 0.8rem; color: #666; margin-bottom: 8px; }
         .p-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: auto; }
-        .p-actions button { padding: 8px; font-size: 11px; }
         .btn-full { grid-column: span 2; margin-bottom: 5px; }
 
         /* Modals */
@@ -67,20 +64,64 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .close-modal { float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
 
-        /* Onboarding Styles */
-        .install-guide { text-align: center; padding: 10px; }
-        .guide-box { background: #f9fafb; border: 2px dashed var(--primary); border-radius: 12px; padding: 15px; margin: 15px 0; text-align: left; }
-        .step { margin-bottom: 10px; display: flex; align-items: flex-start; gap: 10px; }
-        .step-num { background: var(--primary); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
-        
+        /* Order Styles */
+        .order-card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .order-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #555; }
+        .order-id { font-family: monospace; font-weight: bold; color: #000; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+        .order-main { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
+        .order-sub { font-size: 0.85rem; color: #666; margin-bottom: 10px; }
         .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: white; font-weight: bold; }
         .st-pending { background: #f59e0b; }
         .st-accepted { background: #3b82f6; }
         .st-declined { background: #ef4444; }
         .st-delivered { background: #10b981; }
+        .order-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; border-top: 1px solid #f3f4f6; padding-top: 8px; }
+
+        /* Receipt Print Styles */
+        #receipt-print-area { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #receipt-print-area, #receipt-print-area * { visibility: visible; }
+            #receipt-print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; display: flex; justify-content: center; }
+            .receipt-box { width: 300px; border: 2px dashed #000; padding: 20px; font-family: 'Courier New', monospace; text-align: center; position: relative; }
+            .cut-icon { position: absolute; bottom: -12px; left: 20px; background: white; padding: 0 5px; font-size: 20px; }
+        }
+
+        /* Onboarding */
+        .install-guide { text-align: center; }
+        .guide-box { background: #f9fafb; border: 2px dashed var(--primary); border-radius: 12px; padding: 15px; margin: 15px 0; text-align: left; }
     </style>
 </head>
 <body>
+
+    <div id="receipt-print-area">
+        <div class="receipt-box">
+            <h2 style="margin:0">MINISHOP</h2>
+            <p>Order Receipt</p>
+            <hr style="border-top: 1px dashed #000;">
+            <div style="display:flex; justify-content:space-between;">
+                <span>Order #:</span> <span id="rec-id" style="font-weight:900; font-size:1.2em"></span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span>Date:</span> <span id="rec-date"></span>
+            </div>
+            <hr style="border-top: 1px dashed #000;">
+            <div style="text-align:left; margin: 15px 0;">
+                <h3 id="rec-item" style="margin:5px 0"></h3>
+                <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                    <span>Total:</span> <span id="rec-price"></span>
+                </div>
+            </div>
+            <hr style="border-top: 1px dashed #000;">
+            <div style="text-align:left; font-size: 12px;">
+                <b>Customer:</b><br>
+                <span id="rec-user"></span><br>
+                <span id="rec-class"></span>
+            </div>
+            <p style="margin-top:20px;">Thank You!</p>
+            <div class="cut-icon">✂️</div>
+        </div>
+    </div>
 
     <div id="auth-screen">
         <div id="login-form" class="auth-box">
@@ -127,22 +168,16 @@
     <div id="modal-onboarding" class="modal hidden">
         <div class="modal-content" style="border-radius: 20px 20px 20px 20px; align-self: center; margin-bottom: 0; width: 90%; max-width: 450px;">
             <div class="install-guide">
-                <h2 style="color: var(--primary); margin-top: 0;">Install as an App! 📱</h2>
-                <p>Install MiniShop to your home screen for a faster and better experience.</p>
-                
+                <h2 style="color: var(--primary); margin-top: 0;">Install App 📱</h2>
                 <div class="guide-box">
-                    <h4 style="margin: 0 0 10px 0;">iPhone (Safari)</h4>
-                    <div class="step"><div class="step-num">1</div> Tap the <b>'Share'</b> button (square with arrow)</div>
-                    <div class="step"><div class="step-num">2</div> Scroll down and tap <b>'Add to Home Screen'</b></div>
+                    <h4>iPhone (Safari)</h4>
+                    <p style="margin:5px 0">Tap <b>Share</b> (square with arrow) -> <b>Add to Home Screen</b></p>
                 </div>
-
                 <div class="guide-box">
-                    <h4 style="margin: 0 0 10px 0;">Android (Chrome)</h4>
-                    <div class="step"><div class="step-num">1</div> Tap the <b>'Three Dots'</b> (⋮) in the top right</div>
-                    <div class="step"><div class="step-num">2</div> Tap <b>'Install App'</b> or <b>'Add to Home Screen'</b></div>
+                    <h4>Android (Chrome)</h4>
+                    <p style="margin:5px 0">Tap <b>3 Dots</b> (top right) -> <b>Install App</b></p>
                 </div>
-
-                <button class="btn-primary" onclick="closeOnboarding()" style="width: 100%; margin-top: 10px;">Got it, thanks!</button>
+                <button class="btn-primary" onclick="closeOnboarding()" style="width: 100%;">Got it!</button>
             </div>
         </div>
     </div>
@@ -205,6 +240,7 @@
         let currentUser = null;
         const ADMIN_CODE = "555";
 
+        // --- AUTH & INIT ---
         window.onload = () => {
             const savedUser = localStorage.getItem('miniShopUser');
             if (savedUser) { currentUser = JSON.parse(savedUser); showApp(); }
@@ -251,21 +287,16 @@
             checkOnboarding();
         }
 
-        // Onboarding Logic
         function checkOnboarding() {
-            const hasSeen = localStorage.getItem('onboardingShown');
-            if (!hasSeen) {
-                document.getElementById('modal-onboarding').classList.remove('hidden');
-            }
+            if (!localStorage.getItem('onboardingShown')) document.getElementById('modal-onboarding').classList.remove('hidden');
         }
         function closeOnboarding() {
             localStorage.setItem('onboardingShown', 'true');
             document.getElementById('modal-onboarding').classList.add('hidden');
         }
-
         function logout() { localStorage.removeItem('miniShopUser'); location.reload(); }
 
-        // Product Logic
+        // --- PRODUCTS ---
         function openAddProduct() { if (prompt("Admin Code:") === ADMIN_CODE) document.getElementById('modal-add-product').classList.remove('hidden'); }
         function submitProduct() {
             const name = document.getElementById('p-name').value;
@@ -313,15 +344,70 @@
                 document.getElementById('d-qty-info').innerHTML = p.qty <= 0 ? 'Out of Stock' : 'Stock: ' + p.qty;
                 document.getElementById('d-desc').innerText = p.desc;
                 document.getElementById('modal-detail').classList.remove('hidden');
+                document.getElementById('detail-order-btn').onclick = () => orderProduct(p.pid, p.name, p.price);
             });
         }
 
+        function deleteProduct(pid) { if(prompt("Admin Code:") === ADMIN_CODE) db.ref('products/' + pid).remove(); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // --- NEW ORDER LOGIC (SEQUENTIAL ID) ---
+
         function orderProduct(pid, name, price) {
             if(!confirm(`Order ${name}?`)) return;
+            
+            // 1. Decrement Stock
             const pRef = db.ref('products/' + pid);
-            pRef.transaction(p => { if(p && p.qty > 0) { p.qty--; return p; } return p; }, (err, committed) => {
-                if(committed) db.ref('orders/o'+Date.now()).set({pid, name, price, uid: currentUser.uid, uName: currentUser.fname, uDad: currentUser.dadname, uClass: currentUser.uClass, status: 'Pending'});
-                else alert("Sold out!");
+            pRef.transaction(p => { 
+                if(p && p.qty > 0) { p.qty--; return p; } 
+                return p; 
+            }, (err, committed) => {
+                if(committed) {
+                    // 2. Stock secured, now generate Sequential ID
+                    const counterRef = db.ref('metadata/orderCounter');
+                    counterRef.transaction(currentCount => {
+                        return (currentCount || 0) + 1; // Increment counter (Start at 1)
+                    }, (error, committed, snapshot) => {
+                        if (committed) {
+                            // 3. Create the Order
+                            const newId = snapshot.val(); // e.g., 1, 2, 3
+                            const shortId = '#' + newId;
+                            const oid = 'o' + Date.now();
+                            const dateStr = new Date().toLocaleDateString();
+
+                            db.ref('orders/' + oid).set({
+                                oid, pid, name, price, 
+                                uid: currentUser.uid, uName: currentUser.fname, uDad: currentUser.dadname, uClass: currentUser.uClass, 
+                                status: 'Pending', shortId, dateStr, orderNum: newId
+                            });
+                        }
+                    });
+                } else {
+                    alert("Sold out!");
+                }
+            });
+        }
+
+        // Print Function
+        function printReceipt(oid) {
+            db.ref('orders/' + oid).once('value', snap => {
+                const o = snap.val();
+                document.getElementById('rec-id').innerText = o.shortId || '---';
+                document.getElementById('rec-date').innerText = o.dateStr || new Date().toLocaleDateString();
+                document.getElementById('rec-item').innerText = o.name;
+                document.getElementById('rec-price').innerText = o.price + " SAR";
+                document.getElementById('rec-user').innerText = o.uName + " " + o.uDad;
+                document.getElementById('rec-class').innerText = "Class: " + o.uClass;
+                window.print();
+            });
+        }
+
+        function cancelOrder(oid, pid) {
+            if(!confirm("Cancel this order?")) return;
+            db.ref('orders/' + oid).once('value', snap => {
+                const o = snap.val();
+                if(o.status !== 'Declined') db.ref('products/' + pid + '/qty').transaction(q => (q || 0) + 1);
+                db.ref('orders/' + oid).remove();
             });
         }
 
@@ -335,19 +421,31 @@
             });
         }
 
+        // --- ADMIN & MY ORDER VIEWS ---
+
         function openAdminOrders() {
-            if (prompt("Code:") !== ADMIN_CODE) return;
+            if (prompt("Admin Code:") !== ADMIN_CODE) return;
             document.getElementById('modal-admin-orders').classList.remove('hidden');
-            db.ref('orders').on('value', snap => {
+            db.ref('orders').orderByChild('orderNum').on('value', snap => {
                 const list = document.getElementById('admin-orders-list'); list.innerHTML = '';
-                snap.forEach(c => {
-                    const o = c.val();
-                    const d = document.createElement('div'); d.className = 'order-item';
-                    d.innerHTML = `<b>${o.name}</b> (${o.price} SAR)<br>User: ${o.uName} ${o.uDad} | Class: ${o.uClass}<br>Status: <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span>
-                        <div style="margin-top:10px; display:flex; gap:5px;">
-                            <button class="btn-primary" onclick="updStat('${c.key}','${o.pid}','Accepted')">Accept</button>
-                            <button class="btn-danger" onclick="updStat('${c.key}','${o.pid}','Declined')">Decline</button>
-                            <button class="btn-success" onclick="updStat('${c.key}','${o.pid}','Delivered')">Done</button>
+                let orders = [];
+                snap.forEach(c => orders.push(c.val()));
+                // Reverse to see newest (#10) at top, oldest (#1) at bottom
+                orders.reverse().forEach(o => {
+                    const d = document.createElement('div'); d.className = 'order-card';
+                    d.innerHTML = `
+                        <div class="order-header">
+                            <span class="order-id">${o.shortId || '---'}</span>
+                            <span>${o.dateStr || ''}</span>
+                        </div>
+                        <div class="order-main">${o.name} <span style="font-weight:normal">(${o.price} SAR)</span></div>
+                        <div class="order-sub">User: ${o.uName} ${o.uDad} | ${o.uClass}</div>
+                        <div>Status: <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span></div>
+                        <div class="order-actions">
+                            <button class="btn-primary" onclick="updStat('${o.oid}','${o.pid}','Accepted')">Acc</button>
+                            <button class="btn-danger" onclick="updStat('${o.oid}','${o.pid}','Declined')">Dec</button>
+                            <button class="btn-success" onclick="updStat('${o.oid}','${o.pid}','Delivered')">Done</button>
+                            <button class="btn-print" onclick="printReceipt('${o.oid}')">Print 🖨️</button>
                         </div>`;
                     list.appendChild(d);
                 });
@@ -356,21 +454,30 @@
 
         function openMyOrders() {
             document.getElementById('modal-my-orders').classList.remove('hidden');
-            db.ref('orders').on('value', snap => {
+            db.ref('orders').orderByChild('orderNum').on('value', snap => {
                 const list = document.getElementById('my-orders-list'); list.innerHTML = '';
-                snap.forEach(c => {
-                    const o = c.val();
+                let orders = [];
+                snap.forEach(c => orders.push(c.val()));
+                orders.reverse().forEach(o => {
                     if(o.uid === currentUser.uid) {
-                        const d = document.createElement('div'); d.className = 'order-item';
-                        d.innerHTML = `<b>${o.name}</b> - <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span>`;
+                        const d = document.createElement('div'); d.className = 'order-card';
+                        d.innerHTML = `
+                            <div class="order-header">
+                                <span class="order-id">${o.shortId || '---'}</span>
+                                <span>${o.dateStr || ''}</span>
+                            </div>
+                            <div class="order-main">${o.name} <span style="font-weight:normal">(${o.price} SAR)</span></div>
+                            <div style="margin-bottom:5px">Status: <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span></div>
+                            <div class="order-actions">
+                                <button class="btn-print" onclick="printReceipt('${o.oid}')">Print 🖨️</button>
+                                ${o.status === 'Pending' ? `<button class="btn-danger" onclick="cancelOrder('${o.oid}','${o.pid}')">Cancel</button>` : ''}
+                            </div>`;
                         list.appendChild(d);
                     }
                 });
             });
         }
 
-        function deleteProduct(pid) { if(prompt("Admin Code:") === ADMIN_CODE) db.ref('products/' + pid).remove(); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
 </html>
