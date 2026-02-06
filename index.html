@@ -27,6 +27,7 @@
         body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
         button { cursor: pointer; padding: 12px; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; font-size: 14px; }
         button:active { transform: scale(0.96); }
+        button:disabled { background: #d1d5db !important; cursor: not-allowed; transform: none; }
         input, textarea { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; margin-bottom: 12px; font-size: 16px; outline: none; }
         
         .hidden { display: none !important; }
@@ -57,10 +58,10 @@
         .p-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
         .btn-full { grid-column: span 2; }
 
-        /* Order Item Styling */
-        .order-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        /* Order Styling */
+        .order-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid #e5e7eb; position: relative; }
         .order-id-label { background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 5px; font-size: 12px; font-weight: 900; margin-bottom: 8px; display: inline-block; }
-        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: white; font-weight: bold; text-transform: uppercase; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: white; font-weight: bold; text-transform: uppercase; float: right; }
         .st-pending { background: #f59e0b; }
         .st-accepted { background: #3b82f6; }
         .st-declined { background: #ef4444; }
@@ -72,68 +73,41 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .close-modal { float: right; font-size: 28px; font-weight: bold; cursor: pointer; color: #9ca3af; }
 
-        /* RECEIPT PRINTING STYLES */
-        #print-section { display: none; }
-
+        /* PRINT STYLES */
+        #print-area { display: none; }
         @media print {
             body * { visibility: hidden; }
-            #print-section, #print-section * { visibility: visible; }
-            #print-section { 
-                display: block; 
-                position: absolute; 
-                left: 0; top: 0; width: 100%; 
-                padding: 20px;
-                font-family: 'Courier New', Courier, monospace;
-            }
-            .receipt-container {
-                border: 2px dashed #000;
-                padding: 20px;
-                max-width: 300px;
-                margin: auto;
-                text-align: center;
-                position: relative;
-            }
-            .cut-line {
-                width: 100%;
-                border-top: 1px dashed #000;
-                margin-top: 30px;
-                position: relative;
-            }
-            .cut-line::after {
-                content: '✂---';
-                position: absolute;
-                top: -10px;
-                left: 10px;
-                background: white;
-                padding: 0 5px;
-            }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { display: block; position: absolute; left: 0; top: 0; width: 100%; padding: 20px; font-family: 'Courier New', monospace; }
+            .receipt-box { border: 2px dashed #000; padding: 20px; max-width: 300px; margin: auto; text-align: center; }
+            .cut-here { border-top: 1px dashed #000; margin-top: 20px; padding-top: 5px; font-size: 12px; }
         }
     </style>
 </head>
 <body>
 
-    <div id="print-section">
-        <div class="receipt-container">
+    <div id="print-area">
+        <div class="receipt-box">
             <h2 style="margin:0">MINISHOP</h2>
-            <p style="font-size:12px">Official Receipt</p>
+            <p>Receipt for Order</p>
+            <h1 id="pr-num" style="margin:10px 0"></h1>
             <hr>
-            <h1 id="pr-number" style="margin:10px 0">#0</h1>
-            <div style="text-align: left; font-size: 14px;">
-                <p><strong>Item:</strong> <span id="pr-item"></span></p>
-                <p><strong>Price:</strong> <span id="pr-price"></span> SAR</p>
-                <p><strong>Customer:</strong> <span id="pr-user"></span></p>
-                <p><strong>Class:</strong> <span id="pr-class"></span></p>
-                <p><strong>Date:</strong> <span id="pr-date"></span></p>
+            <div style="text-align:left; font-size:14px;">
+                <p><b>Item:</b> <span id="pr-item"></span></p>
+                <p><b>Price:</b> <span id="pr-price"></span> SAR</p>
+                <p><b>User:</b> <span id="pr-user"></span></p>
+                <p><b>Class:</b> <span id="pr-class"></span></p>
+                <p><b>Date:</b> <span id="pr-date"></span></p>
             </div>
             <hr>
-            <p>Thank you for your purchase!</p>
-            <div class="cut-line"></div>
+            <p>Thank You!</p>
+            <div class="cut-here">✂-------------------</div>
         </div>
     </div>
 
     <div id="auth-screen">
         <div id="login-form" class="auth-box">
-            <h2 style="color: var(--primary)">Welcome Back</h2>
+            <h2 style="color: var(--primary)">MiniShop Login</h2>
             <input type="text" id="login-fname" placeholder="First Name">
             <input type="text" id="login-dadname" placeholder="Father's Name">
             <input type="password" id="login-pass" placeholder="Password">
@@ -142,12 +116,12 @@
         </div>
 
         <div id="signup-form" class="auth-box hidden">
-            <h2 style="color: var(--success)">Join MiniShop</h2>
+            <h2 style="color: var(--success)">Sign Up</h2>
             <input type="text" id="signup-fname" placeholder="First Name">
             <input type="text" id="signup-dadname" placeholder="Father's Name">
             <input type="text" id="signup-class" placeholder="Class (e.g. 7c)">
             <input type="password" id="signup-pass" placeholder="Password">
-            <button class="btn-success" onclick="handleSignup()" style="width: 100%">Sign Up</button>
+            <button class="btn-success" onclick="handleSignup()" style="width: 100%">Register</button>
             <span class="toggle-link" onclick="toggleAuth('login')">Back to Login</span>
         </div>
     </div>
@@ -155,7 +129,7 @@
     <div id="app-screen" class="hidden">
         <header>
             <div class="header-top">
-                <span style="font-weight: 900; font-size: 1.4rem; letter-spacing: -1px;">MINISHOP</span>
+                <span style="font-weight: 900; font-size: 1.4rem;">MINISHOP</span>
                 <button class="btn-danger" onclick="logout()" style="padding: 5px 12px; font-size: 12px;">Logout</button>
             </div>
             <div class="nav-buttons">
@@ -172,32 +146,32 @@
     <div id="modal-add-product" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-add-product')">&times;</span>
-            <h3>Post New Item</h3>
+            <h3>Add Product</h3>
             <input type="text" id="p-name" placeholder="Item Name">
             <textarea id="p-desc" placeholder="Details" rows="3"></textarea>
             <input type="number" id="p-price" placeholder="Price (SAR)">
             <input type="number" id="p-qty" placeholder="Initial Stock" value="1">
             <input type="file" id="p-file" accept="image/*">
-            <button class="btn-success" onclick="submitProduct()" style="width: 100%; margin-top: 10px;">Upload</button>
+            <button class="btn-success" onclick="submitProduct()" style="width: 100%; margin-top: 10px;">Post Product</button>
         </div>
     </div>
 
     <div id="modal-detail" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-detail')">&times;</span>
-            <img id="d-img" src="" style="width:100%; border-radius: 12px; margin-bottom: 15px; height: 250px; object-fit: cover;">
-            <h2 id="d-name"></h2>
-            <h3 id="d-price" style="color: var(--success);"></h3>
-            <p id="d-qty-info"></p>
-            <p id="d-desc"></p>
-            <button class="btn-primary" id="detail-order-btn" style="width: 100%; height: 50px;">Order Now</button>
+            <img id="d-img" src="" style="width:100%; border-radius: 12px; height: 220px; object-fit: cover; margin-bottom: 10px;">
+            <h2 id="d-name" style="margin:0"></h2>
+            <h3 id="d-price" style="color: var(--success); margin: 5px 0;"></h3>
+            <p id="d-qty-info" style="font-weight:bold"></p>
+            <p id="d-desc" style="color:#555"></p>
+            <button class="btn-primary" id="detail-order-btn" style="width: 100%; font-size: 1.1rem;">Order Now</button>
         </div>
     </div>
 
     <div id="modal-admin-orders" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-admin-orders')">&times;</span>
-            <h3>Customer Orders</h3>
+            <h3>Store Orders</h3>
             <div id="admin-orders-list"></div>
         </div>
     </div>
@@ -205,7 +179,7 @@
     <div id="modal-my-orders" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('modal-my-orders')">&times;</span>
-            <h3>My History</h3>
+            <h3>My Orders</h3>
             <div id="my-orders-list"></div>
         </div>
     </div>
@@ -237,7 +211,6 @@
             document.getElementById('signup-form').classList.toggle('hidden', view === 'login');
         }
 
-        // UPDATED SIGNUP WITH DUPLICATE CHECK
         function handleSignup() {
             const fname = document.getElementById('signup-fname').value.trim();
             const dadname = document.getElementById('signup-dadname').value.trim();
@@ -245,26 +218,18 @@
             const pass = document.getElementById('signup-pass').value.trim();
             if (!fname || !dadname || !uClass || !pass) return alert("Fill all fields");
 
-            // 1. Check if name combination already exists
             db.ref('users').once('value', snap => {
                 let exists = false;
-                snap.forEach(child => {
-                    const u = child.val();
-                    if (u.fname.toLowerCase() === fname.toLowerCase() && u.dadname.toLowerCase() === dadname.toLowerCase()) {
-                        exists = true;
-                    }
+                snap.forEach(c => {
+                    const u = c.val();
+                    if(u.fname.toLowerCase() === fname.toLowerCase() && u.dadname.toLowerCase() === dadname.toLowerCase()) exists = true;
                 });
-
-                if (exists) {
-                    alert("Account already exists with this name and father's name!");
-                } else {
-                    // 2. Create account if it doesn't exist
-                    const uid = 'u' + Date.now();
-                    db.ref('users/' + uid).set({ fname, dadname, uClass, pass, uid }).then(() => { 
-                        alert("Account Created!"); 
-                        toggleAuth('login'); 
-                    });
-                }
+                if(exists) return alert("Account already exists with this name!");
+                
+                const uid = 'u' + Date.now();
+                db.ref('users/' + uid).set({ fname, dadname, uClass, pass, uid }).then(() => {
+                    alert("Account Created!"); toggleAuth('login');
+                });
             });
         }
 
@@ -282,7 +247,7 @@
                         showApp();
                     }
                 });
-                if (!found) alert("Incorrect Credentials");
+                if (!found) alert("Wrong Credentials");
             });
         }
 
@@ -296,6 +261,7 @@
 
         // PRODUCT LOGIC
         function openAddProduct() { if (prompt("Admin Code:") === ADMIN_CODE) document.getElementById('modal-add-product').classList.remove('hidden'); }
+        
         function submitProduct() {
             const name = document.getElementById('p-name').value;
             const desc = document.getElementById('p-desc').value;
@@ -324,11 +290,11 @@
                         <div class="p-details">
                             <div class="p-title">${p.name}</div>
                             <div class="p-price">${p.price} SAR</div>
-                            <div style="font-size:12px; color:#666; margin-top:5px;">${isOut ? '<span style="color:red">Out of Stock</span>' : 'Stock: '+p.qty}</div>
+                            <div style="font-size:12px; color:${isOut ? 'red' : '#666'}; margin-top:5px;">${isOut ? 'Out of Stock' : 'Stock: '+p.qty}</div>
                             <div class="p-actions">
-                                <button class="btn-primary btn-full" ${isOut ? 'disabled' : ''} onclick="orderProduct('${p.pid}', '${p.name}', '${p.price}')">Order</button>
-                                <button class="btn-secondary" onclick="showDetail('${p.pid}')">More</button>
-                                <button class="btn-danger" onclick="deleteProduct('${p.pid}')">Delete</button>
+                                <button class="btn-primary btn-full" ${isOut ? 'disabled' : ''} onclick="orderProduct('${p.pid}', '${p.name}', '${p.price}')">${isOut ? 'Sold Out' : 'Order'}</button>
+                                <button class="btn-secondary" onclick="showDetail('${p.pid}')">Info</button>
+                                <button class="btn-danger" onclick="deleteProduct('${p.pid}')">Del</button>
                             </div>
                         </div>`;
                     grid.appendChild(card);
@@ -339,50 +305,67 @@
         function showDetail(pid) {
             db.ref('products/' + pid).once('value', snap => {
                 const p = snap.val();
+                const isOut = p.qty <= 0;
                 document.getElementById('d-img').src = p.img;
                 document.getElementById('d-name').innerText = p.name;
                 document.getElementById('d-price').innerText = p.price + " SAR";
-                document.getElementById('d-qty-info').innerHTML = p.qty <= 0 ? 'Out of Stock' : 'Stock: ' + p.qty;
+                document.getElementById('d-qty-info').innerHTML = isOut ? '<span style="color:red">Out of Stock</span>' : 'Items Available: ' + p.qty;
                 document.getElementById('d-desc').innerText = p.desc;
-                document.getElementById('detail-order-btn').onclick = () => orderProduct(p.pid, p.name, p.price);
+                
+                const btn = document.getElementById('detail-order-btn');
+                btn.disabled = isOut;
+                btn.innerText = isOut ? 'Sold Out' : 'Order Now';
+                btn.onclick = () => orderProduct(p.pid, p.name, p.price);
+                
                 document.getElementById('modal-detail').classList.remove('hidden');
             });
         }
 
-        // ORDER LOGIC WITH SEQUENTIAL #1, #2...
+        // ORDER LOGIC
         function orderProduct(pid, name, price) {
-            if(!confirm(`Confirm order for ${name}?`)) return;
+            if(!confirm(`Order ${name}?`)) return;
             const pRef = db.ref('products/' + pid);
             pRef.transaction(p => { 
                 if (p && p.qty > 0) { p.qty--; return p; } return p; 
             }, (err, committed) => {
-                if (!committed) return alert("Sold out!");
+                if (!committed) return alert("Item just sold out!");
                 
-                // Get sequential count
-                const counterRef = db.ref('metadata/orderCount');
-                counterRef.transaction(current => (current || 0) + 1, (error, committed, snapshot) => {
-                    if (committed) {
-                        const orderNum = snapshot.val();
-                        const orderId = 'o' + Date.now();
-                        db.ref('orders/' + orderId).set({
-                            orderNum, pid, name, price,
-                            uid: currentUser.uid,
-                            uName: currentUser.fname + " " + currentUser.dadname,
-                            uClass: currentUser.uClass,
-                            status: 'Pending',
-                            date: new Date().toLocaleString()
-                        }).then(() => {
-                            alert("Ordered! Your ID is #" + orderNum);
-                            closeModal('modal-detail');
-                        });
+                db.ref('metadata/orderCount').transaction(cur => (cur || 0) + 1, (err, comm, snap) => {
+                    if (comm) {
+                        const num = snap.val();
+                        const oid = 'o' + Date.now();
+                        db.ref('orders/' + oid).set({
+                            orderNum: num, pid, name, price,
+                            uid: currentUser.uid, uName: currentUser.fname + " " + currentUser.dadname,
+                            uClass: currentUser.uClass, status: 'Pending', date: new Date().toLocaleString()
+                        }).then(() => { alert("Success! Order #" + num); closeModal('modal-detail'); });
                     }
                 });
             });
         }
 
-        // PRINT LOGIC
-        function printReceipt(o) {
-            document.getElementById('pr-number').innerText = "#" + o.orderNum;
+        // STATUS UPDATE (INCLUDING DECLINE/RESTOCK)
+        function updStat(oid, pid, newStatus) {
+            const oRef = db.ref('orders/' + oid);
+            oRef.once('value', snap => {
+                const o = snap.val();
+                if (!o) return;
+                
+                // If moving to Declined from anything else, give stock back
+                if (newStatus === 'Declined' && o.status !== 'Declined') {
+                    db.ref('products/' + pid + '/qty').transaction(q => (q || 0) + 1);
+                } 
+                // If moving away FROM Declined back to active, take stock away
+                else if (o.status === 'Declined' && newStatus !== 'Declined') {
+                    db.ref('products/' + pid + '/qty').transaction(q => q > 0 ? q - 1 : 0);
+                }
+
+                oRef.update({ status: newStatus });
+            });
+        }
+
+        function printRec(o) {
+            document.getElementById('pr-num').innerText = "#" + o.orderNum;
             document.getElementById('pr-item').innerText = o.name;
             document.getElementById('pr-price').innerText = o.price;
             document.getElementById('pr-user').innerText = o.uName;
@@ -391,17 +374,8 @@
             setTimeout(() => { window.print(); }, 500);
         }
 
-        function updStat(oid, pid, newStatus) {
-            const oRef = db.ref('orders/' + oid);
-            oRef.once('value', snap => {
-                const o = snap.val();
-                if (newStatus === 'Declined' && o.status !== 'Declined') db.ref('products/'+pid+'/qty').transaction(q => (q||0)+1);
-                oRef.update({status: newStatus});
-            });
-        }
-
         function openAdminOrders() {
-            if (prompt("Admin Code:") !== ADMIN_CODE) return;
+            if (prompt("Code:") !== ADMIN_CODE) return;
             document.getElementById('modal-admin-orders').classList.remove('hidden');
             db.ref('orders').on('value', snap => {
                 const list = document.getElementById('admin-orders-list'); list.innerHTML = '';
@@ -409,14 +383,15 @@
                     const o = c.val();
                     const d = document.createElement('div'); d.className = 'order-card';
                     d.innerHTML = `
-                        <div class="order-id-label">ORDER #${o.orderNum}</div>
-                        <div style="float:right"><span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span></div>
+                        <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span>
+                        <div class="order-id-label">#${o.orderNum}</div>
                         <div style="font-weight:bold">${o.name}</div>
-                        <div style="font-size:12px; color:#555;">${o.uName} | ${o.uClass}</div>
-                        <div style="margin-top:10px; display:flex; gap:5px;">
-                            <button class="btn-primary" style="padding:5px 10px; font-size:11px" onclick="updStat('${c.key}','${o.pid}','Accepted')">Accept</button>
-                            <button class="btn-success" style="padding:5px 10px; font-size:11px" onclick="updStat('${c.key}','${o.pid}','Delivered')">Done</button>
-                            <button class="btn-secondary" style="background:#000; padding:5px 10px; font-size:11px" onclick='printReceipt(${JSON.stringify(o)})'>Print 🖨️</button>
+                        <div style="font-size:12px; color:#666">${o.uName} | ${o.uClass}</div>
+                        <div style="margin-top:10px; display:flex; gap:5px; flex-wrap:wrap;">
+                            <button class="btn-primary" style="padding:6px 10px; font-size:11px" onclick="updStat('${c.key}','${o.pid}','Accepted')">Accept</button>
+                            <button class="btn-success" style="padding:6px 10px; font-size:11px" onclick="updStat('${c.key}','${o.pid}','Delivered')">Done</button>
+                            <button class="btn-danger" style="padding:6px 10px; font-size:11px" onclick="updStat('${c.key}','${o.pid}','Declined')">Decline</button>
+                            <button class="btn-secondary" style="background:#000; padding:6px 10px; font-size:11px" onclick='printRec(${JSON.stringify(o)})'>Print 🖨️</button>
                         </div>`;
                     list.appendChild(d);
                 });
@@ -432,11 +407,10 @@
                     if(o.uid === currentUser.uid) {
                         const d = document.createElement('div'); d.className = 'order-card';
                         d.innerHTML = `
-                            <div class="order-id-label">ORDER #${o.orderNum}</div>
-                            <div style="float:right"><span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span></div>
+                            <span class="status-badge st-${o.status.toLowerCase()}">${o.status}</span>
+                            <div class="order-id-label">#${o.orderNum}</div>
                             <div style="font-weight:bold">${o.name}</div>
-                            <button class="btn-secondary" style="background:#000; padding:5px 10px; font-size:11px; margin-top:10px;" onclick='printReceipt(${JSON.stringify(o)})'>Print Receipt 🖨️</button>
-                        `;
+                            <button class="btn-secondary" style="background:#000; padding:6px 10px; font-size:11px; margin-top:10px;" onclick='printRec(${JSON.stringify(o)})'>Print 🖨️</button>`;
                         list.appendChild(d);
                     }
                 });
